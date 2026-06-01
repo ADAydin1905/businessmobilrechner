@@ -20,16 +20,32 @@ Statischer Tarif-/Rabattrechner für Telekom Business Mobil. Rein client-seitig
 | `tarife.json`      | Identische Tarifdaten, werden per `fetch` über http(s) geladen |
 | `rabatte.js`       | Rabattdaten als globale Variable                            |
 | `rabatte.json`     | Identische Rabattdaten per `fetch`                          |
-| `gitlab-config.js` | Stub – verhindert 404. Live-Speichern ist auf Pages inaktiv |
+| `github-config.js` | owner/repo/branch für das „Live speichern" des Admin-Panels |
 
-## Daten ändern
+## Einrichtung des Live-Speicherns
 
-Auf einem statischen Host gibt es kein Live-Speichern. Workflow:
+1. In `github-config.js` `owner` und `repo` eintragen (Branch meist `main`).
+2. Auf GitHub ein **Personal Access Token** erstellen:
+   - Empfohlen: **Fine-grained token**, nur dieses Repo, Recht
+     **Contents: Read and write**.
+   - Alternativ: klassisches Token mit Scope **repo**.
+3. Fertig. Das Token wird **nicht** im Code gespeichert.
 
-1. Im Admin-Panel Änderungen vornehmen und die Dateien **herunterladen**.
-2. Heruntergeladene `tarife.json` **und** `tarife.js` (bzw. `rabatte.*`) ins
-   Repo committen und pushen.
-3. Pages aktualisiert sich automatisch.
+## Daten ändern (live)
+
+1. Rechner mit `?admin` in der URL öffnen → Admin-Panel.
+2. Änderungen vornehmen → **🚀 Live speichern**.
+3. Beim ersten Mal das GitHub-Token eingeben (bleibt nur für die Sitzung im
+   `sessionStorage`).
+4. Das Panel committet `tarife.json` + `tarife.js` (und ggf. `rabatte.*`)
+   direkt ins Repo. GitHub Pages baut neu → nach ~1 Min ist es live.
+
+> **Fallback ohne Token:** Button **⬇️ Download** lädt die Dateien lokal
+> herunter; diese dann manuell ins Repo committen.
+
+> ⚠️ **Sicherheit:** Wer ein gültiges Token + Zugriff auf das Admin-Panel hat,
+> schreibt direkt live (kein Review). Das Repo ist öffentlich, also niemals ein
+> Token in den Code committen.
 
 ## Hinweise
 
