@@ -3285,6 +3285,28 @@
         border-radius: 6px;
         padding: 2px 8px;
       }
+      .ap-opt-builtin {
+        flex: 0 0 auto;
+        font-size: 0.72em;
+        font-style: italic;
+        color: #999;
+      }
+      .ap-opt-del {
+        flex: 0 0 auto;
+        border: 1px solid var(--ap-border, #ddd);
+        background: var(--card-bg);
+        color: #c0392b;
+        border-radius: 6px;
+        padding: 3px 9px;
+        cursor: pointer;
+        font-size: 0.95em;
+        line-height: 1;
+      }
+      .ap-opt-del:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+      }
       .ap-opt-preis {
         display: flex;
         flex-wrap: wrap;
@@ -4500,6 +4522,31 @@
 
       // Laufzeit-Objekt (let, damit es nach Admin-Aenderungen neu gebaut werden kann).
       let ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
+
+      // Eingebaute Optionen: im ⚙️-Menue + saveZubuchoptionen fest verdrahtet
+      // (teils mit Spezial-Handlern/Gruppierung). Sie sind editierbar, aber NICHT
+      // loeschbar. Alles andere gilt als selbst angelegte ("custom") Option und
+      // wird im Menue generisch gerendert + ist loeschbar.
+      const BUILTIN_OPTION_KEYS = [
+        "mobilityConnect",
+        "securityOnNetComfort",
+        "festeIPv6Adresse",
+        "internationalWorld50",
+        "internationalWorld100",
+        "internationalWorld400",
+        "countryFlatWorld",
+        "magentaEinsVorteil",
+        "oneNumber",
+        "festnetznummer",
+        "halbesJahrhalberPreis",
+        "dataunlimitedforfree",
+        "vvlAktion",
+        "aktionspreisHK",
+        "aktionspreisBusinessCardSpecial",
+      ];
+      function istCustomOption(key) {
+        return !BUILTIN_OPTION_KEYS.includes(key);
+      }
 
       function toggleVvlFelder() {
         const checkbox = document.getElementById("vvlAktion-checkbox");
@@ -7070,6 +7117,30 @@
                 `;
           }
 
+          // Generische Sektion fuer selbst angelegte ("custom") Optionen.
+          // Eingebaute Optionen sind oben fest verdrahtet; alles andere wird
+          // hier als Standard-Checkbox gerendert (sofern verfuegbar).
+          let weitereOptionenItems = "";
+          for (const optKey in ZUBUCHOPTIONEN_DETAILS) {
+            if (!istCustomOption(optKey)) continue;
+            const opt = ZUBUCHOPTIONEN_DETAILS[optKey];
+            if (!opt.isAvailable(tarif, kartenArt, cardId)) continue;
+            const checked = currentOptions[optKey] ? "checked" : "";
+            weitereOptionenItems += `
+                    <div class="einstellungs-zeile modal-einstellung">
+                        <label for="custom-opt-${optKey}" class="einstellungs-label">${opt.name} (${getDisplayPrice(
+                          opt.getPreisNetto(tarif),
+                        )})</label>
+                        <label class="magenta-checkbox">
+                            <input type="checkbox" id="custom-opt-${optKey}" data-opt-key="${optKey}" onchange="saveZubuchoptionen(null, this)" ${checked}>
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>`;
+          }
+          const weitereOptionenHTML = weitereOptionenItems
+            ? `<h4 style="margin: 20px 0 0 0; color: var(--primary-color);">Weitere Optionen</h4><hr style="margin: 10px 0 20px 0;">${weitereOptionenItems}`
+            : "";
+
           // Prüfen, ob es sich um eine Datenkarte handelt
 
           const istDatenkarte = kartenArt === "Haupt-Datenkarte" || kartenArt === "Partner-Datenkarte";
@@ -7116,6 +7187,8 @@
                     </div>
 
 
+
+                    ${weitereOptionenHTML}
 
                     ${konfigHTML}
 
@@ -7236,6 +7309,8 @@
                     ${aktionspreiseHTML}
 
 
+
+                    ${weitereOptionenHTML}
 
                     ${konfigHTML}
 
@@ -7452,6 +7527,11 @@
         if (multiSimSelect) {
           tempZubuchoptions[cardId].multisim = parseInt(multiSimSelect.value, 10);
         }
+
+        // Selbst angelegte ("custom") Optionen generisch speichern (data-opt-key).
+        modal.querySelectorAll("[data-opt-key]").forEach((cb) => {
+          tempZubuchoptions[cardId][cb.dataset.optKey] = cb.checked;
+        });
 
         const securityOnNetComfortCheckbox = document.getElementById("securityOnNetComfort-checkbox");
 
@@ -11566,11 +11646,12 @@
 
           if (item.zubuchungen) {
             for (const key in item.zubuchungen) {
-              hatZubuchoptionen = true;
-
               const option = item.zubuchungen[key];
 
               const optionDetail = ZUBUCHOPTIONEN_DETAILS[key];
+              if (!optionDetail) continue; // Option wurde evtl. geloescht
+
+              hatZubuchoptionen = true;
 
               const originalPreis = option.preis / (1 - (option.rabatt || 0) / 100);
 
@@ -12221,6 +12302,7 @@
 
           if (group.zubuchungen) {
             for (const key in group.zubuchungen) {
+              if (!ZUBUCHOPTIONEN_DETAILS[key]) continue; // Option wurde evtl. geloescht
               if (
                 ZUBUCHOPTIONEN_DETAILS[key].berechnungsTyp === "prozentual_zeitlich" ||
                 ZUBUCHOPTIONEN_DETAILS[key].berechnungsTyp === "aktionspreis_zeitlich"
@@ -14659,6 +14741,14 @@
             adminEsc(o.name || "") +
             '" oninput="adminEditOptionName(this.dataset.key, this.value)">';
           if (o.berechnungsTyp) html += '<span class="ap-opt-typ">' + adminEsc(o.berechnungsTyp) + "</span>";
+          if (istCustomOption(key)) {
+            html +=
+              '<button class="ap-opt-del" title="Diese Option löschen" onclick="adminDeleteOption(this.dataset.key)" data-key="' +
+              adminEsc(key) +
+              '">🗑</button>';
+          } else {
+            html += '<span class="ap-opt-builtin" title="Eingebaute Option – editierbar, aber nicht löschbar">🔒 eingebaut</span>';
+          }
           html += "</div>";
 
           html += '<div class="ap-opt-preis">';
@@ -14762,6 +14852,41 @@
           o.preisProStufe[stufe] = n;
         }
         adminMarkOptionenDirty();
+      }
+
+      // Neue (eigene) Option anlegen. Standard-Typ: Name + Monatspreis, ohne
+      // Sonderregeln (verfuegbar, sobald ein Tarif gewaehlt ist). Wird im
+      // ⚙️-Menue generisch gerendert und ist loeschbar.
+      function adminAddOption() {
+        adminState.optionen = adminState.optionen || {};
+        // Eindeutigen Key erzeugen (kollidiert nicht mit eingebauten/eigenen)
+        let key;
+        do {
+          key = "custom_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        } while (adminState.optionen[key]);
+        adminState.optionen[key] = { name: "Neue Option", preisNetto: 0, regeln: {} };
+        adminMarkOptionenDirty();
+        adminRenderOptionen();
+        // Zum neuen Eintrag scrollen + Namensfeld fokussieren
+        setTimeout(() => {
+          const input = document.querySelector('#apOptionenList .ap-opt-name[data-key="' + key + '"]');
+          if (input) {
+            input.scrollIntoView({ block: "center" });
+            input.focus();
+            input.select();
+          }
+        }, 0);
+      }
+
+      // Eigene Option loeschen (eingebaute sind geschuetzt).
+      function adminDeleteOption(key) {
+        if (!adminState.optionen || !adminState.optionen[key]) return;
+        if (!istCustomOption(key)) return; // Sicherheitsnetz
+        const name = adminState.optionen[key].name || key;
+        if (!confirm('Option "' + name + '" wirklich löschen?')) return;
+        delete adminState.optionen[key];
+        adminMarkOptionenDirty();
+        adminRenderOptionen();
       }
 
       // ===== Rabatte-Tab =====
@@ -15742,6 +15867,9 @@
                 sie liegen in <code>optionen.js</code>. Änderungen gehen mit <strong>Live speichern</strong> live.
               </p>
               <div class="ap-optionen-list" id="apOptionenList"></div>
+              <div style="margin-top: 14px;">
+                <button class="ap-add-tarif" onclick="adminAddOption()">+ Option hinzufügen</button>
+              </div>
             </div>
           </div>
         </div>
