@@ -136,7 +136,8 @@
       "preisNetto": 12.36,
       "regeln": {},
       "preisProStufe": {
-        "XXL": 8.36
+        "XXL": 8.36,
+        "XL": 8.36
       }
     }
   }
