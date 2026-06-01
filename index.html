@@ -3362,6 +3362,59 @@
         font-size: 0.8em;
         color: var(--ap-muted, #6b7280);
       }
+      /* Aktiv-Schalter im Options-Kopf */
+      .ap-opt-aktiv {
+        flex: 0 0 auto;
+        font-size: 0.82em;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--text-color);
+        white-space: nowrap;
+      }
+      /* Inaktive Option ausgrauen */
+      .ap-opt-inaktiv {
+        opacity: 0.55;
+      }
+      .ap-opt-inaktiv .ap-opt-aktiv {
+        opacity: 1;
+        font-weight: 600;
+        color: #c0392b;
+      }
+      /* Verfügbarkeit (Kartenarten + Stufen-Ausnahmen) */
+      .ap-opt-verf {
+        margin-top: 8px;
+      }
+      .ap-opt-verf > summary {
+        cursor: pointer;
+        font-size: 0.8em;
+        color: var(--ap-muted, #6b7280);
+        user-select: none;
+      }
+      .ap-opt-verf-body {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .ap-opt-verf-block {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+      .ap-opt-verf-lbl {
+        font-size: 0.82em;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-right: 4px;
+      }
+      .ap-opt-chk {
+        font-size: 0.82em;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
 
       /* Rabatte-Tab Inhalt */
       .ap-rabatte-pane {
@@ -4510,7 +4563,10 @@
           if (o.preisProStufe) detail.preisProStufe = o.preisProStufe;
           detail.preisNetto = o.preisNetto != null ? o.preisNetto : 0;
           detail.getPreisNetto = (tarifName) => optionPreisNetto(o, tarifName);
-          detail.isAvailable = baueOptionVerfuegbar(o.regeln);
+          // Aktiv-Schalter: o.aktiv === false -> Option ueberall ausgeblendet.
+          const regelPruefung = baueOptionVerfuegbar(o.regeln);
+          detail.isAvailable = (tarifName, kartenArt, cardId) =>
+            o.aktiv === false ? false : regelPruefung(tarifName, kartenArt, cardId);
           out[key] = detail;
         }
         return out;
@@ -14732,7 +14788,8 @@
         let html = "";
         Object.keys(opt).forEach((key) => {
           const o = opt[key];
-          html += '<div class="ap-opt-row">';
+          const aktiv = o.aktiv !== false;
+          html += '<div class="ap-opt-row' + (aktiv ? "" : " ap-opt-inaktiv") + '">';
           html += '<div class="ap-opt-head">';
           html +=
             '<input class="ap-opt-name" type="text" data-key="' +
@@ -14740,6 +14797,12 @@
             '" value="' +
             adminEsc(o.name || "") +
             '" oninput="adminEditOptionName(this.dataset.key, this.value)">';
+          html +=
+            '<label class="ap-opt-aktiv" title="Aktiv/Inaktiv – ein Klick zum Deaktivieren (überall ausgeblendet)"><input type="checkbox" data-key="' +
+            adminEsc(key) +
+            '" ' +
+            (aktiv ? "checked" : "") +
+            ' onchange="adminToggleOptionAktiv(this)"> aktiv</label>';
           if (o.berechnungsTyp) html += '<span class="ap-opt-typ">' + adminEsc(o.berechnungsTyp) + "</span>";
           if (istCustomOption(key)) {
             html +=
@@ -14799,7 +14862,47 @@
           }
           html += "</div>";
 
-          html += '<div class="ap-opt-regeln">🔒 ' + adminEsc(optionRegelnText(o.regeln)) + "</div>";
+          // --- Verfügbarkeit (editierbar): Kartenarten + Stufen-Ausnahmen ---
+          const r = o.regeln || {};
+          const kartenArten = [
+            ["Hauptkarte", "Hauptkarten"],
+            ["Partnerkarte", "Partnerkarten"],
+            ["Haupt-Datenkarte", "Haupt-Datenkarten"],
+            ["Partner-Datenkarte", "Partner-Datenkarten"],
+          ];
+          html += '<details class="ap-opt-verf"><summary>Verfügbarkeit: ' + adminEsc(optionRegelnText(o.regeln)) + "</summary>";
+          html += '<div class="ap-opt-verf-body">';
+          html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Gilt für:</span>';
+          kartenArten.forEach(([val, lbl]) => {
+            const checked = !r.kartenArten || r.kartenArten.includes(val);
+            html +=
+              '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
+              adminEsc(key) +
+              '" data-karte="' +
+              val +
+              '" ' +
+              (checked ? "checked" : "") +
+              ' onchange="adminToggleOptionKartenart(this)"> ' +
+              lbl +
+              "</label>";
+          });
+          html += "</div>";
+          html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Ausnahmen (Stufen ausschließen):</span>';
+          stufen.forEach((s) => {
+            const checked = r.stufenExcl && r.stufenExcl.includes(s);
+            html +=
+              '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
+              adminEsc(key) +
+              '" data-stufe="' +
+              s +
+              '" ' +
+              (checked ? "checked" : "") +
+              ' onchange="adminToggleOptionStufeExcl(this)"> ' +
+              s +
+              "</label>";
+          });
+          html += "</div>";
+          html += "</div></details>";
           html += "</div>";
         });
         if (!html) html = '<div class="ap-empty">Keine Optionen geladen (optionen.js fehlt?).</div>';
@@ -14852,6 +14955,49 @@
           o.preisProStufe[stufe] = n;
         }
         adminMarkOptionenDirty();
+      }
+
+      // Aktiv/Inaktiv umschalten (o.aktiv === false => ueberall ausgeblendet).
+      function adminToggleOptionAktiv(cb) {
+        const o = adminState.optionen[cb.dataset.key];
+        if (!o) return;
+        if (cb.checked) delete o.aktiv;
+        else o.aktiv = false;
+        adminMarkOptionenDirty();
+        adminRenderOptionen(); // Zeile aus-/eingrauen
+      }
+
+      // Verfuegbarkeit: Kartenart an-/abwaehlen. Alle 4 aktiv = keine Einschraenkung.
+      function adminToggleOptionKartenart(cb) {
+        const o = adminState.optionen[cb.dataset.key];
+        if (!o) return;
+        const alle = ["Hauptkarte", "Partnerkarte", "Haupt-Datenkarte", "Partner-Datenkarte"];
+        o.regeln = o.regeln || {};
+        const set = new Set(o.regeln.kartenArten || alle);
+        if (cb.checked) set.add(cb.dataset.karte);
+        else set.delete(cb.dataset.karte);
+        const arr = alle.filter((k) => set.has(k));
+        if (arr.length === alle.length) delete o.regeln.kartenArten;
+        else o.regeln.kartenArten = arr;
+        adminMarkOptionenDirty();
+        const sum = cb.closest(".ap-opt-verf")?.querySelector("summary");
+        if (sum) sum.textContent = "Verfügbarkeit: " + optionRegelnText(o.regeln);
+      }
+
+      // Verfuegbarkeit: Stufe als Ausnahme aus-/einschliessen.
+      function adminToggleOptionStufeExcl(cb) {
+        const o = adminState.optionen[cb.dataset.key];
+        if (!o) return;
+        o.regeln = o.regeln || {};
+        const set = new Set(o.regeln.stufenExcl || []);
+        if (cb.checked) set.add(cb.dataset.stufe);
+        else set.delete(cb.dataset.stufe);
+        const arr = Object.keys(TARIF_STUFEN_RANG).filter((s) => set.has(s));
+        if (arr.length === 0) delete o.regeln.stufenExcl;
+        else o.regeln.stufenExcl = arr;
+        adminMarkOptionenDirty();
+        const sum = cb.closest(".ap-opt-verf")?.querySelector("summary");
+        if (sum) sum.textContent = "Verfügbarkeit: " + optionRegelnText(o.regeln);
       }
 
       // Neue (eigene) Option anlegen. Standard-Typ: Name + Monatspreis, ohne
