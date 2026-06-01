@@ -4341,7 +4341,7 @@
           name: "Festnetznummer",
 
           getPreisNetto: (tarifName) => {
-            if (tarifName && tarifStufe(tarifName) === 4) {
+            if (tarifName && tarifStufe(tarifName) >= 4) {
               return 8.36;
             }
 
@@ -4778,25 +4778,7 @@
           if (hauptkarteTarifSelect && hauptkarteTarifSelect.value) {
             const hauptkarteTarif = hauptkarteTarifSelect.value;
 
-            const hauptkarteBasis = hauptkarteTarif.split(" ").slice(0, 3).join(" "); // z.B. "Business Mobil S"
-
-            const erlaubtePartnerkartenProHaupttarif = {
-              "Business Mobil XS": ["Special", "XS"],
-
-              "Business Mobil S": ["Special", "XS", "S"],
-
-              "Business Mobil M": ["Special", "XS", "S", "M"],
-
-              "Business Mobil L": ["Special", "XS", "S", "M", "L"],
-
-              "Business Mobil XL": ["Special", "XS", "S", "M", "L", "XL"],
-            };
-
-            const erlaubteLevels = erlaubtePartnerkartenProHaupttarif[hauptkarteBasis] || [];
-
-            const pkLevel = partnerkartenLevel(cardTarif);
-
-            if (!erlaubteLevels.includes(pkLevel)) {
+            if (!partnerkarteErlaubt(cardTarif, hauptkarteTarif)) {
               isInvalid = true;
 
               errorMessage = `Tarif nicht kompatibel mit Hauptkarte ${targetGroupNum}`;
@@ -5377,17 +5359,6 @@
 
         for (let i = 1; i <= anzahlHauptdatenkarten; i++) mainCardGroups.push(`hdk_${i}`);
 
-        const erlaubtePartnerkartenProHaupttarif = {
-          "Business Mobil XS": ["Special", "XS"],
-
-          "Business Mobil S": ["Special", "XS", "S"],
-
-          "Business Mobil M": ["Special", "XS", "S", "M"],
-
-          "Business Mobil L": ["Special", "XS", "S", "M", "L"],
-
-          "Business Mobil XL": ["Special", "XS", "S", "M", "L", "XL"],
-        };
 
         // SCHRITT 1: Prüfe Kontingent-Limits
 
@@ -5511,13 +5482,7 @@
                 if (hauptkartenTarifSelect && hauptkartenTarifSelect.value) {
                   const hauptkartenTarif = hauptkartenTarifSelect.value;
 
-                  const hauptkartenBasis = hauptkartenTarif.split(" ").slice(0, 3).join(" "); // z.B. "Business Mobil S"
-
-                  const erlaubteLevels = erlaubtePartnerkartenProHaupttarif[hauptkartenBasis] || [];
-
-                  const pkLevel = partnerkartenLevel(partnerTarif);
-
-                  if (!erlaubteLevels.includes(pkLevel)) {
+                  if (!partnerkarteErlaubt(partnerTarif, hauptkartenTarif)) {
                     const displayName = `Partnerkarte ${cardIndex}`;
 
                     errorMessage = `${displayName} (${partnerTarif}) kann nicht zu Hauptkarte ${groupNum} (${hauptkartenTarif}) zugewiesen werden. Der Partnerkarten-Tarif ist höher als erlaubt.`;
@@ -5750,7 +5715,7 @@
 
         const tarifStufeVal = tarifStufe(tarifName);
 
-        if (tarifStufeVal === 3 || tarifStufeVal === 4) {
+        if (tarifStufeVal >= 3) {
           return 25.17;
         }
 
@@ -5765,19 +5730,58 @@
         return tarifName;
       }
 
+      // =====================================================================
+      // ZENTRALE TARIFSTUFEN-LOGIK (Partnerkarten-Kompatibilitaet)
+      // ---------------------------------------------------------------------
+      // Eine einzige Quelle der Wahrheit: Jeder Tarif hat eine Groessen-Stufe
+      // (XS < S < M < L < XL < XXL). "Special" ist ein Sonderfall und passt an
+      // jede Hauptkarte. Die Stufe wird bevorzugt aus dem Tarif-Feld `stufe`
+      // (im Admin-Panel pflegbar) gelesen; nur als Notnagel faellt sie auf eine
+      // robuste Namens-Erkennung zurueck (fuer Alt-Daten ohne `stufe`).
+      // =====================================================================
+      const TARIF_STUFEN_RANG = { XS: 0, S: 1, M: 2, L: 3, XL: 4, XXL: 5 };
+      const TARIF_STUFEN_LABELS = ["XS", "S", "M", "L", "XL", "XXL", "Special"];
+
+      // Namens-Fallback. Wortgrenzen (\b) verhindern, dass Teilstrings wie
+      // "Mobil" faelschlich als "M" oder "L" matchen. Reihenfolge: groesste
+      // bzw. spezifischste zuerst.
+      function stufeAusName(tarifname) {
+        if (!tarifname) return null;
+        if (tarifname.includes("Special")) return "Special";
+        if (/\bXXL\b/.test(tarifname)) return "XXL";
+        if (/\bXL\b/.test(tarifname)) return "XL";
+        if (/\bXS\b/.test(tarifname)) return "XS";
+        if (/\bL\b/.test(tarifname)) return "L";
+        if (/\bM\b/.test(tarifname)) return "M";
+        if (/\bS\b/.test(tarifname)) return "S";
+        return null;
+      }
+
+      // Liefert das Stufen-Label eines Tarifs ("XS".."XXL" | "Special" | null).
+      function getTarifStufeLabel(tarifname) {
+        const t = typeof tarifDetails !== "undefined" ? tarifDetails[tarifname] : null;
+        if (t && t.stufe && TARIF_STUFEN_LABELS.includes(t.stufe)) return t.stufe;
+        return stufeAusName(tarifname);
+      }
+
+      // Darf eine Partnerkarte an eine bestimmte Hauptkarte gebucht werden?
+      // Regel: Partner-Stufe <= Haupt-Stufe. "Special"-Partnerkarten passen
+      // immer (wie in der frueheren fest verdrahteten Tabelle).
+      function partnerkarteErlaubt(partnerTarif, hauptTarif) {
+        const pk = getTarifStufeLabel(partnerTarif);
+        const hk = getTarifStufeLabel(hauptTarif);
+        if (pk === "Special") return true;
+        if (pk == null || hk == null) return false;
+        if (hk === "Special") return false; // Special-Hauptkarte: nur Special-Partner
+        return TARIF_STUFEN_RANG[pk] <= TARIF_STUFEN_RANG[hk];
+      }
+
+      // Numerische Stufe (Rueckwaertskompatibel: XS=0..XL=4, XXL=5,
+      // Special=-1, unbekannt=-2). Nutzt jetzt die zentrale Label-Logik.
       function tarifStufe(tarifname) {
-        if (tarifname.includes("XL")) return 4;
-
-        if (tarifname.includes("L")) return 3;
-
-        if (tarifname.includes("M")) return 2;
-
-        if (tarifname.includes("XS")) return 0;
-
-        if (tarifname.includes("S")) return 1;
-
-        if (tarifname.includes("Special")) return -1;
-
+        const label = getTarifStufeLabel(tarifname);
+        if (label === "Special") return -1;
+        if (label && label in TARIF_STUFEN_RANG) return TARIF_STUFEN_RANG[label];
         return -2;
       }
 
@@ -8970,25 +8974,9 @@
         return html;
       }
 
-      const erlaubtePartnerkartenProHaupttarif = {
-        "Business Mobil XS": ["Special", "XS"],
-        "Business Mobil S": ["Special", "XS", "S"],
-        "Business Mobil M": ["Special", "XS", "S", "M"],
-
-        "Business Mobil L": ["Special", "XS", "S", "M", "L"],
-        "Business Mobil XL": ["Special", "XS", "S", "M", "L", "XL"],
-      };
-
       function partnerkartenLevel(tarifname) {
-        if (tarifname.includes("Special")) return "Special";
-        if (tarifname.includes("XS")) return "XS";
-        if (tarifname.includes("S")) return "S";
-
-        if (tarifname.includes("M")) return "M";
-        if (tarifname.includes("XL")) return "XL";
-        if (tarifname.includes("L")) return "L";
-
-        return null;
+        // Nutzt jetzt die zentrale Stufen-Logik (Feld `stufe` + Namens-Fallback).
+        return getTarifStufeLabel(tarifname);
       }
 
       function performAssignmentAndValidation(zeigeModal = false) {
@@ -9061,11 +9049,7 @@
             return;
           }
 
-          const hauptkartenTarif = hauptkartenTarifSelect.value,
-            hauptkartenBasis = hauptkartenTarif.split(" ").slice(0, 3).join(" ");
-
-          const pkLevel = partnerkartenLevel(pk.tarif),
-            erlaubteLevels = erlaubtePartnerkartenProHaupttarif[hauptkartenBasis] || [];
+          const hauptkartenTarif = hauptkartenTarifSelect.value;
 
           if (gruppen[targetHauptkarteId].length >= 10) {
             fehlerListe.push(
@@ -9074,7 +9058,7 @@
 
             pkTarifSelect.style.border = "2px solid red";
             automatischeZuweisungenPK.push(pk);
-          } else if (!erlaubteLevels.includes(pkLevel)) {
+          } else if (!partnerkarteErlaubt(pk.tarif, hauptkartenTarif)) {
             fehlerListe.push(
               `❌ Partnerkarte ${pk.id} (${getDisplayName(pk.tarif)}): Tarif ist nicht mit Hauptkarte ${hauptkarteNummer} (${getDisplayName(hauptkartenTarif)}) kompatibel. Die Zuordnung wurde auf automatisch zurückgesetzt.`,
             );
@@ -9090,8 +9074,7 @@
           let zugewiesen = false,
             kompatibleHauptkarteGefunden = false;
 
-          const pkLevel = partnerkartenLevel(pk.tarif),
-            pkTarifSelect = document.getElementById(`pk_tarif_${pk.id}`);
+          const pkTarifSelect = document.getElementById(`pk_tarif_${pk.id}`);
 
           for (let i = 1; i <= hauptkartenAnzahl; i++) {
             const hauptkartenId = `hk_${i}`,
@@ -9099,12 +9082,9 @@
 
             if (!hauptkartenTarifSelect || !hauptkartenTarifSelect.value) continue;
 
-            const hauptkartenTarif = hauptkartenTarifSelect.value,
-              hauptkartenBasis = hauptkartenTarif.split(" ").slice(0, 3).join(" ");
+            const hauptkartenTarif = hauptkartenTarifSelect.value;
 
-            const erlaubteLevels = erlaubtePartnerkartenProHaupttarif[hauptkartenBasis] || [];
-
-            if (erlaubteLevels.includes(pkLevel)) {
+            if (partnerkarteErlaubt(pk.tarif, hauptkartenTarif)) {
               kompatibleHauptkarteGefunden = true;
 
               if (gruppen[hauptkartenId].length < 10) {
@@ -14154,6 +14134,29 @@
         });
         html += "</select></div>";
 
+        // Tarifstufe (Groesse) - steuert, welche Partnerkarten an diese Karte
+        // passen. Nur fuer Business Mobil (Haupt) und Business Card (Partner).
+        if (aktuelleGruppe === "hauptkarte" || aktuelleGruppe === "partnerkarte") {
+          const aktuelleStufe = t.stufe || stufeAusName(key) || "";
+          html += '<div class="ap-field">';
+          html +=
+            '<label title="Bestimmt die Partnerkarten-Kompatibilität: eine Partnerkarte passt an jede Hauptkarte mit gleicher oder höherer Stufe. \'Special\' passt an jede Hauptkarte.">' +
+            "Tarifstufe (Partnerkarten-Kompatibilität)</label>";
+          html += '<select class="ap-select" data-field="stufe" onchange="adminEditStufe(this)">';
+          html += '<option value="">— nicht gesetzt (aus Name ableiten) —</option>';
+          TARIF_STUFEN_LABELS.forEach((s) => {
+            html +=
+              '<option value="' +
+              s +
+              '"' +
+              (s === aktuelleStufe ? " selected" : "") +
+              ">" +
+              s +
+              "</option>";
+          });
+          html += "</select></div>";
+        }
+
         html += '<div class="ap-row3">';
         html +=
           '<div class="ap-field"><label>Preis (netto / Monat)</label><div class="ap-input-affix">' +
@@ -14253,6 +14256,16 @@
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
         t.inclusiveMultiSim = parseInt(input.value, 10) || 0;
+        adminMarkDirty();
+      }
+
+      // Tarifstufe (Groesse) setzen. Leer = Feld entfernen -> Namens-Fallback.
+      function adminEditStufe(select) {
+        const t = adminState.tarife[adminState.aktiverTarif];
+        if (!t) return;
+        const val = select.value;
+        if (val && TARIF_STUFEN_LABELS.includes(val)) t.stufe = val;
+        else delete t.stufe;
         adminMarkDirty();
       }
 
@@ -14379,12 +14392,16 @@
           }
 
           // Neue Variante: Preis + Leistungen vom Quell-Tarif erben, Gruppe übernehmen
-          adminState.tarife[neuerName] = {
+          const neuerTarif = {
             preis: t.preis,
             inclusiveMultiSim: t.inclusiveMultiSim || 0,
             leistungen: JSON.parse(JSON.stringify(t.leistungen)),
             gruppe: gruppe,
           };
+          // Tarifstufe (Groesse) erben, damit Partnerkarten-Kompatibilitaet stimmt
+          const erbStufe = t.stufe || stufeAusName(key);
+          if (erbStufe) neuerTarif.stufe = erbStufe;
+          adminState.tarife[neuerName] = neuerTarif;
           angelegt++;
         });
 
