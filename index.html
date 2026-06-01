@@ -29,6 +29,13 @@
     <script src="rabatte.js"></script>
 
     <!-- ===================================================================== -->
+    <!-- EXTERNE ZUBUCHOPTIONEN (v2.0)                                         -->
+    <!-- optionen.js definiert window.OPTIONEN_DATA (Name, Preise, Regeln).    -->
+    <!-- Selbe Mechanik wie tarife.js. Muss im selben Ordner liegen.           -->
+    <!-- ===================================================================== -->
+    <script src="optionen.js"></script>
+
+    <!-- ===================================================================== -->
     <!-- GITHUB-KONFIGURATION (v2.0)                                           -->
     <!-- Pro Installation auszufuellen: owner, repo, branch.                   -->
     <!-- Token wird zur Laufzeit abgefragt, NIEMALS in dieser Datei!           -->
@@ -3225,6 +3232,99 @@
         }
       }
 
+      /* Optionen-Tab Inhalt */
+      .ap-optionen-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .ap-opt-row {
+        border: 1px solid var(--ap-border, #e2e8f0);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: var(--card-bg);
+      }
+      .ap-opt-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .ap-opt-name {
+        flex: 1 1 auto;
+        font-weight: 600;
+        padding: 7px 10px;
+        border: 1px solid var(--ap-border, #ddd);
+        border-radius: 6px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-family: var(--font-family);
+      }
+      .ap-opt-typ {
+        flex: 0 0 auto;
+        font-size: 0.78em;
+        background: var(--ap-border, #e2e8f0);
+        color: var(--text-color);
+        border-radius: 6px;
+        padding: 2px 8px;
+      }
+      .ap-opt-preis {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+      .ap-opt-preis > label {
+        font-size: 0.9em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ap-opt-preis input {
+        width: 90px;
+        padding: 6px 8px;
+        border: 1px solid var(--ap-border, #ddd);
+        border-radius: 6px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-family: var(--font-family);
+      }
+      .ap-opt-note {
+        font-size: 0.85em;
+        color: var(--ap-muted, #6b7280);
+        font-style: italic;
+      }
+      .ap-opt-stufen {
+        flex: 1 1 100%;
+      }
+      .ap-opt-stufen > summary {
+        cursor: pointer;
+        font-size: 0.85em;
+        color: var(--primary-color);
+        user-select: none;
+      }
+      .ap-opt-stufen-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .ap-opt-stufen-grid label {
+        font-size: 0.82em;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .ap-opt-stufen-grid input {
+        width: 80px;
+      }
+      .ap-opt-regeln {
+        margin-top: 8px;
+        font-size: 0.8em;
+        color: var(--ap-muted, #6b7280);
+      }
+
       /* Rabatte-Tab Inhalt */
       .ap-rabatte-pane {
         padding: 24px 28px;
@@ -4303,221 +4403,87 @@
 
       let lastCardCounts = { pk: 0, pdk: 0 };
 
-      const ZUBUCHOPTIONEN_DETAILS = {
-        mobilityConnect: {
-          name: "Mobility Connect",
-
-          preisNetto: 8.36,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        securityOnNetComfort: {
-          name: "Security OnNet Comfort",
-
-          preisNetto: 3.32,
-
-          isAvailable: (tarifName) => {
-            return tarifName && !tarifName.includes("Special");
-          },
-        },
-
-        festeIPv6Adresse: {
-          name: "Feste-IPv6-Adresse",
-
-          preisNetto: 4.16,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        internationalWorld50: {
-          name: "International World 50",
-
-          preisNetto: 8.36,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        internationalWorld100: {
-          name: "International World 100",
-
-          preisNetto: 16.76,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        internationalWorld400: {
-          name: "International World 400",
-
-          preisNetto: 33.57,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        countryFlatWorld: {
-          name: "CountryFlat World",
-
-          preisNetto: 75.62,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        magentaEinsVorteil: {
-          name: "Magenta 1 Business Vorteil",
-
-          preisNetto: -5,
-
-          berechnungsTyp: "vorteil",
-
-          isAvailable: (tarifName, kartenArt) => {
-            if (kartenArt !== "Hauptkarte") {
-              return false;
-            }
-
-            if (!tarifName) {
-              return false;
-            }
-
-            if (
-              tarifName === "Business Mobil XS eco" ||
-              tarifName === "Business Mobil XS mit Handy" ||
-              tarifName === "Business Mobil XS mit Top Handy" ||
-              tarifName === "Business Mobil XS mit Premium-Handy" ||
-              tarifName === "Business Mobil XS Premium"
-            ) {
-              return false;
-            }
-
-            return true;
-          },
-        },
-
-        oneNumber: {
-          name: "OneNumber",
-
-          preisNetto: 8.36,
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-
-        festnetznummer: {
-          name: "Festnetznummer",
-
-          getPreisNetto: (tarifName) => {
-            if (tarifName && tarifStufe(tarifName) >= 4) {
-              return 8.36;
-            }
-
-            return 4.16;
-          },
-
-          isAvailable: (tarifName) => !!tarifName,
-        },
-        halbesJahrhalberPreis: {
-          name: "6 Monate 50% Rabatt",
-
-          berechnungsTyp: "prozentual_zeitlich", // Ein neuer Typ, um die Logik zu steuern
-
-          prozent: 50, // Der Rabatt in Prozent
-
-          dauerMonate: 6, // Die Dauer in Monaten
-
-          isAvailable: (tarifName, kartenArt) => {
-            // Aktion für Hauptkarten, außer für XS-Tarife und Tarife, die auf " Premium" enden
-
-            return (
-              kartenArt === "Hauptkarte" &&
-              tarifName &&
-              !tarifName.includes("Business Mobil XS") &&
-              !tarifName.endsWith(" Premium")
-            );
-          },
-        },
-
-        dataunlimitedforfree: {
-          name: "Data Plus Unlimited",
-
-          getPreisNetto: (tarifName) => {
-            // The price is now always 0.00 as it's only for M tariffs where it's free.
-
-            return 0.0;
-          },
-
-          isAvailable: (tarifName, kartenArt, cardId) => {
-            // Genaue Prüfung, ob es ein M-Tarif ist (mit Leerzeichen, um XS etc. auszuschließen)
-
-            const isM = tarifName && (tarifName.includes(" Mobil M ") || tarifName.includes(" Card M "));
-
-            if (!isM) {
-              return false;
-            }
-
-            // Fall 1: Für Hauptkarten (Mobil M) ist es immer verfügbar.
-
-            if (kartenArt === "Hauptkarte") {
-              return true;
-            }
-
-            // Fall 2: Für Partnerkarten (Card M) muss die Abhängigkeit zur Hauptkarte geprüft werden.
-
-            if (kartenArt === "Partnerkarte") {
-              const { gruppen } = performAssignmentAndValidation(false);
-
-              let hauptkartenId = null;
-
-              const pkId = parseInt(cardId.split("_")[1]);
-
-              for (const hkId in gruppen) {
-                if (gruppen[hkId].some((pk) => pk.id === pkId)) {
-                  hauptkartenId = hkId;
-
-                  break;
-                }
-              }
-
-              if (hauptkartenId) {
-                const hauptkartenOptionen = zubuchoptionen[hauptkartenId] || {};
-
-                return hauptkartenOptionen.dataunlimitedforfree === true;
-              }
-
-              return false;
-            }
-
-            return false;
-          },
-        },
-
-        vvlAktion: {
-          name: "Rabatt aus BSP / Carmen / MaVi (Abzug vom Grundpreis vor RV-Rabatt)",
-
-          berechnungsTyp: "manuell_zeitlich",
-
-          isAvailable: (tarifName, kartenArt) => {
-            return kartenArt === "Hauptkarte";
-          },
-        },
-
-        aktionspreisHK: {
-          name: "Aktionspreis aus BSP / Carmen / MaVi (Endpreis nach Abzug von RV-Rabatt)",
-
-          berechnungsTyp: "aktionspreis_zeitlich",
-
-          isAvailable: (tarifName, kartenArt) => {
-            return kartenArt === "Hauptkarte";
-          },
-        },
-
-        aktionspreisBusinessCardSpecial: {
-          name: "Aktionspreis Business Card Special",
-
-          berechnungsTyp: "festpreis_aktion",
-
-          isAvailable: (tarifName, kartenArt) => {
-            return tarifName && tarifName.startsWith("Business Card Special");
-          },
-        },
-      };
+      // =====================================================================
+      // ZUBUCHOPTIONEN (datengetrieben aus optionen.js / window.OPTIONEN_DATA)
+      // ---------------------------------------------------------------------
+      // Das Laufzeit-Objekt ZUBUCHOPTIONEN_DETAILS wird aus den externen Daten
+      // gebaut. Pro Option werden isAvailable() und getPreisNetto() aus
+      // deklarativen Regeln synthetisiert, damit der restliche Rechner-Code
+      // unveraendert weiterlaeuft. Bearbeitbar im Admin-Panel ("Optionen").
+      // =====================================================================
+
+      // Preis einer Option fuer einen konkreten Tarif: Standardpreis, sofern
+      // keine Stufen-Ausnahme (preisProStufe) fuer die Tarifstufe greift.
+      function optionPreisNetto(optData, tarifName) {
+        if (optData && optData.preisProStufe) {
+          const label = getTarifStufeLabel(tarifName);
+          if (label && optData.preisProStufe[label] != null) return optData.preisProStufe[label];
+        }
+        return optData && optData.preisNetto != null ? optData.preisNetto : 0;
+      }
+
+      // Prueft fuer eine Partnerkarte, ob ihre zugeordnete Hauptkarte eine
+      // bestimmte Option gebucht hat (Abhaengigkeit, z.B. Data Plus Unlimited).
+      function hauptkarteHatOption(cardId, optionKey) {
+        if (!cardId) return false;
+        const { gruppen } = performAssignmentAndValidation(false);
+        const pkId = parseInt(String(cardId).split("_")[1], 10);
+        let hkId = null;
+        for (const id in gruppen) {
+          if (gruppen[id].some((pk) => pk.id === pkId)) {
+            hkId = id;
+            break;
+          }
+        }
+        if (!hkId) return false;
+        const hko = zubuchoptionen[hkId] || {};
+        return hko[optionKey] === true;
+      }
+
+      // Baut aus den deklarativen Regeln eine isAvailable(tarifName, kartenArt, cardId).
+      function baueOptionVerfuegbar(regeln) {
+        const r = regeln || {};
+        return function (tarifName, kartenArt, cardId) {
+          if (!tarifName) return false;
+          if (r.kartenArten && !r.kartenArten.includes(kartenArt)) return false;
+          const label = getTarifStufeLabel(tarifName);
+          if (r.stufenIncl && !r.stufenIncl.includes(label)) return false;
+          if (r.stufenExcl && r.stufenExcl.includes(label)) return false;
+          if (r.nameExcl && r.nameExcl.some((s) => tarifName.includes(s))) return false;
+          if (r.nameExclEnd && r.nameExclEnd.some((s) => tarifName.endsWith(s))) return false;
+          if (r.nameInclStart && !r.nameInclStart.some((s) => tarifName.startsWith(s))) return false;
+          if (r.erfordertHauptkartenOption && kartenArt === "Partnerkarte") {
+            return hauptkarteHatOption(cardId, r.erfordertHauptkartenOption);
+          }
+          return true;
+        };
+      }
+
+      // Baut das Laufzeit-Detail-Objekt aus window.OPTIONEN_DATA.
+      function baueOptionenDetails(data) {
+        const quelle = data && data.optionen ? data.optionen : {};
+        const out = {};
+        for (const key in quelle) {
+          const o = quelle[key];
+          const detail = { name: o.name };
+          if (o.berechnungsTyp) detail.berechnungsTyp = o.berechnungsTyp;
+          if (o.prozent != null) detail.prozent = o.prozent;
+          if (o.dauerMonate != null) detail.dauerMonate = o.dauerMonate;
+          if (o.preisProStufe) detail.preisProStufe = o.preisProStufe;
+          detail.preisNetto = o.preisNetto != null ? o.preisNetto : 0;
+          detail.getPreisNetto = (tarifName) => optionPreisNetto(o, tarifName);
+          detail.isAvailable = baueOptionVerfuegbar(o.regeln);
+          out[key] = detail;
+        }
+        return out;
+      }
+
+      if (!window.OPTIONEN_DATA || !window.OPTIONEN_DATA.optionen) {
+        console.warn("optionen.js (window.OPTIONEN_DATA) nicht geladen - Zubuchoptionen fehlen.");
+      }
+
+      // Laufzeit-Objekt (let, damit es nach Admin-Aenderungen neu gebaut werden kann).
+      let ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
 
       function toggleVvlFelder() {
         const checkbox = document.getElementById("vvlAktion-checkbox");
@@ -9035,11 +9001,6 @@
         html += `</div>`;
 
         return html;
-      }
-
-      function partnerkartenLevel(tarifname) {
-        // Nutzt jetzt die zentrale Stufen-Logik (Feld `stufe` + Namens-Fallback).
-        return getTarifStufeLabel(tarifname);
       }
 
       function performAssignmentAndValidation(zeigeModal = false) {
@@ -14075,10 +14036,15 @@
         adminState.tarife = JSON.parse(JSON.stringify(tarifDetails));
         adminState.rabatte = JSON.parse(JSON.stringify(mitarbeiterRabatte || {}));
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
+        // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
+        adminState.optionen = JSON.parse(
+          JSON.stringify((window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {}),
+        );
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
         adminState.rabatteDirty = false;
+        adminState.optionenDirty = false;
         adminState.rahmenvertragsRabatteDirty = false;
         adminRenderFilterChips();
         adminRenderList();
@@ -14429,9 +14395,10 @@
             leistungen: JSON.parse(JSON.stringify(t.leistungen)),
             gruppe: gruppe,
           };
-          // Tarifstufe (Groesse) erben, damit Partnerkarten-Kompatibilitaet stimmt
-          const erbStufe = t.stufe || stufeAusName(key);
-          if (erbStufe) neuerTarif.stufe = erbStufe;
+          // Nur einen EXPLIZITEN Stufen-Override erben. Laeuft die Familie auf
+          // "Auto" (kein Feld), bleibt die neue Variante ebenfalls auf Auto –
+          // ihr Name liefert denselben Wert ueber den Namens-Fallback.
+          if (t.stufe) neuerTarif.stufe = t.stufe;
           adminState.tarife[neuerName] = neuerTarif;
           angelegt++;
         });
@@ -14505,7 +14472,12 @@
           b.classList.toggle("active", b.getAttribute("data-tab") === tab);
         });
         // Panes ein-/ausblenden
-        const panes = { tarife: "apTabTarife", rabatte: "apTabRabatte", stufen: "apTabStufen" };
+        const panes = {
+          tarife: "apTabTarife",
+          rabatte: "apTabRabatte",
+          stufen: "apTabStufen",
+          optionen: "apTabOptionen",
+        };
         Object.entries(panes).forEach(([id, elementId]) => {
           const el = document.getElementById(elementId);
           if (el) el.style.display = id === tab ? "" : "none";
@@ -14513,6 +14485,7 @@
         // Beim Wechsel den jeweiligen Tab neu rendern
         if (tab === "rabatte") adminRenderRabatte();
         if (tab === "stufen") adminRenderStufen();
+        if (tab === "optionen") adminRenderOptionen();
       }
 
       // ===== Tarifstufen-Tab =====
@@ -14584,6 +14557,145 @@
         });
         if (count) adminMarkDirty();
         adminRenderStufen();
+      }
+
+      // ===== Optionen-Tab =====
+      const OPTIONEN_OHNE_FESTPREIS = ["manuell_zeitlich", "aktionspreis_zeitlich", "festpreis_aktion"];
+
+      // Lesbarer Text der Verfuegbarkeits-Regeln (read-only Anzeige).
+      function optionRegelnText(regeln) {
+        const r = regeln || {};
+        const parts = [];
+        if (r.kartenArten) parts.push("Karten: " + r.kartenArten.join(", "));
+        if (r.stufenIncl) parts.push("nur Stufen: " + r.stufenIncl.join(", "));
+        if (r.stufenExcl) parts.push("nicht Stufen: " + r.stufenExcl.join(", "));
+        if (r.nameInclStart) parts.push("Name beginnt mit: " + r.nameInclStart.join(" / "));
+        if (r.nameExcl) parts.push("Name ohne: " + r.nameExcl.join(", "));
+        if (r.nameExclEnd) parts.push("Name nicht endend auf: " + r.nameExclEnd.join(", "));
+        if (r.erfordertHauptkartenOption) parts.push("nur wenn zugeordnete Hauptkarte dieselbe Option hat");
+        return parts.length ? parts.join(" · ") : "immer verfügbar (sobald ein Tarif gewählt ist)";
+      }
+
+      function adminRenderOptionen() {
+        const el = document.getElementById("apOptionenList");
+        if (!el) return;
+        const opt = adminState.optionen || {};
+        const stufen = Object.keys(TARIF_STUFEN_RANG);
+        let html = "";
+        Object.keys(opt).forEach((key) => {
+          const o = opt[key];
+          html += '<div class="ap-opt-row">';
+          html += '<div class="ap-opt-head">';
+          html +=
+            '<input class="ap-opt-name" type="text" data-key="' +
+            adminEsc(key) +
+            '" value="' +
+            adminEsc(o.name || "") +
+            '" oninput="adminEditOptionName(this.dataset.key, this.value)">';
+          if (o.berechnungsTyp) html += '<span class="ap-opt-typ">' + adminEsc(o.berechnungsTyp) + "</span>";
+          html += "</div>";
+
+          html += '<div class="ap-opt-preis">';
+          if (o.berechnungsTyp === "prozentual_zeitlich") {
+            html +=
+              '<label>Rabatt <input type="number" step="1" data-key="' +
+              adminEsc(key) +
+              '" value="' +
+              (o.prozent != null ? o.prozent : "") +
+              '" oninput="adminEditOptionProzent(this.dataset.key, this.value)"> %</label>';
+            html +=
+              '<label>Dauer <input type="number" step="1" data-key="' +
+              adminEsc(key) +
+              '" value="' +
+              (o.dauerMonate != null ? o.dauerMonate : "") +
+              '" oninput="adminEditOptionDauer(this.dataset.key, this.value)"> Monate</label>';
+          } else if (OPTIONEN_OHNE_FESTPREIS.includes(o.berechnungsTyp)) {
+            html += '<span class="ap-opt-note">Preis/Wert wird pro Vorgang im Rechner eingegeben.</span>';
+          } else {
+            const lbl =
+              o.berechnungsTyp === "vorteil" ? "Vorteil (netto, negativ = Rabatt)" : "Preis (netto / Monat)";
+            html +=
+              "<label>" +
+              lbl +
+              ' <input type="number" step="0.01" data-key="' +
+              adminEsc(key) +
+              '" value="' +
+              (o.preisNetto != null ? o.preisNetto : "") +
+              '" oninput="adminEditOptionPreis(this.dataset.key, this.value)"> €</label>';
+            if (o.berechnungsTyp !== "vorteil") {
+              html +=
+                '<details class="ap-opt-stufen"><summary>Ausnahmen pro Stufe</summary><div class="ap-opt-stufen-grid">';
+              stufen.forEach((s) => {
+                const v = o.preisProStufe && o.preisProStufe[s] != null ? o.preisProStufe[s] : "";
+                html +=
+                  "<label>" +
+                  s +
+                  ' <input type="number" step="0.01" placeholder="Standard" data-key="' +
+                  adminEsc(key) +
+                  '" data-stufe="' +
+                  s +
+                  '" value="' +
+                  v +
+                  '" oninput="adminEditOptionStufenpreis(this.dataset.key, this.dataset.stufe, this.value)"></label>';
+              });
+              html += "</div></details>";
+            }
+          }
+          html += "</div>";
+
+          html += '<div class="ap-opt-regeln">🔒 ' + adminEsc(optionRegelnText(o.regeln)) + "</div>";
+          html += "</div>";
+        });
+        if (!html) html = '<div class="ap-empty">Keine Optionen geladen (optionen.js fehlt?).</div>';
+        el.innerHTML = html;
+      }
+
+      function adminMarkOptionenDirty() {
+        adminState.optionenDirty = true;
+        adminMarkDirty();
+      }
+      function adminEditOptionName(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        o.name = val;
+        adminMarkOptionenDirty();
+      }
+      function adminEditOptionPreis(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const n = parseFloat(val);
+        o.preisNetto = isFinite(n) ? n : 0;
+        adminMarkOptionenDirty();
+      }
+      function adminEditOptionProzent(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const n = parseFloat(val);
+        o.prozent = isFinite(n) ? n : 0;
+        adminMarkOptionenDirty();
+      }
+      function adminEditOptionDauer(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const n = parseInt(val, 10);
+        o.dauerMonate = isFinite(n) ? n : 0;
+        adminMarkOptionenDirty();
+      }
+      // Stufen-Ausnahme setzen/loeschen (leer = Standardpreis verwenden).
+      function adminEditOptionStufenpreis(key, stufe, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const n = parseFloat(val);
+        if (val === "" || !isFinite(n)) {
+          if (o.preisProStufe) {
+            delete o.preisProStufe[stufe];
+            if (Object.keys(o.preisProStufe).length === 0) delete o.preisProStufe;
+          }
+        } else {
+          o.preisProStufe = o.preisProStufe || {};
+          o.preisProStufe[stufe] = n;
+        }
+        adminMarkOptionenDirty();
       }
 
       // ===== Rabatte-Tab =====
@@ -14736,6 +14848,28 @@
           files.push({ name: "rabatte.json", content: rabatteJson, mime: "application/json" });
           files.push({ name: "rabatte.js", content: rabatteJsText, mime: "text/javascript" });
         }
+
+        // --- optionen.* (nur, wenn veraendert) ---
+        if (adminState.optionenDirty) {
+          const optionenMeta =
+            window.OPTIONEN_DATA && window.OPTIONEN_DATA._meta
+              ? JSON.parse(JSON.stringify(window.OPTIONEN_DATA._meta))
+              : { schemaVersion: "1.0", appVersion: "2.0" };
+          optionenMeta.stand = new Date().toISOString().slice(0, 10);
+          const optionenOut = { _meta: optionenMeta, optionen: adminState.optionen };
+          const optionenJson = JSON.stringify(optionenOut, null, 2);
+          const optionenJsHeader =
+            "/*\n" +
+            " * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)\n" +
+            " * Automatisch erzeugt vom Admin-Panel am " +
+            new Date().toLocaleString("de-DE") +
+            "\n" +
+            " * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.\n" +
+            " */\n";
+          const optionenJsText = optionenJsHeader + "window.OPTIONEN_DATA = " + optionenJson + ";\n";
+          files.push({ name: "optionen.json", content: optionenJson, mime: "application/json" });
+          files.push({ name: "optionen.js", content: optionenJsText, mime: "text/javascript" });
+        }
         return files;
       }
 
@@ -14743,6 +14877,7 @@
       function adminMarkSavedAndApply() {
         adminState.dirty = false;
         adminState.rabatteDirty = false;
+        adminState.optionenDirty = false;
         adminState.rahmenvertragsRabatteDirty = false;
         adminUpdateDirty();
         adminUebernehmeInRechner();
@@ -15093,6 +15228,12 @@
             rahmenvertragsRabatte.length = 0;
             adminState.rahmenvertragsRabatte.forEach((p) => rahmenvertragsRabatte.push(p));
           }
+          // Zubuchoptionen uebernehmen: Quelle aktualisieren + Laufzeit-Objekt neu bauen
+          if (adminState.optionen) {
+            window.OPTIONEN_DATA = window.OPTIONEN_DATA || {};
+            window.OPTIONEN_DATA.optionen = JSON.parse(JSON.stringify(adminState.optionen));
+            ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
+          }
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen
           if (typeof aktualisiereTarifListen === "function") aktualisiereTarifListen();
           if (typeof renderTarifDropdowns === "function") renderTarifDropdowns();
@@ -15440,7 +15581,7 @@
         <!-- Bereichs-Tabs (Optionen/Rabatte/Aktionen vorbereitet) -->
         <div class="ap-tabs" id="apTabs">
           <button class="ap-tab active" data-tab="tarife" onclick="adminSwitchTab('tarife')">📱 Tarife</button>
-          <button class="ap-tab" data-tab="optionen" disabled>🧩 Optionen <span class="soon">bald</span></button>
+          <button class="ap-tab" data-tab="optionen" onclick="adminSwitchTab('optionen')">🧩 Optionen</button>
           <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ Rabatte</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
           <button class="ap-tab" data-tab="aktionen" disabled>🎯 Aktionen <span class="soon">bald</span></button>
@@ -15519,6 +15660,22 @@
                 nicht eindeutig ist. Die Einstellung gilt für <strong>alle Endgeräte-Varianten</strong> der Familie.
               </p>
               <div class="ap-stufen-list" id="apStufenList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Optionen -->
+        <div id="apTabOptionen" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Zubuchoptionen</h3>
+              <p class="ap-rabatte-hint">
+                Preise und Werte der Zubuchoptionen. Abweichende Preise je Tarifstufe trägst du
+                unter <strong>„Ausnahmen pro Stufe"</strong> ein (z. B. Festnetznummer teurer ab XL).
+                Die <strong>Verfügbarkeits-Regeln</strong> (welche Karten/Stufen) werden zur Info angezeigt –
+                sie liegen in <code>optionen.js</code>. Änderungen gehen mit <strong>Live speichern</strong> live.
+              </p>
+              <div class="ap-optionen-list" id="apOptionenList"></div>
             </div>
           </div>
         </div>
