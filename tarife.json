@@ -998,6 +998,51 @@
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
       ],
       "gruppe": "partnerdatenkarte"
+    },
+    "Business Mobil XXL eco": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Handy": {
+      "preis": 199.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Top Handy": {
+      "preis": 299.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Premium-Handy": {
+      "preis": 399.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL Premium": {
+      "preis": 499.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
     }
   }
 }
