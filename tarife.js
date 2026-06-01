@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 02:14:08
+ * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 02:18:57
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -17,7 +17,7 @@ window.TARIFE_DATA = {
   },
   "tarife": {
     "Business Mobil XS eco": {
-      "preis": 29.29,
+      "preis": 29.37,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
