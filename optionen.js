@@ -1,6 +1,6 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 14:49:18
+ * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 14:50:31
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
  */
 window.OPTIONEN_DATA = {
@@ -141,7 +141,8 @@ window.OPTIONEN_DATA = {
       "preisNetto": 12.36,
       "regeln": {},
       "preisProStufe": {
-        "XXL": 8.36
+        "XXL": 8.36,
+        "XL": 8.36
       }
     }
   }
