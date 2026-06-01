@@ -3162,6 +3162,69 @@
         flex: 0;
       }
 
+      /* Tarifstufen-Tab Inhalt */
+      .ap-stufen-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .ap-stufen-group {
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 16px 0 6px;
+        font-size: 0.95em;
+      }
+      .ap-stufen-group:first-child {
+        margin-top: 0;
+      }
+      .ap-stufen-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border: 1px solid var(--ap-border, #e2e8f0);
+        border-radius: 8px;
+        background: var(--card-bg);
+      }
+      .ap-stufen-name {
+        flex: 1 1 auto;
+        font-weight: 600;
+      }
+      .ap-stufen-select {
+        flex: 0 0 auto;
+        width: 200px;
+        max-width: 45%;
+      }
+      .ap-stufen-eff {
+        flex: 0 0 auto;
+        font-size: 0.85em;
+        color: var(--ap-muted, #6b7280);
+        min-width: 130px;
+        text-align: right;
+      }
+      .ap-stufen-tag {
+        display: inline-block;
+        background: var(--primary-color);
+        color: #fff;
+        border-radius: 6px;
+        padding: 1px 6px;
+        font-size: 0.82em;
+        margin-left: 4px;
+      }
+      @media (max-width: 640px) {
+        .ap-stufen-row {
+          flex-wrap: wrap;
+        }
+        .ap-stufen-select {
+          width: 100%;
+          max-width: none;
+        }
+        .ap-stufen-eff {
+          text-align: left;
+        }
+      }
+
       /* Rabatte-Tab Inhalt */
       .ap-rabatte-pane {
         padding: 24px 28px;
@@ -14134,29 +14197,6 @@
         });
         html += "</select></div>";
 
-        // Tarifstufe (Groesse) - steuert, welche Partnerkarten an diese Karte
-        // passen. Nur fuer Business Mobil (Haupt) und Business Card (Partner).
-        if (aktuelleGruppe === "hauptkarte" || aktuelleGruppe === "partnerkarte") {
-          const aktuelleStufe = t.stufe || stufeAusName(key) || "";
-          html += '<div class="ap-field">';
-          html +=
-            '<label title="Bestimmt die Partnerkarten-Kompatibilität: eine Partnerkarte passt an jede Hauptkarte mit gleicher oder höherer Stufe. \'Special\' passt an jede Hauptkarte.">' +
-            "Tarifstufe (Partnerkarten-Kompatibilität)</label>";
-          html += '<select class="ap-select" data-field="stufe" onchange="adminEditStufe(this)">';
-          html += '<option value="">— nicht gesetzt (aus Name ableiten) —</option>';
-          TARIF_STUFEN_LABELS.forEach((s) => {
-            html +=
-              '<option value="' +
-              s +
-              '"' +
-              (s === aktuelleStufe ? " selected" : "") +
-              ">" +
-              s +
-              "</option>";
-          });
-          html += "</select></div>";
-        }
-
         html += '<div class="ap-row3">';
         html +=
           '<div class="ap-field"><label>Preis (netto / Monat)</label><div class="ap-input-affix">' +
@@ -14259,15 +14299,6 @@
         adminMarkDirty();
       }
 
-      // Tarifstufe (Groesse) setzen. Leer = Feld entfernen -> Namens-Fallback.
-      function adminEditStufe(select) {
-        const t = adminState.tarife[adminState.aktiverTarif];
-        if (!t) return;
-        const val = select.value;
-        if (val && TARIF_STUFEN_LABELS.includes(val)) t.stufe = val;
-        else delete t.stufe;
-        adminMarkDirty();
-      }
 
       // Mitarbeiter-Rabatt ändern (separater Datenspeicher: adminState.rabatte)
       function adminEditRabatt(input) {
@@ -14474,13 +14505,85 @@
           b.classList.toggle("active", b.getAttribute("data-tab") === tab);
         });
         // Panes ein-/ausblenden
-        const panes = { tarife: "apTabTarife", rabatte: "apTabRabatte" };
+        const panes = { tarife: "apTabTarife", rabatte: "apTabRabatte", stufen: "apTabStufen" };
         Object.entries(panes).forEach(([id, elementId]) => {
           const el = document.getElementById(elementId);
           if (el) el.style.display = id === tab ? "" : "none";
         });
-        // Beim Wechsel zum Rabatte-Tab dort neu rendern
+        // Beim Wechsel den jeweiligen Tab neu rendern
         if (tab === "rabatte") adminRenderRabatte();
+        if (tab === "stufen") adminRenderStufen();
+      }
+
+      // ===== Tarifstufen-Tab =====
+      // Zeigt je Groessen-Familie (Basis-Tarif) eine Zeile. Standard kommt aus
+      // dem Namen; ein optionaler Override gilt fuer ALLE Endgeraete-Varianten.
+      function adminRenderStufen() {
+        const el = document.getElementById("apStufenList");
+        if (!el) return;
+
+        // Varianten nach Gruppe + Basis-Familie buendeln (nur Telefonie-Karten)
+        const relevant = { hauptkarte: {}, partnerkarte: {} };
+        Object.keys(adminState.tarife).forEach((name) => {
+          const g = adminState.tarife[name].gruppe || ermittleGruppe(name);
+          if (g !== "hauptkarte" && g !== "partnerkarte") return;
+          const basis = tarifBasisName(name);
+          (relevant[g][basis] = relevant[g][basis] || []).push(name);
+        });
+
+        const gruppenLabel = {
+          hauptkarte: "📱 Business Mobil (Hauptkarten)",
+          partnerkarte: "💳 Business Card (Partnerkarten)",
+        };
+
+        let html = "";
+        ["hauptkarte", "partnerkarte"].forEach((g) => {
+          const familien = Object.keys(relevant[g]).sort();
+          if (!familien.length) return;
+          html += '<div class="ap-stufen-group">' + gruppenLabel[g] + "</div>";
+          familien.forEach((basis) => {
+            const varianten = relevant[g][basis];
+            const autoLabel = stufeAusName(basis) || "—";
+            // Override nur, wenn ALLE Varianten dieselbe explizite Stufe tragen
+            const gesetzte = new Set(varianten.map((n) => adminState.tarife[n].stufe || ""));
+            const override = gesetzte.size === 1 ? [...gesetzte][0] : "";
+            const effektiv = override || autoLabel;
+            html += '<div class="ap-stufen-row">';
+            html += '<span class="ap-stufen-name">' + adminEsc(basis) + "</span>";
+            html +=
+              '<select class="ap-select ap-stufen-select" data-basis="' +
+              adminEsc(basis) +
+              '" onchange="adminSetStufenOverride(this.dataset.basis, this.value)">';
+            html += '<option value="">Auto – aus Name (' + autoLabel + ")</option>";
+            TARIF_STUFEN_LABELS.forEach((s) => {
+              html += '<option value="' + s + '"' + (s === override ? " selected" : "") + ">" + s + "</option>";
+            });
+            html += "</select>";
+            html +=
+              '<span class="ap-stufen-eff">wirkt als <strong>' +
+              adminEsc(effektiv) +
+              "</strong>" +
+              (override ? ' <span class="ap-stufen-tag">manuell</span>' : "") +
+              "</span>";
+            html += "</div>";
+          });
+        });
+        if (!html) html = '<div class="ap-empty">Keine Business-Mobil-/Business-Card-Tarife vorhanden.</div>';
+        el.innerHTML = html;
+      }
+
+      // Override fuer eine ganze Familie setzen ("" = zurueck auf Namens-Automatik).
+      function adminSetStufenOverride(basis, value) {
+        const val = TARIF_STUFEN_LABELS.includes(value) ? value : "";
+        let count = 0;
+        Object.keys(adminState.tarife).forEach((name) => {
+          if (tarifBasisName(name) !== basis) return;
+          if (val) adminState.tarife[name].stufe = val;
+          else delete adminState.tarife[name].stufe;
+          count++;
+        });
+        if (count) adminMarkDirty();
+        adminRenderStufen();
       }
 
       // ===== Rabatte-Tab =====
@@ -15339,6 +15442,7 @@
           <button class="ap-tab active" data-tab="tarife" onclick="adminSwitchTab('tarife')">📱 Tarife</button>
           <button class="ap-tab" data-tab="optionen" disabled>🧩 Optionen <span class="soon">bald</span></button>
           <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ Rabatte</button>
+          <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
           <button class="ap-tab" data-tab="aktionen" disabled>🎯 Aktionen <span class="soon">bald</span></button>
         </div>
 
@@ -15397,6 +15501,24 @@
                 direkt am jeweiligen Tarif eingestellt. Hier zur Übersicht.
               </p>
               <div class="ap-mitarbeiter-list" id="apMitarbeiterList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Tarifstufen -->
+        <div id="apTabStufen" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Tarifstufen (Partnerkarten-Kompatibilität)</h3>
+              <p class="ap-rabatte-hint">
+                Die Stufe bestimmt, welche Partnerkarten an eine Hauptkarte passen:
+                eine Partnerkarte passt an jede Hauptkarte mit <strong>gleicher oder höherer</strong>
+                Stufe (XS &lt; S &lt; M &lt; L &lt; XL &lt; XXL). <strong>„Special"</strong> passt an jede Hauptkarte.<br />
+                Die Stufe wird <strong>automatisch aus dem Tarifnamen</strong> erkannt – du musst hier
+                normalerweise nichts tun. Stelle eine Stufe nur dann manuell ein, wenn ein Name
+                nicht eindeutig ist. Die Einstellung gilt für <strong>alle Endgeräte-Varianten</strong> der Familie.
+              </p>
+              <div class="ap-stufen-list" id="apStufenList"></div>
             </div>
           </div>
         </div>
