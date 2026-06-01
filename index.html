@@ -485,6 +485,22 @@
         font-weight: bold;
       }
 
+      /* Kleiner grauer Hinweis neben den Abschnitts-Überschriften (Vorteile/Zubuchoptionen) */
+      .enthalten-hint {
+        font-size: 0.72em;
+        font-weight: 400;
+        font-style: italic;
+        color: #888;
+      }
+
+      /* Zeile unter dem Monatspreis: "inkl. ... – im Monatspreis bereits berücksichtigt" */
+      .preis-enthalten-hinweis {
+        font-size: 0.78em;
+        font-style: italic;
+        color: #888;
+        margin-top: 2px;
+      }
+
       .preisbox {
         background-color: var(--card-bg);
 
@@ -10915,7 +10931,7 @@
 
               vorteile.push({
                 name: optionDetail.name,
-                text: `${optionDetail.name} (${formatCurrencyNumber(Math.abs(preis))} € Rabatt)`,
+                betragNetto: Math.abs(preis),
               });
             } else if (
               optionDetail.berechnungsTyp !== "prozentual_zeitlich" &&
@@ -11467,18 +11483,15 @@
 
           const preisPeriode2 = item.preisNettoPeriode2 * (item.isBrutto ? mwst : 1);
 
+          const nettoOderBrutto = item.isBrutto ? "Brutto" : "Netto";
+
           if (item.promotionsInfo) {
             const dauerInMonaten = item.promotionsInfo.dauer;
 
-            const nettoOderBrutto = item.isBrutto ? "Brutto" : "Netto";
-
             monatlichText = `Monatlich (1.-${dauerInMonaten}. Monat): ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} € ${nettoOderBrutto}<br>
-
-
-
                             Monatlich (ab ${dauerInMonaten + 1}. Monat): ${pricePrefix}${formatCurrencyNumber(preisPeriode2)} € ${nettoOderBrutto}`;
           } else {
-            monatlichText = `Monatlich: ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} €`;
+            monatlichText = `Monatlich: ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} € ${nettoOderBrutto}`;
           }
 
           let bereitstellungHTML =
@@ -11538,7 +11551,14 @@
 
           if (item.vorteile && item.vorteile.length > 0) {
             item.vorteile.forEach((vorteil) => {
-              vorteilHTML += `<li>${vorteil.text}</li>`;
+              if (vorteil.betragNetto != null) {
+                const betrag = vorteil.betragNetto * (item.isBrutto ? mwst : 1);
+                vorteilHTML += `<li>${vorteil.name} (${formatCurrencyNumber(betrag)} € ${
+                  item.isBrutto ? "Brutto" : "Netto"
+                } Rabatt)</li>`;
+              } else {
+                vorteilHTML += `<li>${vorteil.text}</li>`;
+              }
 
               hatVorteil = true;
             });
@@ -11580,11 +11600,24 @@
             }
           }
 
-          let finalZubuchungenHTML = hatZubuchoptionen ? `<h4>Zubuchoptionen</h4><ul>${zubuchoptionenHTML}</ul>` : "";
+          let finalZubuchungenHTML = hatZubuchoptionen
+            ? `<h4>Zubuchoptionen <span class="enthalten-hint">· bereits berücksichtigt</span></h4><ul>${zubuchoptionenHTML}</ul>`
+            : "";
 
-          let finalVorteilHTML = hatVorteil ? `<h4>Vorteile</h4><ul>${vorteilHTML}</ul>` : "";
+          let finalVorteilHTML = hatVorteil
+            ? `<h4>Vorteile <span class="enthalten-hint">· bereits berücksichtigt</span></h4><ul>${vorteilHTML}</ul>`
+            : "";
 
-          const cardHTML = `<div class="tarif"><h3>${tarifTitle}</h3>${leistungenHTML}${finalZubuchungenHTML}${finalVorteilHTML}<div class="preisbox">${monatlichText} ${item.isBrutto ? "Brutto" : "Netto"}${geraeteHTML}${bereitstellungHTML}</div></div>`;
+          // Hinweis unter dem Monatspreis: macht klar, dass Vorteile/Zubuchoptionen
+          // bereits eingerechnet sind. Nur zeigen, wenn es etwas zu erklaeren gibt.
+          const enthaltenParts = [];
+          if (hatVorteil) enthaltenParts.push("Vorteile");
+          if (hatZubuchoptionen) enthaltenParts.push("Zubuchoptionen");
+          const enthaltenHinweis = enthaltenParts.length
+            ? `<div class="preis-enthalten-hinweis">inkl. ${enthaltenParts.join(" & ")}</div>`
+            : "";
+
+          const cardHTML = `<div class="tarif"><h3>${tarifTitle}</h3>${leistungenHTML}${finalZubuchungenHTML}${finalVorteilHTML}<div class="preisbox">${monatlichText}${enthaltenHinweis}${geraeteHTML}${bereitstellungHTML}</div></div>`;
 
           console.log(`HTML für Gruppe ${index + 1}:`, cardHTML.substring(0, 100) + "...");
 
@@ -12275,7 +12308,14 @@
             hatVorteil = true;
 
             group.vorteile.forEach((vorteil) => {
-              vorteileText += `  - ${vorteil.text}\n`;
+              if (vorteil.betragNetto != null) {
+                const betrag = vorteil.betragNetto * (istBrutto ? mwst : 1);
+                vorteileText += `  - ${vorteil.name} (${formatCurrencyNumber(betrag)} € ${
+                  istBrutto ? "Brutto" : "Netto"
+                } Rabatt)\n`;
+              } else {
+                vorteileText += `  - ${vorteil.text}\n`;
+              }
             });
           }
 
@@ -12305,6 +12345,14 @@
             offerText += `  Monatlich (ab ${dauerInMonaten + 1}. Monat): ${pricePrefix}${formatCurrencyNumber(preisPeriode2)} €${preisSuffix}\n`;
           } else {
             offerText += `  Monatlich: ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} €${preisSuffix}\n`;
+          }
+
+          // Hinweis: Vorteile/Zubuchoptionen sind im Monatspreis bereits berücksichtigt
+          const enthaltenPartsText = [];
+          if (hatVorteil) enthaltenPartsText.push("Vorteile");
+          if (hatZubuchoptionen) enthaltenPartsText.push("Zubuchoptionen");
+          if (enthaltenPartsText.length) {
+            offerText += `  inkl. ${enthaltenPartsText.join(" & ")}\n`;
           }
 
           if (group.geraeteName) {
@@ -12798,7 +12846,8 @@
                 fontSize: "1.1em",
               });
 
-              zubuchTitle.textContent = "Zubuchoptionen";
+              zubuchTitle.innerHTML =
+                'Zubuchoptionen <span style="font-size:0.7em;font-style:italic;font-weight:400;color:#888;">· bereits berücksichtigt</span>';
 
               zubuchoptionenContainer.appendChild(zubuchTitle);
 
@@ -12873,7 +12922,16 @@
 
             if (group.vorteile && group.vorteile.length > 0) {
               group.vorteile.forEach((vorteil) => {
-                addVorteil(vorteil.text);
+                if (vorteil.betragNetto != null) {
+                  const betrag = vorteil.betragNetto * (group.isBrutto ? mwst : 1);
+                  addVorteil(
+                    `${vorteil.name} (${formatCurrencyNumber(betrag)} € ${
+                      group.isBrutto ? "Brutto" : "Netto"
+                    } Rabatt)`,
+                  );
+                } else {
+                  addVorteil(vorteil.text);
+                }
               });
             }
 
@@ -12904,7 +12962,8 @@
                 fontSize: "1.1em",
               });
 
-              vorteilTitle.textContent = "Vorteile";
+              vorteilTitle.innerHTML =
+                'Vorteile <span style="font-size:0.7em;font-style:italic;font-weight:400;color:#888;">· bereits berücksichtigt</span>';
 
               vorteilContainer.appendChild(vorteilTitle);
 
@@ -12935,21 +12994,28 @@
 
             let monatlichTextPDF = "";
 
+            const nettoOderBruttoPDF = group.isBrutto ? "Brutto" : "Netto";
+
             if (Math.abs(preisPeriode1 - preisPeriode2) > 0.001) {
               const dauerInMonaten = group.promotionsInfo ? group.promotionsInfo.dauer : 6;
 
-              const nettoOderBruttoPDF = group.isBrutto ? "Brutto" : "Netto";
-
               monatlichTextPDF = `Monatlich (1.-${dauerInMonaten}. Monat): ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} € ${nettoOderBruttoPDF}<br>
-
-
-
                                Monatlich (ab ${dauerInMonaten + 1}. Monat): ${pricePrefix}${formatCurrencyNumber(preisPeriode2)} € ${nettoOderBruttoPDF}`;
             } else {
-              monatlichTextPDF = `Monatlich: ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} €`;
+              monatlichTextPDF = `Monatlich: ${pricePrefix}${formatCurrencyNumber(preisPeriode1)} € ${nettoOderBruttoPDF}`;
             }
 
-            preisBoxDiv.innerHTML = `${monatlichTextPDF} ${group.isBrutto ? "Brutto" : "Netto"}`;
+            preisBoxDiv.innerHTML = monatlichTextPDF;
+
+            // B-Hinweis: Vorteile/Zubuchoptionen sind im Monatspreis bereits berücksichtigt
+            const enthaltenPartsPDF = [];
+            if (hatVorteil) enthaltenPartsPDF.push("Vorteile");
+            if (hatZubuchoptionen) enthaltenPartsPDF.push("Zubuchoptionen");
+            if (enthaltenPartsPDF.length) {
+              preisBoxDiv.innerHTML += `<div style="margin-top: 3px; font-size: 0.8em; font-style: italic; color: #888;">inkl. ${enthaltenPartsPDF.join(
+                " & ",
+              )}</div>`;
+            }
 
             if (group.geraeteName) {
               preisBoxDiv.innerHTML += `<div style="margin-top: 5px; font-size: 0.9em; color: #666;">${group.geraeteName}: ${pricePrefix}${group.displayGeraetePreis} €</div>`;
