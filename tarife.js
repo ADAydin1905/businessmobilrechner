@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 02:18:57
+ * Automatisch erzeugt vom Admin-Panel am 1.6.2026, 02:23:59
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -1003,6 +1003,51 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
       ],
       "gruppe": "partnerdatenkarte"
+    },
+    "Business Mobil XXL eco": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Handy": {
+      "preis": 199.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Top Handy": {
+      "preis": 299.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL mit Premium-Handy": {
+      "preis": 399.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXL Premium": {
+      "preis": 499.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [
+        "Unlimted Datenvolumen Weltweit",
+        "Telefonie Flat Weltweit"
+      ],
+      "gruppe": "hauptkarte"
     }
   }
 };
