@@ -32,7 +32,8 @@
       "name": "Festnetzrufnummern",
       "collapsible": true,
       "optionen": [
-        "oneNumber"
+        "oneNumber",
+        "festnetznummer"
       ]
     },
     {
@@ -42,7 +43,6 @@
       "optionen": [
         "internationalWorld100",
         "internationalWorld50",
-        "festnetznummer",
         "internationalWorld400",
         "countryFlatWorld"
       ]
@@ -121,8 +121,7 @@
           "Hauptkarte",
           "Partnerkarte"
         ]
-      },
-      "aktiv": false
+      }
     },
     "countryFlatWorld": {
       "name": "CountryFlat World",
