@@ -3252,8 +3252,95 @@
       .ap-optionen-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 14px;
         margin-top: 8px;
+      }
+      /* Optionen-Gruppen (Phase 3a) */
+      .ap-optgrp {
+        border: 1px solid var(--ap-border, #e2e8f0);
+        border-radius: 10px;
+        background: var(--background-color);
+        padding: 8px 10px 12px;
+      }
+      .ap-optgrp-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .ap-grp-name {
+        flex: 1 1 auto;
+        font-weight: 700;
+        color: var(--primary-color);
+        font-size: 1.02em;
+        padding: 6px 10px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        font-family: var(--font-family);
+      }
+      .ap-grp-name:hover,
+      .ap-grp-name:focus {
+        border-color: var(--ap-border, #ddd);
+        background: var(--card-bg);
+      }
+      .ap-grp-count {
+        flex: 0 0 auto;
+        font-size: 0.78em;
+        color: var(--ap-muted, #6b7280);
+      }
+      .ap-grp-collapsible {
+        flex: 0 0 auto;
+        font-size: 0.78em;
+        color: var(--text-color);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+      }
+      /* Menü-Gruppen-Wrapper im Rechner (aufklappbare Gruppe) */
+      .opt-gruppe-wrapper {
+        margin-top: 4px;
+      }
+      .ap-grp-del {
+        flex: 0 0 auto;
+        border: 1px solid var(--ap-border, #ddd);
+        background: var(--card-bg);
+        color: #c0392b;
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.8em;
+      }
+      .ap-grp-del:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+      }
+      .ap-optgrp-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 12px;
+      }
+      .ap-grp-drag,
+      .ap-opt-drag {
+        flex: 0 0 auto;
+        cursor: grab;
+        color: #b0b0b0;
+        font-size: 1.1em;
+        user-select: none;
+        padding: 0 2px;
+      }
+      .ap-grp-drag:active,
+      .ap-opt-drag:active {
+        cursor: grabbing;
+      }
+      .sortable-ghost {
+        opacity: 0.4;
+      }
+      .sortable-chosen {
+        background: var(--card-bg);
       }
       .ap-opt-row {
         border: 1px solid var(--ap-border, #e2e8f0);
@@ -3414,6 +3501,57 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
+      }
+      /* Familien-/Varianten-Baum in der Verfügbarkeit */
+      .ap-opt-grp {
+        margin-top: 6px;
+        border: 1px solid var(--ap-border, #e2e8f0);
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+      .ap-opt-grp > summary {
+        cursor: pointer;
+        font-size: 0.82em;
+        font-weight: 600;
+        user-select: none;
+      }
+      .ap-opt-hint2 {
+        font-weight: 400;
+        font-style: italic;
+        color: var(--ap-muted, #6b7280);
+      }
+      .ap-opt-fam-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .ap-opt-fam {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 3px 0;
+      }
+      .ap-opt-fam-head {
+        font-weight: 600;
+      }
+      .ap-opt-sub {
+        flex: 1 1 100%;
+        margin-left: 22px;
+      }
+      .ap-opt-sub > summary {
+        cursor: pointer;
+        font-size: 0.78em;
+        color: var(--primary-color);
+        user-select: none;
+      }
+      .ap-opt-var-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 6px;
+        padding-left: 6px;
       }
 
       /* Rabatte-Tab Inhalt */
@@ -4540,6 +4678,9 @@
           const label = getTarifStufeLabel(tarifName);
           if (r.stufenIncl && !r.stufenIncl.includes(label)) return false;
           if (r.stufenExcl && r.stufenExcl.includes(label)) return false;
+          // Familien-/Tarif-Ausschluesse (positiv gepflegt im Admin-Panel)
+          if (r.familienExcl && r.familienExcl.includes(tarifBasisName(tarifName))) return false;
+          if (r.tarifeExcl && r.tarifeExcl.includes(tarifName)) return false;
           if (r.nameExcl && r.nameExcl.some((s) => tarifName.includes(s))) return false;
           if (r.nameExclEnd && r.nameExclEnd.some((s) => tarifName.endsWith(s))) return false;
           if (r.nameInclStart && !r.nameInclStart.some((s) => tarifName.startsWith(s))) return false;
@@ -6254,19 +6395,29 @@
 
           const currentMagentaEinsVorteilSelection = currentOptions.magentaEinsVorteil || false;
 
-          const securityOnNetComfort = ZUBUCHOPTIONEN_DETAILS.securityOnNetComfort;
+          // Stub fuer geloeschte eingebaute Optionen: rendert nichts (isAvailable=false),
+          // damit die fest verdrahteten Menue-Bloecke nicht abstuerzen.
+          const OPTION_STUB = {
+            name: "",
+            preisNetto: 0,
+            getPreisNetto: () => 0,
+            isAvailable: () => false,
+            berechnungsTyp: null,
+          };
 
-          const mobilityConnectOption = ZUBUCHOPTIONEN_DETAILS.mobilityConnect;
+          const securityOnNetComfort = ZUBUCHOPTIONEN_DETAILS.securityOnNetComfort || OPTION_STUB;
 
-          const festeIPv6AdresseOption = ZUBUCHOPTIONEN_DETAILS.festeIPv6Adresse;
+          const mobilityConnectOption = ZUBUCHOPTIONEN_DETAILS.mobilityConnect || OPTION_STUB;
 
-          const international50Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld50;
+          const festeIPv6AdresseOption = ZUBUCHOPTIONEN_DETAILS.festeIPv6Adresse || OPTION_STUB;
 
-          const international100Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld100;
+          const international50Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld50 || OPTION_STUB;
 
-          const international400Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld400;
+          const international100Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld100 || OPTION_STUB;
 
-          const countryFlatOption = ZUBUCHOPTIONEN_DETAILS.countryFlatWorld;
+          const international400Option = ZUBUCHOPTIONEN_DETAILS.internationalWorld400 || OPTION_STUB;
+
+          const countryFlatOption = ZUBUCHOPTIONEN_DETAILS.countryFlatWorld || OPTION_STUB;
 
           const istBrutto =
             document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
@@ -6281,11 +6432,11 @@
             return `${formatCurrencyNumber(price)} € ${priceType}`;
           };
 
-          const oneNumberOption = ZUBUCHOPTIONEN_DETAILS.oneNumber;
+          const oneNumberOption = ZUBUCHOPTIONEN_DETAILS.oneNumber || OPTION_STUB;
 
-          const festnetznummerOption = ZUBUCHOPTIONEN_DETAILS.festnetznummer;
+          const festnetznummerOption = ZUBUCHOPTIONEN_DETAILS.festnetznummer || OPTION_STUB;
 
-          const magentaEinsVorteilOption = ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil;
+          const magentaEinsVorteilOption = ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil || OPTION_STUB;
 
           const currenthalbesJahrhalberPreisSelection = currentOptions.halbesJahrhalberPreis || 0;
 
@@ -6327,13 +6478,16 @@
             }
           }
 
+          // Phase 3b: Item-HTML je Options-Key sammeln, danach nach Gruppen ordnen.
+          const itemHtmlByKey = {};
+
           let aktionspreiseHTML = "";
 
           let aktionspreiseItems = "";
 
-          const halbesJahrhalberPreis = ZUBUCHOPTIONEN_DETAILS.halbesJahrhalberPreis;
+          const halbesJahrhalberPreis = ZUBUCHOPTIONEN_DETAILS.halbesJahrhalberPreis || OPTION_STUB;
 
-          const dataunlimitedforfree = ZUBUCHOPTIONEN_DETAILS.dataunlimitedforfree;
+          const dataunlimitedforfree = ZUBUCHOPTIONEN_DETAILS.dataunlimitedforfree || OPTION_STUB;
 
           let festnetzOptionenHTML = "";
 
@@ -6346,7 +6500,7 @@
               ? `onclick="öffneFehlerModal('Data Plus Unlimited ist bereits 1x in einem Hauptvertrag gebucht')"`
               : "";
 
-            aktionspreiseItems += `
+            itemHtmlByKey["dataunlimitedforfree"] = `
 
 
 
@@ -6382,7 +6536,7 @@
           }
 
           if (halbesJahrhalberPreis.isAvailable(tarif, kartenArt)) {
-            aktionspreiseItems += `
+            itemHtmlByKey["halbesJahrhalberPreis"] = `
 
 
 
@@ -6417,12 +6571,12 @@
               `;
           }
 
-          const aktionspreisBC = ZUBUCHOPTIONEN_DETAILS.aktionspreisBusinessCardSpecial;
+          const aktionspreisBC = ZUBUCHOPTIONEN_DETAILS.aktionspreisBusinessCardSpecial || OPTION_STUB;
 
           if (aktionspreisBC.isAvailable(tarif, kartenArt)) {
             const currentAktionspreisSelection = currentOptions.aktionspreisBusinessCardSpecial || false;
 
-            aktionspreiseItems += `
+            itemHtmlByKey["aktionspreisBusinessCardSpecial"] = `
 
 
 
@@ -6457,7 +6611,7 @@
                 `;
           }
 
-          const vvlAktion = ZUBUCHOPTIONEN_DETAILS.vvlAktion;
+          const vvlAktion = ZUBUCHOPTIONEN_DETAILS.vvlAktion || OPTION_STUB;
 
           if (vvlAktion.isAvailable(tarif, kartenArt)) {
             const currentVvlAktion = currentOptions.vvlAktion || {};
@@ -6468,7 +6622,7 @@
 
             const vvlDauer = currentVvlAktion.dauer || "";
 
-            aktionspreiseItems += `
+            itemHtmlByKey["vvlAktion"] = `
 
 
 
@@ -6543,7 +6697,7 @@
                 `;
           }
 
-          const aktionspreisHK = ZUBUCHOPTIONEN_DETAILS.aktionspreisHK;
+          const aktionspreisHK = ZUBUCHOPTIONEN_DETAILS.aktionspreisHK || OPTION_STUB;
 
           if (aktionspreisHK.isAvailable(tarif, kartenArt)) {
             const currentAktionspreisHK = currentOptions.aktionspreisHK || {};
@@ -6554,7 +6708,7 @@
 
             const apDauer = currentAktionspreisHK.dauer || "";
 
-            aktionspreiseItems += `
+            itemHtmlByKey["aktionspreisHK"] = `
 
 
 
@@ -6630,7 +6784,7 @@
           }
 
           if (magentaEinsVorteilOption.isAvailable(tarif, kartenArt)) {
-            haeufigGebuchteOptionenItems += `
+            itemHtmlByKey["magentaEinsVorteil"] = `
 
 
 
@@ -6665,8 +6819,8 @@
                 `;
           }
 
-          if (mobilityConnectOption.isAvailable(tarif)) {
-            haeufigGebuchteOptionenItems += `
+          if (mobilityConnectOption.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["mobilityConnect"] = `
 
 
 
@@ -6701,8 +6855,8 @@
                 `;
           }
 
-          if (securityOnNetComfort.isAvailable(tarif)) {
-            haeufigGebuchteOptionenItems += `
+          if (securityOnNetComfort.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["securityOnNetComfort"] = `
 
 
 
@@ -6737,8 +6891,8 @@
                 `;
           }
 
-          if (festeIPv6AdresseOption.isAvailable(tarif)) {
-            haeufigGebuchteOptionenItems += `
+          if (festeIPv6AdresseOption.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["festeIPv6Adresse"] = `
 
 
 
@@ -6841,104 +6995,26 @@
               `;
           }
 
-          if (oneNumberOption.isAvailable(tarif) || festnetznummerOption.isAvailable(tarif)) {
-            festnetzOptionenHTML = `
-
-
-
-                <div id="weitere-optionen-section-wrapper">
-
-
-
-                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
-
-
-
-                        <h4 style="margin: 0; color: var(--primary-color);">Festnetzrufnummern relevante Optionen</h4>
-
-
-
-                        <span class="arrow-icon"></span>
-
-
-
-                    </div>
-
-
-
-                    <div class="collapsible-content">
-
-
-
-                        <hr style="margin: 0 0 20px 0;">
-
-
-
-                        <div class="einstellungs-zeile modal-einstellung">
-
-
-
-                            <label for="one-number-checkbox" class="einstellungs-label">${oneNumberOption.name} (${getDisplayPrice(oneNumberOption.preisNetto)})</label>
-
-
-
-                            <label class="magenta-checkbox">
-
-
-
-                                <input type="checkbox" id="one-number-checkbox" onchange="saveZubuchoptionen()" ${currentOneNumberSelection ? "checked" : ""}>
-
-
-
-                                <span class="checkmark"></span>
-
-
-
-                            </label>
-
-
-
-                        </div>
-
-
-
-                        <div class="einstellungs-zeile modal-einstellung">
-
-
-
-                            <label for="festnetznummer-checkbox" class="einstellungs-label">${festnetznummerOption.name} (${getDisplayPrice(festnetznummerOption.getPreisNetto(tarif))})</label>
-
-
-
-                            <label class="magenta-checkbox">
-
-
-
-                                <input type="checkbox" id="festnetznummer-checkbox" onchange="saveZubuchoptionen()" ${currentFestnetznummerSelection ? "checked" : ""}>
-
-
-
-                                <span class="checkmark"></span>
-
-
-
-                            </label>
-
-
-
-                        </div>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                `;
+          if (oneNumberOption.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["oneNumber"] = `
+                <div class="einstellungs-zeile modal-einstellung">
+                    <label for="one-number-checkbox" class="einstellungs-label">${oneNumberOption.name} (${getDisplayPrice(oneNumberOption.preisNetto)})</label>
+                    <label class="magenta-checkbox">
+                        <input type="checkbox" id="one-number-checkbox" onchange="saveZubuchoptionen()" ${currentOneNumberSelection ? "checked" : ""}>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>`;
+          }
+
+          if (festnetznummerOption.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["festnetznummer"] = `
+                <div class="einstellungs-zeile modal-einstellung">
+                    <label for="festnetznummer-checkbox" class="einstellungs-label">${festnetznummerOption.name} (${getDisplayPrice(festnetznummerOption.getPreisNetto(tarif))})</label>
+                    <label class="magenta-checkbox">
+                        <input type="checkbox" id="festnetznummer-checkbox" onchange="saveZubuchoptionen()" ${currentFestnetznummerSelection ? "checked" : ""}>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>`;
           }
 
           const createAuslandsOptionControl = (optionKey, option, currentCardId) => {
@@ -6977,7 +7053,7 @@
 
 
 
-                        <div class="discount-toggle" data-option-key="${optionKey}" style="min-width: 400px;">
+                        <div class="discount-toggle" data-auslands="1" data-option-key="${optionKey}" style="min-width: 400px;">
 
 
 
@@ -7012,85 +7088,17 @@
                 `;
           };
 
-          let auslandsOptionenHTML = "";
-
-          if (
-            international50Option.isAvailable(tarif) ||
-            international100Option.isAvailable(tarif) ||
-            international400Option.isAvailable(tarif) ||
-            countryFlatOption.isAvailable(tarif)
-          ) {
-            auslandsOptionenHTML += `
-
-
-
-                <div id="auslands-section-wrapper">
-
-
-
-                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
-
-
-
-                        <h4 style="margin: 0; color: var(--primary-color);">Auslandstelefonie</h4>
-
-
-
-                        <span class="arrow-icon"></span>
-
-
-
-                    </div>
-
-
-
-                    <div class="collapsible-content" id="auslands-options-container">
-
-
-
-                        <hr style="margin: 0 0 20px 0;">
-
-
-
-                `;
-
-            if (international50Option.isAvailable(tarif)) {
-              auslandsOptionenHTML += createAuslandsOptionControl(
-                "internationalWorld50",
-                international50Option,
-                cardId,
-              );
-            }
-
-            if (international100Option.isAvailable(tarif)) {
-              auslandsOptionenHTML += createAuslandsOptionControl(
-                "internationalWorld100",
-                international100Option,
-                cardId,
-              );
-            }
-
-            if (international400Option.isAvailable(tarif)) {
-              auslandsOptionenHTML += createAuslandsOptionControl(
-                "internationalWorld400",
-                international400Option,
-                cardId,
-              );
-            }
-
-            if (countryFlatOption.isAvailable(tarif)) {
-              auslandsOptionenHTML += createAuslandsOptionControl("countryFlatWorld", countryFlatOption, cardId);
-            }
-
-            auslandsOptionenHTML += `
-
-
-
-                    </div>
-
-
-
-                </div>`;
+          if (international50Option.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["internationalWorld50"] = createAuslandsOptionControl("internationalWorld50", international50Option, cardId);
+          }
+          if (international100Option.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["internationalWorld100"] = createAuslandsOptionControl("internationalWorld100", international100Option, cardId);
+          }
+          if (international400Option.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["internationalWorld400"] = createAuslandsOptionControl("internationalWorld400", international400Option, cardId);
+          }
+          if (countryFlatOption.isAvailable(tarif, kartenArt)) {
+            itemHtmlByKey["countryFlatWorld"] = createAuslandsOptionControl("countryFlatWorld", countryFlatOption, cardId);
           }
 
           const hauptkartenAnzahl = parseInt(document.getElementById("hauptkarten").value, 10) || 0;
@@ -7173,16 +7181,13 @@
                 `;
           }
 
-          // Generische Sektion fuer selbst angelegte ("custom") Optionen.
-          // Eingebaute Optionen sind oben fest verdrahtet; alles andere wird
-          // hier als Standard-Checkbox gerendert (sofern verfuegbar).
-          let weitereOptionenItems = "";
+          // Selbst angelegte ("custom") Optionen als Standard-Checkbox in die Map.
           for (const optKey in ZUBUCHOPTIONEN_DETAILS) {
             if (!istCustomOption(optKey)) continue;
             const opt = ZUBUCHOPTIONEN_DETAILS[optKey];
             if (!opt.isAvailable(tarif, kartenArt, cardId)) continue;
             const checked = currentOptions[optKey] ? "checked" : "";
-            weitereOptionenItems += `
+            itemHtmlByKey[optKey] = `
                     <div class="einstellungs-zeile modal-einstellung">
                         <label for="custom-opt-${optKey}" class="einstellungs-label">${opt.name} (${getDisplayPrice(
                           opt.getPreisNetto(tarif),
@@ -7193,63 +7198,48 @@
                         </label>
                     </div>`;
           }
-          const weitereOptionenHTML = weitereOptionenItems
-            ? `<h4 style="margin: 20px 0 0 0; color: var(--primary-color);">Weitere Optionen</h4><hr style="margin: 10px 0 20px 0;">${weitereOptionenItems}`
-            : "";
+
+          // Optionen-Gruppen aus dem Admin-Panel: Reihenfolge, Name, Aufklappbarkeit.
+          // collapsible === false => Optionen fest sichtbar (z.B. "Häufig gebuchte").
+          const optGruppen = migriereOptionenGruppen(
+            window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
+            ZUBUCHOPTIONEN_DETAILS,
+          );
+          let gruppenOptionenHTML = "";
+          optGruppen.forEach((g) => {
+            const items = (g.optionen || [])
+              .map((k) => itemHtmlByKey[k])
+              .filter(Boolean)
+              .join("");
+            if (!items) return; // Gruppe ohne verfuegbare Optionen ausblenden
+            const titel = adminEsc(g.name || "");
+            if (g.collapsible === false) {
+              gruppenOptionenHTML +=
+                '<h4 style="margin: 20px 0 0 0; color: var(--primary-color);">' +
+                titel +
+                '</h4><hr style="margin: 10px 0 20px 0;">' +
+                items;
+            } else {
+              gruppenOptionenHTML +=
+                '<div class="opt-gruppe-wrapper"><div class="collapsible-header" onclick="toggleCollapsible(this)">' +
+                '<h4 style="margin: 0; color: var(--primary-color);">' +
+                titel +
+                '</h4><span class="arrow-icon"></span></div>' +
+                '<div class="collapsible-content"><hr style="margin: 0 0 20px 0;">' +
+                items +
+                "</div></div>";
+            }
+          });
 
           // Prüfen, ob es sich um eine Datenkarte handelt
 
           const istDatenkarte = kartenArt === "Haupt-Datenkarte" || kartenArt === "Partner-Datenkarte";
 
           if (istDatenkarte) {
-            // Für Datenkarten nur die Feste-IPv6-Adresse Option anzeigen
-
+            // Datenkarten: Gruppen rendern (isAvailable filtert auf Datenkarten-Optionen)
             modalContent.innerHTML = `
-
-
-
-                    <h4 style="margin: 20px 0 0 0; color: var(--primary-color);">Zubuchoptionen</h4>
-
-
-
-                    <hr style="margin: 10px 0 20px 0;">
-
-
-
-                    <div class="einstellungs-zeile modal-einstellung">
-
-
-
-                        <label for="feste-ipv6-adresse-checkbox" class="einstellungs-label">${festeIPv6AdresseOption.name} (${getDisplayPrice(festeIPv6AdresseOption.preisNetto)})</label>
-
-
-
-                        <label class="magenta-checkbox">
-
-
-
-                            <input type="checkbox" id="feste-ipv6-adresse-checkbox" onchange="saveZubuchoptionen()" ${currentFesteIPv6AdresseSelection ? "checked" : ""}>
-
-
-
-                            <span class="checkmark"></span>
-
-
-
-                        </label>
-
-
-
-                    </div>
-
-
-
-                    ${weitereOptionenHTML}
-
+                    ${gruppenOptionenHTML}
                     ${konfigHTML}
-
-
-
                 `;
           } else {
             // Für Haupt- und Partnerkarten die normale Ansicht
@@ -7350,23 +7340,7 @@
 
 
 
-                    ${haeufigGebuchteOptionenHTML}
-
-
-
-                    ${festnetzOptionenHTML}
-
-
-
-                    ${auslandsOptionenHTML}
-
-
-
-                    ${aktionspreiseHTML}
-
-
-
-                    ${weitereOptionenHTML}
+                    ${gruppenOptionenHTML}
 
                     ${konfigHTML}
 
@@ -7543,7 +7517,7 @@
             if (optionKey === "multisimRabatt") {
               tempZubuchoptions[cardId].multisimRabatt = parseInt(value, 10);
             } else {
-              const allAuslandsGroups = modal.querySelectorAll("#auslands-options-container .discount-toggle");
+              const allAuslandsGroups = modal.querySelectorAll('.discount-toggle[data-auslands="1"]');
 
               allAuslandsGroups.forEach((g) => {
                 const key = g.dataset.optionKey;
@@ -8192,7 +8166,7 @@
               if (finalOptions.magentaEinsVorteil) {
                 const tarif = document.getElementById(`${kartenArtPrefix}_tarif_${cardNum}`).value;
 
-                if (!ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil.isAvailable(tarif, kartenArt)) {
+                if (!ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil?.isAvailable(tarif, kartenArt)) {
                   finalOptions.magentaEinsVorteil = false;
                 }
               }
@@ -8250,7 +8224,7 @@
 
             const tarif = document.getElementById(`hk_tarif_${cardNum}`).value;
 
-            return ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil.isAvailable(tarif, "Hauptkarte");
+            return ZUBUCHOPTIONEN_DETAILS.magentaEinsVorteil?.isAvailable(tarif, "Hauptkarte") || false;
           });
 
           if (eligibleTargets.length > 0) {
@@ -10893,7 +10867,7 @@
             vvlDiscount = vvlOptions.preis;
 
             promotionsInfo = {
-              name: ZUBUCHOPTIONEN_DETAILS.vvlAktion.name,
+              name: ZUBUCHOPTIONEN_DETAILS.vvlAktion?.name || "Rabatt-Aktion",
 
               dauer: vvlOptions.dauer,
 
@@ -10933,7 +10907,7 @@
 
           tarifRabattBetrag = originalTarifPreis * (1 - aktuellerRabattFaktor);
 
-          if (!promotionsInfo && options.halbesJahrhalberPreis) {
+          if (!promotionsInfo && options.halbesJahrhalberPreis && ZUBUCHOPTIONEN_DETAILS.halbesJahrhalberPreis) {
             const optionDetail = ZUBUCHOPTIONEN_DETAILS.halbesJahrhalberPreis;
 
             const rabattFaktor = 1 - optionDetail.prozent / 100;
@@ -10959,7 +10933,7 @@
             basisPreisNettoPeriode1 = aktionspreisHKOptions.preis;
 
             promotionsInfo = {
-              name: ZUBUCHOPTIONEN_DETAILS.aktionspreisHK.name,
+              name: ZUBUCHOPTIONEN_DETAILS.aktionspreisHK?.name || "Aktionspreis",
 
               dauer: aktionspreisHKOptions.dauer,
 
@@ -14244,6 +14218,11 @@
         adminState.optionen = JSON.parse(
           JSON.stringify((window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {}),
         );
+        // Options-Gruppen (mit Migration/Defaults)
+        adminState.optionenGruppen = migriereOptionenGruppen(
+          window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
+          adminState.optionen,
+        );
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
@@ -14766,6 +14745,193 @@
       // ===== Optionen-Tab =====
       const OPTIONEN_OHNE_FESTPREIS = ["manuell_zeitlich", "aktionspreis_zeitlich", "festpreis_aktion"];
 
+      // Merkt sich offene <details> (Verfügbarkeit/Gruppe/Substufen) ueber Re-Renders.
+      const adminOptUiOpen = new Set();
+      function adminOptRememberOpen(det) {
+        const k = det.dataset.openkey;
+        if (!k) return;
+        if (det.open) adminOptUiOpen.add(k);
+        else adminOptUiOpen.delete(k);
+      }
+
+      // Liefert fuer eine Tarif-Gruppe { Basisname: [vollständige Tarifnamen ...] }.
+      function adminFamilienDerGruppe(gruppe) {
+        const fam = {};
+        Object.keys(adminState.tarife || {}).forEach((name) => {
+          const g = adminState.tarife[name].gruppe || ermittleGruppe(name);
+          if (g !== gruppe) return;
+          const basis = tarifBasisName(name);
+          (fam[basis] = fam[basis] || []).push(name);
+        });
+        return fam;
+      }
+
+      // ----- Optionen-Gruppen (Phase 3a) -----
+      // Standard-Gruppen + Zuordnung (spiegelt die bisherigen ⚙️-Menue-Sektionen).
+      const OPTION_GRUPPEN_DEFAULT = [
+        {
+          id: "haeufig",
+          name: "Häufig gebuchte Optionen",
+          collapsible: false,
+          optionen: ["mobilityConnect", "securityOnNetComfort", "festeIPv6Adresse", "magentaEinsVorteil", "dataunlimitedforfree"],
+        },
+        { id: "festnetz", name: "Festnetzrufnummern", collapsible: true, optionen: ["oneNumber", "festnetznummer"] },
+        {
+          id: "ausland",
+          name: "Auslandstelefonie",
+          collapsible: true,
+          optionen: ["internationalWorld50", "internationalWorld100", "internationalWorld400", "countryFlatWorld"],
+        },
+        {
+          id: "aktionen",
+          name: "Aktionen",
+          collapsible: true,
+          optionen: ["halbesJahrhalberPreis", "vvlAktion", "aktionspreisHK", "aktionspreisBusinessCardSpecial"],
+        },
+        { id: "weitere", name: "Weitere Optionen", collapsible: true, optionen: [] },
+      ];
+
+      // Stellt sicher, dass eine gueltige Gruppenliste existiert: bekannte Keys
+      // bleiben in ihrer Gruppe, unbekannte landen in "weitere" (wird ggf. angelegt).
+      function migriereOptionenGruppen(gruppen, optionen) {
+        let g =
+          Array.isArray(gruppen) && gruppen.length
+            ? JSON.parse(JSON.stringify(gruppen))
+            : JSON.parse(JSON.stringify(OPTION_GRUPPEN_DEFAULT));
+        g.forEach((x) => {
+          x.optionen = Array.isArray(x.optionen) ? x.optionen.filter((k) => optionen[k]) : [];
+        });
+        const zugeordnet = new Set();
+        g.forEach((x) => x.optionen.forEach((k) => zugeordnet.add(k)));
+        const fehlende = Object.keys(optionen).filter((k) => !zugeordnet.has(k));
+        if (fehlende.length) {
+          let weitere = g.find((x) => x.id === "weitere");
+          if (!weitere) {
+            weitere = { id: "weitere", name: "Weitere Optionen", optionen: [] };
+            g.push(weitere);
+          }
+          fehlende.forEach((k) => weitere.optionen.push(k));
+        }
+        return g;
+      }
+
+      // Findet die Gruppe, die einen Options-Key enthaelt.
+      function adminGruppeVonOption(key) {
+        return (adminState.optionenGruppen || []).find((g) => (g.optionen || []).includes(key));
+      }
+
+      // Synchronisiert adminState.optionenGruppen aus der aktuellen DOM-Reihenfolge
+      // (nach Drag & Drop von Optionen oder Gruppen).
+      function adminSyncGruppenAusDOM() {
+        const container = document.getElementById("apOptionenList");
+        if (!container) return;
+        const neu = [];
+        container.querySelectorAll(".ap-optgrp").forEach((gEl) => {
+          const gid = gEl.dataset.gid;
+          const orig = (adminState.optionenGruppen || []).find((x) => x.id === gid) || { id: gid, name: gid };
+          const keys = [...gEl.querySelectorAll(".ap-optgrp-list > .ap-opt-row")]
+            .map((r) => r.dataset.key)
+            .filter(Boolean);
+          neu.push({ ...orig, optionen: keys });
+        });
+        adminState.optionenGruppen = neu;
+        adminMarkOptionenDirty();
+      }
+
+      // Initialisiert Sortable.js fuer Optionen (innerhalb/uebergreifend) + Gruppen.
+      function adminInitOptionenSortable() {
+        if (typeof Sortable === "undefined") return;
+        const container = document.getElementById("apOptionenList");
+        if (!container) return;
+        // Optionen je Gruppe (gemeinsame group => uebergreifend verschiebbar)
+        container.querySelectorAll(".ap-optgrp-list").forEach((listEl) => {
+          new Sortable(listEl, {
+            group: "ap-optionen",
+            handle: ".ap-opt-drag",
+            animation: 150,
+            onEnd: () => {
+              adminSyncGruppenAusDOM();
+              adminRenderOptionen(); // Gruppen-Zaehler aktualisieren + Sortable neu binden
+            },
+          });
+        });
+        // Gruppen-Reihenfolge
+        new Sortable(container, {
+          handle: ".ap-grp-drag",
+          animation: 150,
+          draggable: ".ap-optgrp",
+          onEnd: () => {
+            adminSyncGruppenAusDOM();
+            adminRenderOptionen();
+          },
+        });
+      }
+
+      // Neue Gruppe anlegen.
+      function adminAddGruppe() {
+        adminState.optionenGruppen = adminState.optionenGruppen || [];
+        let id;
+        do {
+          id = "grp_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        } while (adminState.optionenGruppen.some((g) => g.id === id));
+        adminState.optionenGruppen.push({ id, name: "Neue Gruppe", optionen: [] });
+        adminMarkOptionenDirty();
+        adminRenderOptionen();
+        setTimeout(() => {
+          const input = document.querySelector('.ap-grp-name[data-gid="' + id + '"]');
+          if (input) {
+            input.scrollIntoView({ block: "center" });
+            input.focus();
+            input.select();
+          }
+        }, 0);
+      }
+
+      // Gruppe umbenennen.
+      function adminRenameGruppe(gid, name) {
+        const g = (adminState.optionenGruppen || []).find((x) => x.id === gid);
+        if (!g) return;
+        g.name = name;
+        adminMarkOptionenDirty();
+      }
+
+      // Aufklappbar (true) vs. fest sichtbar (false) im Rechner-Menue.
+      function adminToggleGruppeCollapsible(gid, val) {
+        const g = (adminState.optionenGruppen || []).find((x) => x.id === gid);
+        if (!g) return;
+        g.collapsible = !!val;
+        adminMarkOptionenDirty();
+      }
+
+      // Gruppe loeschen: ihre Optionen wandern nach "weitere" (bleiben erhalten).
+      function adminDeleteGruppe(gid) {
+        const gruppen = adminState.optionenGruppen || [];
+        const idx = gruppen.findIndex((x) => x.id === gid);
+        if (idx === -1) return;
+        const g = gruppen[idx];
+        const anzahl = (g.optionen || []).length;
+        if (
+          !confirm(
+            'Gruppe "' +
+              (g.name || gid) +
+              '" löschen?' +
+              (anzahl ? "\n\nDie " + anzahl + ' enthaltene(n) Option(en) wandern nach „Weitere Optionen“.' : ""),
+          )
+        )
+          return;
+        if (anzahl) {
+          let weitere = gruppen.find((x) => x.id === "weitere");
+          if (!weitere) {
+            weitere = { id: "weitere", name: "Weitere Optionen", optionen: [] };
+            gruppen.push(weitere);
+          }
+          if (weitere.id !== gid) weitere.optionen.push(...g.optionen);
+        }
+        gruppen.splice(idx, 1);
+        adminMarkOptionenDirty();
+        adminRenderOptionen();
+      }
+
       // Lesbarer Text der Verfuegbarkeits-Regeln (read-only Anzeige).
       function optionRegelnText(regeln) {
         const r = regeln || {};
@@ -14773,6 +14939,10 @@
         if (r.kartenArten) parts.push("Karten: " + r.kartenArten.join(", "));
         if (r.stufenIncl) parts.push("nur Stufen: " + r.stufenIncl.join(", "));
         if (r.stufenExcl) parts.push("nicht Stufen: " + r.stufenExcl.join(", "));
+        if (r.familienExcl && r.familienExcl.length)
+          parts.push("ohne: " + r.familienExcl.join(", "));
+        if (r.tarifeExcl && r.tarifeExcl.length)
+          parts.push(r.tarifeExcl.length + " Variante(n) ausgeschlossen");
         if (r.nameInclStart) parts.push("Name beginnt mit: " + r.nameInclStart.join(" / "));
         if (r.nameExcl) parts.push("Name ohne: " + r.nameExcl.join(", "));
         if (r.nameExclEnd) parts.push("Name nicht endend auf: " + r.nameExclEnd.join(", "));
@@ -14780,17 +14950,22 @@
         return parts.length ? parts.join(" · ") : "immer verfügbar (sobald ein Tarif gewählt ist)";
       }
 
-      function adminRenderOptionen() {
-        const el = document.getElementById("apOptionenList");
-        if (!el) return;
-        const opt = adminState.optionen || {};
+      // Baut die HTML-Karte einer einzelnen Option (key).
+      function adminOptionCardHtml(key) {
+        const o = adminState.optionen[key];
+        if (!o) return "";
         const stufen = Object.keys(TARIF_STUFEN_RANG);
-        let html = "";
-        Object.keys(opt).forEach((key) => {
-          const o = opt[key];
+        {
           const aktiv = o.aktiv !== false;
-          html += '<div class="ap-opt-row' + (aktiv ? "" : " ap-opt-inaktiv") + '">';
+          let html = "";
+          html +=
+            '<div class="ap-opt-row' +
+            (aktiv ? "" : " ap-opt-inaktiv") +
+            '" data-key="' +
+            adminEsc(key) +
+            '">';
           html += '<div class="ap-opt-head">';
+          html += '<span class="ap-opt-drag" title="Option verschieben">⠿</span>';
           html +=
             '<input class="ap-opt-name" type="text" data-key="' +
             adminEsc(key) +
@@ -14804,14 +14979,13 @@
             (aktiv ? "checked" : "") +
             ' onchange="adminToggleOptionAktiv(this)"> aktiv</label>';
           if (o.berechnungsTyp) html += '<span class="ap-opt-typ">' + adminEsc(o.berechnungsTyp) + "</span>";
-          if (istCustomOption(key)) {
-            html +=
-              '<button class="ap-opt-del" title="Diese Option löschen" onclick="adminDeleteOption(this.dataset.key)" data-key="' +
-              adminEsc(key) +
-              '">🗑</button>';
-          } else {
-            html += '<span class="ap-opt-builtin" title="Eingebaute Option – editierbar, aber nicht löschbar">🔒 eingebaut</span>';
+          if (!istCustomOption(key)) {
+            html += '<span class="ap-opt-builtin" title="Eingebaute Option">eingebaut</span>';
           }
+          html +=
+            '<button class="ap-opt-del" title="Diese Option löschen" onclick="adminDeleteOption(this.dataset.key)" data-key="' +
+            adminEsc(key) +
+            '">🗑</button>';
           html += "</div>";
 
           html += '<div class="ap-opt-preis">';
@@ -14862,18 +15036,29 @@
           }
           html += "</div>";
 
-          // --- Verfügbarkeit (editierbar): Kartenarten + Stufen-Ausnahmen ---
+          // --- Verfügbarkeit (editierbar): Kartenarten + Familien/Varianten ---
           const r = o.regeln || {};
-          const kartenArten = [
-            ["Hauptkarte", "Hauptkarten"],
-            ["Partnerkarte", "Partnerkarten"],
-            ["Haupt-Datenkarte", "Haupt-Datenkarten"],
-            ["Partner-Datenkarte", "Partner-Datenkarten"],
+          const familienExcl = r.familienExcl || [];
+          const tarifeExcl = r.tarifeExcl || [];
+          const kartenArtenDefs = [
+            ["Hauptkarte", "Hauptkarten", "hauptkarte"],
+            ["Partnerkarte", "Partnerkarten", "partnerkarte"],
+            ["Haupt-Datenkarte", "Haupt-Datenkarten", "hauptdatenkarte"],
+            ["Partner-Datenkarte", "Partner-Datenkarten", "partnerdatenkarte"],
           ];
-          html += '<details class="ap-opt-verf"><summary>Verfügbarkeit: ' + adminEsc(optionRegelnText(o.regeln)) + "</summary>";
+          const verfOpen = adminOptUiOpen.has(key + "::verf") ? " open" : "";
+          html +=
+            '<details class="ap-opt-verf" data-openkey="' +
+            adminEsc(key) +
+            '::verf" ontoggle="adminOptRememberOpen(this)"' +
+            verfOpen +
+            "><summary>Verfügbarkeit: " +
+            adminEsc(optionRegelnText(o.regeln)) +
+            "</summary>";
           html += '<div class="ap-opt-verf-body">';
+          // 1) Kartenarten (grob)
           html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Gilt für:</span>';
-          kartenArten.forEach(([val, lbl]) => {
+          kartenArtenDefs.forEach(([val, lbl]) => {
             const checked = !r.kartenArten || r.kartenArten.includes(val);
             html +=
               '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
@@ -14887,26 +15072,109 @@
               "</label>";
           });
           html += "</div>";
-          html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Ausnahmen (Stufen ausschließen):</span>';
-          stufen.forEach((s) => {
-            const checked = r.stufenExcl && r.stufenExcl.includes(s);
+          // 2) Pro aktivierter Kartengruppe: Familienliste (+ optional Varianten)
+          kartenArtenDefs.forEach(([val, lbl, gruppe]) => {
+            const aktiv = !r.kartenArten || r.kartenArten.includes(val);
+            if (!aktiv) return;
+            const fam = adminFamilienDerGruppe(gruppe);
+            const basisListe = Object.keys(fam).sort();
+            if (!basisListe.length) return;
+            const grpKey = key + "::grp::" + gruppe;
             html +=
-              '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
-              adminEsc(key) +
-              '" data-stufe="' +
-              s +
-              '" ' +
-              (checked ? "checked" : "") +
-              ' onchange="adminToggleOptionStufeExcl(this)"> ' +
-              s +
-              "</label>";
+              '<details class="ap-opt-grp" data-openkey="' +
+              adminEsc(grpKey) +
+              '" ontoggle="adminOptRememberOpen(this)"' +
+              (adminOptUiOpen.has(grpKey) ? " open" : "") +
+              "><summary>" +
+              adminEsc(lbl) +
+              ' – Tarife <span class="ap-opt-hint2">(abwählen = ausschließen)</span></summary>';
+            html += '<div class="ap-opt-fam-list">';
+            basisListe.forEach((basis) => {
+              const famAus = familienExcl.includes(basis);
+              const varianten = fam[basis];
+              html += '<div class="ap-opt-fam">';
+              html +=
+                '<label class="ap-opt-chk ap-opt-fam-head"><input type="checkbox" data-key="' +
+                adminEsc(key) +
+                '" data-basis="' +
+                adminEsc(basis) +
+                '" ' +
+                (famAus ? "" : "checked") +
+                ' onchange="adminToggleOptionFamilie(this)"> ' +
+                adminEsc(basis) +
+                "</label>";
+              if (!famAus && varianten.length > 1) {
+                const subKey = key + "::sub::" + basis;
+                html +=
+                  '<details class="ap-opt-sub" data-openkey="' +
+                  adminEsc(subKey) +
+                  '" ontoggle="adminOptRememberOpen(this)"' +
+                  (adminOptUiOpen.has(subKey) ? " open" : "") +
+                  "><summary>Substufen bearbeiten</summary>";
+                html += '<div class="ap-opt-var-list">';
+                varianten.forEach((vname) => {
+                  const varAus = tarifeExcl.includes(vname);
+                  const vlabel = vname.slice(basis.length).trim() || vname;
+                  html +=
+                    '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
+                    adminEsc(key) +
+                    '" data-tarif="' +
+                    adminEsc(vname) +
+                    '" ' +
+                    (varAus ? "" : "checked") +
+                    ' onchange="adminToggleOptionVariante(this)"> ' +
+                    adminEsc(vlabel) +
+                    "</label>";
+                });
+                html += "</div></details>";
+              }
+              html += "</div>";
+            });
+            html += "</div></details>";
           });
-          html += "</div>";
           html += "</div></details>";
           html += "</div>";
+          return html;
+        }
+      }
+
+      // Rendert die Optionen nach Gruppen-Sektionen + initialisiert Drag & Drop.
+      function adminRenderOptionen() {
+        const el = document.getElementById("apOptionenList");
+        if (!el) return;
+        const gruppen = adminState.optionenGruppen || [];
+        let html = "";
+        gruppen.forEach((g) => {
+          html += '<div class="ap-optgrp" data-gid="' + adminEsc(g.id) + '">';
+          html += '<div class="ap-optgrp-head">';
+          html += '<span class="ap-grp-drag" title="Gruppe verschieben">⠿</span>';
+          html +=
+            '<input class="ap-grp-name" data-gid="' +
+            adminEsc(g.id) +
+            '" value="' +
+            adminEsc(g.name || "") +
+            '" oninput="adminRenameGruppe(this.dataset.gid, this.value)">';
+          html += '<span class="ap-grp-count">' + (g.optionen ? g.optionen.length : 0) + " Option(en)</span>";
+          html +=
+            '<label class="ap-grp-collapsible" title="An: im Rechner aufklappbar. Aus: Optionen immer sichtbar."><input type="checkbox" data-gid="' +
+            adminEsc(g.id) +
+            '" ' +
+            (g.collapsible === false ? "" : "checked") +
+            ' onchange="adminToggleGruppeCollapsible(this.dataset.gid, this.checked)"> aufklappbar</label>';
+          html +=
+            '<button class="ap-grp-del" title="Gruppe löschen (Optionen wandern zu „Weitere“)" onclick="adminDeleteGruppe(this.dataset.gid)" data-gid="' +
+            adminEsc(g.id) +
+            '">🗑 Gruppe</button>';
+          html += "</div>";
+          html += '<div class="ap-optgrp-list" data-gid="' + adminEsc(g.id) + '">';
+          (g.optionen || []).forEach((key) => {
+            html += adminOptionCardHtml(key);
+          });
+          html += "</div></div>";
         });
-        if (!html) html = '<div class="ap-empty">Keine Optionen geladen (optionen.js fehlt?).</div>';
+        if (!gruppen.length) html = '<div class="ap-empty">Keine Optionen/Gruppen geladen.</div>';
         el.innerHTML = html;
+        adminInitOptionenSortable();
       }
 
       function adminMarkOptionenDirty() {
@@ -14980,21 +15248,40 @@
         if (arr.length === alle.length) delete o.regeln.kartenArten;
         else o.regeln.kartenArten = arr;
         adminMarkOptionenDirty();
-        const sum = cb.closest(".ap-opt-verf")?.querySelector("summary");
-        if (sum) sum.textContent = "Verfügbarkeit: " + optionRegelnText(o.regeln);
+        adminRenderOptionen(); // Familienliste der Gruppe ein-/ausblenden
       }
 
-      // Verfuegbarkeit: Stufe als Ausnahme aus-/einschliessen.
-      function adminToggleOptionStufeExcl(cb) {
+      // Verfuegbarkeit: ganze Familie aus-/einschliessen (regeln.familienExcl).
+      function adminToggleOptionFamilie(cb) {
         const o = adminState.optionen[cb.dataset.key];
         if (!o) return;
+        const basis = cb.dataset.basis;
         o.regeln = o.regeln || {};
-        const set = new Set(o.regeln.stufenExcl || []);
-        if (cb.checked) set.add(cb.dataset.stufe);
-        else set.delete(cb.dataset.stufe);
-        const arr = Object.keys(TARIF_STUFEN_RANG).filter((s) => set.has(s));
-        if (arr.length === 0) delete o.regeln.stufenExcl;
-        else o.regeln.stufenExcl = arr;
+        const set = new Set(o.regeln.familienExcl || []);
+        if (cb.checked) set.delete(basis);
+        else set.add(basis);
+        if (set.size === 0) delete o.regeln.familienExcl;
+        else o.regeln.familienExcl = [...set];
+        // Beim Ausschliessen der Familie etwaige Einzel-Varianten-Ausschluesse aufraeumen
+        if (!cb.checked && o.regeln.tarifeExcl) {
+          o.regeln.tarifeExcl = o.regeln.tarifeExcl.filter((t) => tarifBasisName(t) !== basis);
+          if (o.regeln.tarifeExcl.length === 0) delete o.regeln.tarifeExcl;
+        }
+        adminMarkOptionenDirty();
+        adminRenderOptionen(); // Substufen ein-/ausblenden
+      }
+
+      // Verfuegbarkeit: einzelne Endgeraete-Variante aus-/einschliessen (regeln.tarifeExcl).
+      function adminToggleOptionVariante(cb) {
+        const o = adminState.optionen[cb.dataset.key];
+        if (!o) return;
+        const tarif = cb.dataset.tarif;
+        o.regeln = o.regeln || {};
+        const set = new Set(o.regeln.tarifeExcl || []);
+        if (cb.checked) set.delete(tarif);
+        else set.add(tarif);
+        if (set.size === 0) delete o.regeln.tarifeExcl;
+        else o.regeln.tarifeExcl = [...set];
         adminMarkOptionenDirty();
         const sum = cb.closest(".ap-opt-verf")?.querySelector("summary");
         if (sum) sum.textContent = "Verfügbarkeit: " + optionRegelnText(o.regeln);
@@ -15011,6 +15298,14 @@
           key = "custom_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
         } while (adminState.optionen[key]);
         adminState.optionen[key] = { name: "Neue Option", preisNetto: 0, regeln: {} };
+        // Neue Option in Gruppe "Weitere Optionen" einsortieren (anlegen falls noetig)
+        adminState.optionenGruppen = adminState.optionenGruppen || [];
+        let weitere = adminState.optionenGruppen.find((g) => g.id === "weitere");
+        if (!weitere) {
+          weitere = { id: "weitere", name: "Weitere Optionen", optionen: [] };
+          adminState.optionenGruppen.push(weitere);
+        }
+        weitere.optionen.push(key);
         adminMarkOptionenDirty();
         adminRenderOptionen();
         // Zum neuen Eintrag scrollen + Namensfeld fokussieren
@@ -15024,13 +15319,27 @@
         }, 0);
       }
 
-      // Eigene Option loeschen (eingebaute sind geschuetzt).
+      // Option loeschen (auch eingebaute). Eingebaute lassen sich nur ueber
+      // Zuruecksetzen/erneutes Pflegen von optionen.js wiederherstellen -> daher
+      // ein deutlicherer Hinweis.
       function adminDeleteOption(key) {
         if (!adminState.optionen || !adminState.optionen[key]) return;
-        if (!istCustomOption(key)) return; // Sicherheitsnetz
         const name = adminState.optionen[key].name || key;
-        if (!confirm('Option "' + name + '" wirklich löschen?')) return;
+        let msg = 'Option "' + name + '" wirklich löschen?';
+        if (!istCustomOption(key)) {
+          msg =
+            'Eingebaute Option "' +
+            name +
+            '" wirklich löschen?\n\nSie verschwindet komplett aus dem Rechner. ' +
+            "Wiederherstellen geht nur über „Alles zurücksetzen“ (vor dem Speichern) " +
+            "oder erneutes Anlegen.";
+        }
+        if (!confirm(msg)) return;
         delete adminState.optionen[key];
+        // Key aus seiner Gruppe entfernen
+        (adminState.optionenGruppen || []).forEach((g) => {
+          if (Array.isArray(g.optionen)) g.optionen = g.optionen.filter((k) => k !== key);
+        });
         adminMarkOptionenDirty();
         adminRenderOptionen();
       }
@@ -15193,7 +15502,11 @@
               ? JSON.parse(JSON.stringify(window.OPTIONEN_DATA._meta))
               : { schemaVersion: "1.0", appVersion: "2.0" };
           optionenMeta.stand = new Date().toISOString().slice(0, 10);
-          const optionenOut = { _meta: optionenMeta, optionen: adminState.optionen };
+          const optionenOut = {
+            _meta: optionenMeta,
+            gruppen: adminState.optionenGruppen || [],
+            optionen: adminState.optionen,
+          };
           const optionenJson = JSON.stringify(optionenOut, null, 2);
           const optionenJsHeader =
             "/*\n" +
@@ -15569,6 +15882,8 @@
           if (adminState.optionen) {
             window.OPTIONEN_DATA = window.OPTIONEN_DATA || {};
             window.OPTIONEN_DATA.optionen = JSON.parse(JSON.stringify(adminState.optionen));
+            if (adminState.optionenGruppen)
+              window.OPTIONEN_DATA.gruppen = JSON.parse(JSON.stringify(adminState.optionenGruppen));
             ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
           }
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen
@@ -16013,8 +16328,9 @@
                 sie liegen in <code>optionen.js</code>. Änderungen gehen mit <strong>Live speichern</strong> live.
               </p>
               <div class="ap-optionen-list" id="apOptionenList"></div>
-              <div style="margin-top: 14px;">
+              <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="ap-add-tarif" onclick="adminAddOption()">+ Option hinzufügen</button>
+                <button class="ap-add-tarif" onclick="adminAddGruppe()">+ Gruppe hinzufügen</button>
               </div>
             </div>
           </div>
