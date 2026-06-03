@@ -1,6 +1,6 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 00:15:54
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 00:20:52
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
  */
 window.OPTIONEN_DATA = {
@@ -37,7 +37,8 @@ window.OPTIONEN_DATA = {
       "name": "Festnetzrufnummern",
       "collapsible": true,
       "optionen": [
-        "oneNumber"
+        "oneNumber",
+        "festnetznummer"
       ]
     },
     {
@@ -47,7 +48,6 @@ window.OPTIONEN_DATA = {
       "optionen": [
         "internationalWorld100",
         "internationalWorld50",
-        "festnetznummer",
         "internationalWorld400",
         "countryFlatWorld"
       ]
@@ -126,8 +126,7 @@ window.OPTIONEN_DATA = {
           "Hauptkarte",
           "Partnerkarte"
         ]
-      },
-      "aktiv": false
+      }
     },
     "countryFlatWorld": {
       "name": "CountryFlat World",
