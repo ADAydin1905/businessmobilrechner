@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 00:15:54
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 00:20:52
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
