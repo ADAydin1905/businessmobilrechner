@@ -18,7 +18,7 @@
     {
       "id": "haeufig",
       "name": "Häufig gebuchte Optionen",
-      "collapsible": false,
+      "collapsible": true,
       "optionen": [
         "mobilityConnect",
         "securityOnNetComfort",
