@@ -1,6 +1,6 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 00:20:52
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 01:04:29
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
  */
 window.OPTIONEN_DATA = {
@@ -23,7 +23,7 @@ window.OPTIONEN_DATA = {
     {
       "id": "haeufig",
       "name": "Häufig gebuchte Optionen",
-      "collapsible": false,
+      "collapsible": true,
       "optionen": [
         "mobilityConnect",
         "securityOnNetComfort",
