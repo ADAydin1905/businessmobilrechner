@@ -1,6 +1,6 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 10:58:01
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 11:02:11
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
  */
 window.OPTIONEN_DATA = {
@@ -83,7 +83,10 @@ window.OPTIONEN_DATA = {
       "rabattToggle": true,
       "rabattStufen": [
         0,
+        10,
+        15,
         25,
+        30,
         50,
         75,
         100
