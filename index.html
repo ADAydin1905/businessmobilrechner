@@ -3423,6 +3423,25 @@
       .ap-opt-stufen {
         flex: 1 1 100%;
       }
+      .ap-opt-rabatt-chk {
+        flex: 1 1 100%;
+        font-size: 0.85em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        color: var(--primary-color);
+      }
+      .ap-opt-rabatt-stufen {
+        flex: 1 1 100%;
+        font-size: 0.85em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ap-opt-rabatt-stufen input {
+        width: 150px;
+      }
       .ap-opt-stufen > summary {
         cursor: pointer;
         font-size: 0.85em;
@@ -4702,6 +4721,8 @@
           if (o.prozent != null) detail.prozent = o.prozent;
           if (o.dauerMonate != null) detail.dauerMonate = o.dauerMonate;
           if (o.preisProStufe) detail.preisProStufe = o.preisProStufe;
+          if (o.rabattToggle) detail.rabattToggle = true;
+          if (Array.isArray(o.rabattStufen)) detail.rabattStufen = o.rabattStufen.slice();
           detail.preisNetto = o.preisNetto != null ? o.preisNetto : 0;
           detail.getPreisNetto = (tarifName) => optionPreisNetto(o, tarifName);
           // Aktiv-Schalter: o.aktiv === false -> Option ueberall ausgeblendet.
@@ -6480,6 +6501,13 @@
 
           // Phase 3b: Item-HTML je Options-Key sammeln, danach nach Gruppen ordnen.
           const itemHtmlByKey = {};
+          // Gruppen (Reihenfolge/Aufklappbarkeit) + Key->Gruppe-Map (fuer Rabatt-Exklusivitaet).
+          const optGruppen = migriereOptionenGruppen(
+            window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
+            ZUBUCHOPTIONEN_DETAILS,
+          );
+          const keyToGroupId = {};
+          optGruppen.forEach((g) => (g.optionen || []).forEach((k) => (keyToGroupId[k] = g.id)));
 
           let aktionspreiseHTML = "";
 
@@ -7017,88 +7045,40 @@
                 </div>`;
           }
 
-          const createAuslandsOptionControl = (optionKey, option, currentCardId) => {
+          // Rabatt-Toggle-Steuerung (links Festpreis, rechts Rabatt-Auswahl).
+          // Auswahl eines Prozentwerts bucht die Option; 0% = voller Preis, 100% = 0 €.
+          const createRabattToggleControl = (optionKey, option, currentCardId, stufen, rabattgroup) => {
             const isChecked = zubuchoptionen[currentCardId] && zubuchoptionen[currentCardId][optionKey];
-
             const currentRabatt =
               (zubuchoptionen[currentCardId] && zubuchoptionen[currentCardId][`${optionKey}Rabatt`]) || 0;
-
-            let activeState = "off";
-
-            if (isChecked) {
-              activeState = currentRabatt.toString();
-            }
-
+            const activeState = isChecked ? currentRabatt.toString() : "off";
+            const stufenArr = Array.isArray(stufen) && stufen.length ? stufen : [0, 50, 100];
+            let buttons =
+              `<button class="rabatt-btn ${activeState === "off" ? "active" : ""}" data-value="off" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">Keine<br>Buchung</button>`;
+            stufenArr.forEach((p) => {
+              buttons +=
+                `<button class="rabatt-btn ${activeState === String(p) ? "active" : ""}" data-value="${p}" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">${p}%</button>`;
+            });
+            const breite = Math.max(280, 120 + (stufenArr.length + 1) * 70);
             return `
-
-
-
                     <div class="einstellungs-zeile modal-einstellung">
-
-
-
                         <div class="einstellungs-label-gruppe">
-
-
-
                             <label class="einstellungs-label">${option.name} (${getDisplayPrice(option.preisNetto)})</label>
-
-
-
-                            <span class="rabatt-hinweis">Rahmenvertragsrabatt wählen zum Buchen →</span>
-
-
-
+                            <span class="rabatt-hinweis">Rabatt wählen zum Buchen →</span>
                         </div>
-
-
-
-                        <div class="discount-toggle" data-auslands="1" data-option-key="${optionKey}" style="min-width: 400px;">
-
-
-
+                        <div class="discount-toggle" data-rabatttoggle="1" data-rabattgroup="${rabattgroup || ""}" data-option-key="${optionKey}" style="min-width: ${breite}px;">
                             <div class="toggle-slider"></div>
-
-
-
-                            <button class="rabatt-btn ${activeState === "off" ? "active" : ""}" data-value="off" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">Keine<br>Buchung</button>
-
-
-
-                            <button class="rabatt-btn ${activeState === "0" ? "active" : ""}" data-value="0" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">0%</button>
-
-
-
-                            <button class="rabatt-btn ${activeState === "50" ? "active" : ""}" data-value="50" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">50%</button>
-
-
-
-                            <button class="rabatt-btn ${activeState === "100" ? "active" : ""}" data-value="100" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">100%</button>
-
-
-
+                            ${buttons}
                         </div>
-
-
-
-                    </div>
-
-
-
-                `;
+                    </div>`;
           };
 
-          if (international50Option.isAvailable(tarif, kartenArt)) {
-            itemHtmlByKey["internationalWorld50"] = createAuslandsOptionControl("internationalWorld50", international50Option, cardId);
-          }
-          if (international100Option.isAvailable(tarif, kartenArt)) {
-            itemHtmlByKey["internationalWorld100"] = createAuslandsOptionControl("internationalWorld100", international100Option, cardId);
-          }
-          if (international400Option.isAvailable(tarif, kartenArt)) {
-            itemHtmlByKey["internationalWorld400"] = createAuslandsOptionControl("internationalWorld400", international400Option, cardId);
-          }
-          if (countryFlatOption.isAvailable(tarif, kartenArt)) {
-            itemHtmlByKey["countryFlatWorld"] = createAuslandsOptionControl("countryFlatWorld", countryFlatOption, cardId);
+          // Alle Rabatt-Optionen (rabattToggle) generisch rendern.
+          for (const rk in ZUBUCHOPTIONEN_DETAILS) {
+            const ro = ZUBUCHOPTIONEN_DETAILS[rk];
+            if (!ro.rabattToggle) continue;
+            if (!ro.isAvailable(tarif, kartenArt, cardId)) continue;
+            itemHtmlByKey[rk] = createRabattToggleControl(rk, ro, cardId, ro.rabattStufen, keyToGroupId[rk]);
           }
 
           const hauptkartenAnzahl = parseInt(document.getElementById("hauptkarten").value, 10) || 0;
@@ -7185,6 +7165,7 @@
           for (const optKey in ZUBUCHOPTIONEN_DETAILS) {
             if (!istCustomOption(optKey)) continue;
             const opt = ZUBUCHOPTIONEN_DETAILS[optKey];
+            if (opt.rabattToggle) continue; // Rabatt-Optionen rendert der Rabatt-Loop
             if (!opt.isAvailable(tarif, kartenArt, cardId)) continue;
             const checked = currentOptions[optKey] ? "checked" : "";
             itemHtmlByKey[optKey] = `
@@ -7199,12 +7180,8 @@
                     </div>`;
           }
 
-          // Optionen-Gruppen aus dem Admin-Panel: Reihenfolge, Name, Aufklappbarkeit.
-          // collapsible === false => Optionen fest sichtbar (z.B. "Häufig gebuchte").
-          const optGruppen = migriereOptionenGruppen(
-            window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
-            ZUBUCHOPTIONEN_DETAILS,
-          );
+          // Optionen-Gruppen (optGruppen) wurden oben bereits ermittelt:
+          // Reihenfolge, Name, Aufklappbarkeit. collapsible === false => fest sichtbar.
           let gruppenOptionenHTML = "";
           optGruppen.forEach((g) => {
             const items = (g.optionen || [])
@@ -7517,9 +7494,13 @@
             if (optionKey === "multisimRabatt") {
               tempZubuchoptions[cardId].multisimRabatt = parseInt(value, 10);
             } else {
-              const allAuslandsGroups = modal.querySelectorAll('.discount-toggle[data-auslands="1"]');
+              // Rabatt-Optionen derselben Gruppe sind gegenseitig exklusiv (wie zuvor Auslandstelefonie).
+              const grpId = group.dataset.rabattgroup || "";
+              const exklusivToggles = grpId
+                ? modal.querySelectorAll('.discount-toggle[data-rabattgroup="' + grpId + '"]')
+                : [];
 
-              allAuslandsGroups.forEach((g) => {
+              exklusivToggles.forEach((g) => {
                 const key = g.dataset.optionKey;
 
                 if (key !== optionKey) {
@@ -11060,7 +11041,7 @@
 
               zubuchungenFixPreisNetto += finalOptionPreis;
 
-              zubuchungenDetails[key] = { preis: finalOptionPreis, rabatt: rabattProzent };
+              zubuchungenDetails[key] = { preis: finalOptionPreis, rabatt: rabattProzent, basis: optionPreisNetto };
             }
           }
         }
@@ -11683,7 +11664,8 @@
 
               hatZubuchoptionen = true;
 
-              const originalPreis = option.preis / (1 - (option.rabatt || 0) / 100);
+              const originalPreis =
+                option.basis != null ? option.basis : option.preis / (1 - (option.rabatt || 0) / 100);
 
               zubuchoptionenHTML += `<li>${optionDetail.name}: ${formatCurrencyNumber(originalPreis * (item.isBrutto ? mwst : 1))} €</li>`;
 
@@ -12345,7 +12327,8 @@
 
               const optionDetail = ZUBUCHOPTIONEN_DETAILS[key];
 
-              const originalPreis = option.preis / (1 - (option.rabatt || 0) / 100);
+              const originalPreis =
+                option.basis != null ? option.basis : option.preis / (1 - (option.rabatt || 0) / 100);
 
               zubuchungenText += `  - ${optionDetail.name}: ${formatCurrencyNumber(originalPreis * (istBrutto ? mwst : 1))} €\n`;
 
@@ -12926,7 +12909,8 @@
 
                 hatZubuchoptionen = true;
 
-                const originalPreis = option.preis / (1 - (option.rabatt || 0) / 100);
+                const originalPreis =
+                option.basis != null ? option.basis : option.preis / (1 - (option.rabatt || 0) / 100);
 
                 const preisAngezeigt = originalPreis * (group.isBrutto ? 1.19 : 1);
 
@@ -15032,6 +15016,23 @@
                   '" oninput="adminEditOptionStufenpreis(this.dataset.key, this.dataset.stufe, this.value)"></label>';
               });
               html += "</div></details>";
+
+              // Rabatt-Auswahl (Rabatt-Toggle statt Checkbox im Rechner-Menü)
+              html +=
+                '<label class="ap-opt-rabatt-chk" title="Im Menü erscheint statt einer Checkbox eine Rabatt-Auswahl (0% = voller Preis, 100% = 0 €). Optionen derselben Gruppe sind dann gegenseitig exklusiv."><input type="checkbox" data-key="' +
+                adminEsc(key) +
+                '" ' +
+                (o.rabattToggle ? "checked" : "") +
+                ' onchange="adminToggleOptionRabatt(this.dataset.key, this.checked)"> Rabatt-Auswahl statt Checkbox</label>';
+              if (o.rabattToggle) {
+                const stufenStr = (Array.isArray(o.rabattStufen) ? o.rabattStufen : [0, 50, 100]).join(", ");
+                html +=
+                  '<label class="ap-opt-rabatt-stufen">Rabattstufen (%) <input type="text" data-key="' +
+                  adminEsc(key) +
+                  '" value="' +
+                  adminEsc(stufenStr) +
+                  '" oninput="adminEditOptionRabattStufen(this.dataset.key, this.value)" placeholder="z.B. 0, 50, 100"></label>';
+              }
             }
           }
           html += "</div>";
@@ -15222,6 +15223,33 @@
           o.preisProStufe = o.preisProStufe || {};
           o.preisProStufe[stufe] = n;
         }
+        adminMarkOptionenDirty();
+      }
+
+      // Rabatt-Auswahl (Rabatt-Toggle) an/aus. Standardstufen 0/50/100.
+      function adminToggleOptionRabatt(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        if (val) {
+          o.rabattToggle = true;
+          if (!Array.isArray(o.rabattStufen) || !o.rabattStufen.length) o.rabattStufen = [0, 50, 100];
+        } else {
+          delete o.rabattToggle;
+          delete o.rabattStufen;
+        }
+        adminMarkOptionenDirty();
+        adminRenderOptionen();
+      }
+
+      // Rabattstufen (Prozentwerte) setzen, z.B. "0, 50, 100".
+      function adminEditOptionRabattStufen(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const arr = String(val)
+          .split(",")
+          .map((s) => parseInt(s.trim(), 10))
+          .filter((n) => isFinite(n) && n >= 0 && n <= 100);
+        o.rabattStufen = arr.length ? arr : [0, 50, 100];
         adminMarkOptionenDirty();
       }
 
