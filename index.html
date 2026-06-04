@@ -1237,6 +1237,35 @@
       }
 
       #fehlerModal .primary,
+      /* Tabs im Zubuch-Menü (Optionen / Aktionen / Konfiguration übertragen) */
+      .zubuch-tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px solid var(--ap-border, #e2e8f0);
+        margin: 0 0 18px 0;
+        flex-wrap: wrap;
+      }
+      .zubuch-tab {
+        appearance: none;
+        border: none;
+        background: transparent;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--ap-muted, #6b7280);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        font-family: var(--font-family);
+      }
+      .zubuch-tab:hover {
+        color: var(--primary-color);
+      }
+      .zubuch-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+      }
+
       #zubuchModal .primary {
         padding: 10px 20px;
 
@@ -6346,6 +6375,54 @@
         }
       }
 
+      // Baut die Tab-Leiste + Panes fuer das Zubuch-Menue. panes: [{id,label,html}].
+      // Leere Panes werden weggelassen; der erste nicht-leere Tab ist aktiv.
+      function zubuchTabShell(panes) {
+        const sichtbar = panes.filter((p) => p.html && p.html.trim());
+        if (!sichtbar.length) return "";
+        const aktivId = sichtbar[0].id;
+        let bar = '<div class="zubuch-tabs">';
+        let body = "";
+        sichtbar.forEach((p) => {
+          const isActive = p.id === aktivId;
+          bar +=
+            '<button type="button" class="zubuch-tab' +
+            (isActive ? " active" : "") +
+            '" data-ztab="' +
+            p.id +
+            "\" onclick=\"zubuchSwitchTab('" +
+            p.id +
+            '\')">' +
+            p.label +
+            "</button>";
+          body +=
+            '<div class="zubuch-pane" data-ztab="' +
+            p.id +
+            '"' +
+            (isActive ? "" : ' style="display:none"') +
+            ">" +
+            p.html +
+            "</div>";
+        });
+        bar += "</div>";
+        return bar + body;
+      }
+
+      // Tab im Zubuch-Menue umschalten (+ Rabatt-Slider im sichtbaren Pane neu setzen).
+      function zubuchSwitchTab(id) {
+        const mc = document.getElementById("zubuchModalContent");
+        if (!mc) return;
+        mc.querySelectorAll(".zubuch-tab").forEach((b) => b.classList.toggle("active", b.dataset.ztab === id));
+        mc.querySelectorAll(".zubuch-pane").forEach((p) => {
+          p.style.display = p.dataset.ztab === id ? "" : "none";
+        });
+        setTimeout(() => {
+          mc.querySelectorAll('.zubuch-pane[data-ztab="' + id + '"] .discount-toggle .rabatt-btn.active').forEach(
+            (b) => moveDiscountSlider(b, false),
+          );
+        }, 20);
+      }
+
       function openZubuchModal(kartenArt, kartenNummer) {
         let kartenPrefix;
 
@@ -7111,53 +7188,13 @@
 
           if (totalSelectedTariffs >= 2) {
             konfigHTML = `
-
-
-
-                    <div class="collapsible-header" id="konfig-uebertragen-header" onclick="toggleCollapsible(this)">
-
-
-
-                        <h4 style="margin: 0; color: var(--primary-color);">Konfiguration übertragen</h4>
-
-
-
-                        <span class="arrow-icon"></span>
-
-
-
+                    <p style="font-size: 0.9em; color: #666; margin: 0 0 16px 0;">
+                        Überträgt die gebuchten Optionen <strong>und</strong> Aktionen dieser Karte auf die ausgewählten Karten.
+                    </p>
+                    <div id="uebertragungs-liste" style="margin-bottom: 15px;">
+                        <!-- List will be loaded here automatically -->
                     </div>
-
-
-
-                    <div class="collapsible-content">
-
-
-
-                        <hr style="margin: 0 0 20px 0;">
-
-
-
-                        <div id="uebertragungs-liste" style="margin-bottom: 15px;">
-
-
-
-                            <!-- List will be loaded here automatically -->
-
-
-
-                        </div>
-
-
-
-                        <button id="konfig-uebertragen-btn" class="primary" onclick="konfigurationUebertragen()">Konfiguration übertragen & Speichern</button>
-
-
-
-                    </div>
-
-
-
+                    <button id="konfig-uebertragen-btn" class="primary" onclick="konfigurationUebertragen()">Konfiguration übertragen & Speichern</button>
                 `;
           }
 
@@ -7180,9 +7217,10 @@
                     </div>`;
           }
 
-          // Optionen-Gruppen (optGruppen) wurden oben bereits ermittelt:
-          // Reihenfolge, Name, Aufklappbarkeit. collapsible === false => fest sichtbar.
+          // Optionen-Gruppen (optGruppen) wurden oben bereits ermittelt.
+          // Getrennt nach Kategorie: Optionen-Tab vs. Aktionen-Tab.
           let gruppenOptionenHTML = "";
+          let aktionenOptionenHTML = "";
           optGruppen.forEach((g) => {
             const items = (g.optionen || [])
               .map((k) => itemHtmlByKey[k])
@@ -7190,14 +7228,15 @@
               .join("");
             if (!items) return; // Gruppe ohne verfuegbare Optionen ausblenden
             const titel = adminEsc(g.name || "");
+            let block;
             if (g.collapsible === false) {
-              gruppenOptionenHTML +=
+              block =
                 '<h4 style="margin: 20px 0 0 0; color: var(--primary-color);">' +
                 titel +
                 '</h4><hr style="margin: 10px 0 20px 0;">' +
                 items;
             } else {
-              gruppenOptionenHTML +=
+              block =
                 '<div class="opt-gruppe-wrapper"><div class="collapsible-header" onclick="toggleCollapsible(this)">' +
                 '<h4 style="margin: 0; color: var(--primary-color);">' +
                 titel +
@@ -7206,6 +7245,8 @@
                 items +
                 "</div></div>";
             }
+            if (g.kategorie === "aktion") aktionenOptionenHTML += block;
+            else gruppenOptionenHTML += block;
           });
 
           // Prüfen, ob es sich um eine Datenkarte handelt
@@ -7213,15 +7254,16 @@
           const istDatenkarte = kartenArt === "Haupt-Datenkarte" || kartenArt === "Partner-Datenkarte";
 
           if (istDatenkarte) {
-            // Datenkarten: Gruppen rendern (isAvailable filtert auf Datenkarten-Optionen)
-            modalContent.innerHTML = `
-                    ${gruppenOptionenHTML}
-                    ${konfigHTML}
-                `;
+            // Datenkarten: 3-Tab-Menü (Optionen / Aktionen / Konfiguration übertragen)
+            modalContent.innerHTML = zubuchTabShell([
+              { id: "optionen", label: "Optionen", html: gruppenOptionenHTML },
+              { id: "aktionen", label: "Aktionen", html: aktionenOptionenHTML },
+              { id: "uebertragen", label: "Konfiguration übertragen", html: konfigHTML },
+            ]);
           } else {
             // Für Haupt- und Partnerkarten die normale Ansicht
 
-            modalContent.innerHTML = `
+            const mehrkartenserviceHTML = `
 
 
 
@@ -7309,21 +7351,12 @@
 
 
 
-                        </div>
-
-
-
-                    </div>
-
-
-
-                    ${gruppenOptionenHTML}
-
-                    ${konfigHTML}
-
-
-
-                `;
+                        </div>`;
+            modalContent.innerHTML = zubuchTabShell([
+              { id: "optionen", label: "Optionen", html: mehrkartenserviceHTML + gruppenOptionenHTML },
+              { id: "aktionen", label: "Aktionen", html: aktionenOptionenHTML },
+              { id: "uebertragen", label: "Konfiguration übertragen", html: konfigHTML },
+            ]);
 
             document.getElementById("multisim-select").value = currentMultiSimSelection;
           }
@@ -14770,6 +14803,7 @@
           id: "aktionen",
           name: "Aktionen",
           collapsible: true,
+          kategorie: "aktion",
           optionen: ["halbesJahrhalberPreis", "vvlAktion", "aktionspreisHK", "aktionspreisBusinessCardSpecial"],
         },
         { id: "weitere", name: "Weitere Optionen", collapsible: true, optionen: [] },
@@ -14784,6 +14818,8 @@
             : JSON.parse(JSON.stringify(OPTION_GRUPPEN_DEFAULT));
         g.forEach((x) => {
           x.optionen = Array.isArray(x.optionen) ? x.optionen.filter((k) => optionen[k]) : [];
+          // Kategorie sicherstellen: 'aktionen'-Gruppe = Aktion, sonst Option.
+          if (!x.kategorie) x.kategorie = x.id === "aktionen" ? "aktion" : "option";
         });
         const zugeordnet = new Set();
         g.forEach((x) => x.optionen.forEach((k) => zugeordnet.add(k)));
