@@ -78,7 +78,10 @@
       "rabattToggle": true,
       "rabattStufen": [
         0,
+        10,
+        15,
         25,
+        30,
         50,
         75,
         100
