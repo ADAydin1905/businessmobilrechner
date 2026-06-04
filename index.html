@@ -14677,6 +14677,7 @@
           rabatte: "apTabRabatte",
           stufen: "apTabStufen",
           optionen: "apTabOptionen",
+          aktionen: "apTabAktionen",
         };
         Object.entries(panes).forEach(([id, elementId]) => {
           const el = document.getElementById(elementId);
@@ -14686,6 +14687,7 @@
         if (tab === "rabatte") adminRenderRabatte();
         if (tab === "stufen") adminRenderStufen();
         if (tab === "optionen") adminRenderOptionen();
+        if (tab === "aktionen") adminRenderAktionen();
       }
 
       // ===== Tarifstufen-Tab =====
@@ -14842,61 +14844,68 @@
 
       // Synchronisiert adminState.optionenGruppen aus der aktuellen DOM-Reihenfolge
       // (nach Drag & Drop von Optionen oder Gruppen).
-      function adminSyncGruppenAusDOM() {
-        const container = document.getElementById("apOptionenList");
+      // Synchronisiert adminState.optionenGruppen aus dem DOM EINER Kategorie
+      // (Optionen oder Aktionen); die jeweils andere Kategorie bleibt unveraendert.
+      function adminSyncGruppenAusDOM(containerId, kategorie) {
+        const container = document.getElementById(containerId);
         if (!container) return;
-        const neu = [];
+        const editierte = [];
         container.querySelectorAll(".ap-optgrp").forEach((gEl) => {
           const gid = gEl.dataset.gid;
           const orig = (adminState.optionenGruppen || []).find((x) => x.id === gid) || { id: gid, name: gid };
           const keys = [...gEl.querySelectorAll(".ap-optgrp-list > .ap-opt-row")]
             .map((r) => r.dataset.key)
             .filter(Boolean);
-          neu.push({ ...orig, optionen: keys });
+          editierte.push({ ...orig, kategorie, optionen: keys });
         });
-        adminState.optionenGruppen = neu;
+        const alle = adminState.optionenGruppen || [];
+        const optionGroups =
+          kategorie === "option" ? editierte : alle.filter((g) => (g.kategorie || "option") === "option");
+        const actionGroups = kategorie === "aktion" ? editierte : alle.filter((g) => (g.kategorie || "option") === "aktion");
+        adminState.optionenGruppen = [...optionGroups, ...actionGroups];
         adminMarkOptionenDirty();
       }
 
-      // Initialisiert Sortable.js fuer Optionen (innerhalb/uebergreifend) + Gruppen.
-      function adminInitOptionenSortable() {
+      // Initialisiert Sortable.js (Optionen/Gruppen) fuer einen Container + Kategorie.
+      function adminInitGruppenSortable(containerId, sortableGroup, kategorie) {
         if (typeof Sortable === "undefined") return;
-        const container = document.getElementById("apOptionenList");
+        const container = document.getElementById(containerId);
         if (!container) return;
-        // Optionen je Gruppe (gemeinsame group => uebergreifend verschiebbar)
+        const reRender = kategorie === "aktion" ? adminRenderAktionen : adminRenderOptionen;
         container.querySelectorAll(".ap-optgrp-list").forEach((listEl) => {
           new Sortable(listEl, {
-            group: "ap-optionen",
+            group: sortableGroup,
             handle: ".ap-opt-drag",
             animation: 150,
             onEnd: () => {
-              adminSyncGruppenAusDOM();
-              adminRenderOptionen(); // Gruppen-Zaehler aktualisieren + Sortable neu binden
+              adminSyncGruppenAusDOM(containerId, kategorie);
+              reRender();
             },
           });
         });
-        // Gruppen-Reihenfolge
         new Sortable(container, {
           handle: ".ap-grp-drag",
           animation: 150,
           draggable: ".ap-optgrp",
           onEnd: () => {
-            adminSyncGruppenAusDOM();
-            adminRenderOptionen();
+            adminSyncGruppenAusDOM(containerId, kategorie);
+            reRender();
           },
         });
       }
 
-      // Neue Gruppe anlegen.
-      function adminAddGruppe() {
+      // Neue Gruppe anlegen (kategorie "option" oder "aktion").
+      function adminAddGruppe(kategorie) {
+        kategorie = kategorie === "aktion" ? "aktion" : "option";
         adminState.optionenGruppen = adminState.optionenGruppen || [];
         let id;
         do {
           id = "grp_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
         } while (adminState.optionenGruppen.some((g) => g.id === id));
-        adminState.optionenGruppen.push({ id, name: "Neue Gruppe", optionen: [] });
+        adminState.optionenGruppen.push({ id, name: "Neue Gruppe", kategorie, optionen: [] });
         adminMarkOptionenDirty();
-        adminRenderOptionen();
+        if (kategorie === "aktion") adminRenderAktionen();
+        else adminRenderOptionen();
         setTimeout(() => {
           const input = document.querySelector('.ap-grp-name[data-gid="' + id + '"]');
           if (input) {
@@ -14923,33 +14932,47 @@
         adminMarkOptionenDirty();
       }
 
-      // Gruppe loeschen: ihre Optionen wandern nach "weitere" (bleiben erhalten).
+      // Gruppe loeschen: ihr Inhalt wandert in eine andere Gruppe DERSELBEN Kategorie
+      // (bleibt erhalten). Bei Optionen bevorzugt "Weitere Optionen".
       function adminDeleteGruppe(gid) {
         const gruppen = adminState.optionenGruppen || [];
         const idx = gruppen.findIndex((x) => x.id === gid);
         if (idx === -1) return;
         const g = gruppen[idx];
+        const kategorie = g.kategorie || "option";
         const anzahl = (g.optionen || []).length;
+        // Zielgruppe (gleiche Kategorie, nicht die zu loeschende)
+        let ziel = null;
+        if (anzahl) {
+          if (kategorie === "option") {
+            ziel = gruppen.find((x) => x.id === "weitere" && x.id !== gid);
+            if (!ziel) {
+              ziel = { id: "weitere", name: "Weitere Optionen", kategorie: "option", optionen: [] };
+              gruppen.push(ziel);
+            }
+          } else {
+            ziel = gruppen.find((x) => (x.kategorie || "option") === "aktion" && x.id !== gid);
+          }
+        }
+        const zielName = ziel ? ziel.name || ziel.id : null;
         if (
           !confirm(
             'Gruppe "' +
               (g.name || gid) +
               '" löschen?' +
-              (anzahl ? "\n\nDie " + anzahl + ' enthaltene(n) Option(en) wandern nach „Weitere Optionen“.' : ""),
+              (anzahl
+                ? "\n\nDie " +
+                  anzahl +
+                  " enthaltene(n) Einträge wandern " +
+                  (zielName ? 'nach „' + zielName + "“." : "in eine andere Gruppe.")
+                : ""),
           )
         )
           return;
-        if (anzahl) {
-          let weitere = gruppen.find((x) => x.id === "weitere");
-          if (!weitere) {
-            weitere = { id: "weitere", name: "Weitere Optionen", optionen: [] };
-            gruppen.push(weitere);
-          }
-          if (weitere.id !== gid) weitere.optionen.push(...g.optionen);
-        }
+        if (anzahl && ziel) ziel.optionen.push(...g.optionen);
         gruppen.splice(idx, 1);
         adminMarkOptionenDirty();
-        adminRenderOptionen();
+        adminRenderOptionenUndAktionen();
       }
 
       // Lesbarer Text der Verfuegbarkeits-Regeln (read-only Anzeige).
@@ -15176,10 +15199,12 @@
       }
 
       // Rendert die Optionen nach Gruppen-Sektionen + initialisiert Drag & Drop.
-      function adminRenderOptionen() {
-        const el = document.getElementById("apOptionenList");
+      // Rendert die Gruppen EINER Kategorie ("option"|"aktion") in einen Container.
+      function adminRenderGruppenliste(kategorie, containerId, sortableGroup) {
+        const el = document.getElementById(containerId);
         if (!el) return;
-        const gruppen = adminState.optionenGruppen || [];
+        const gruppen = (adminState.optionenGruppen || []).filter((g) => (g.kategorie || "option") === kategorie);
+        const einheit = kategorie === "aktion" ? "Aktion(en)" : "Option(en)";
         let html = "";
         gruppen.forEach((g) => {
           html += '<div class="ap-optgrp" data-gid="' + adminEsc(g.id) + '">';
@@ -15191,15 +15216,15 @@
             '" value="' +
             adminEsc(g.name || "") +
             '" oninput="adminRenameGruppe(this.dataset.gid, this.value)">';
-          html += '<span class="ap-grp-count">' + (g.optionen ? g.optionen.length : 0) + " Option(en)</span>";
+          html += '<span class="ap-grp-count">' + (g.optionen ? g.optionen.length : 0) + " " + einheit + "</span>";
           html +=
-            '<label class="ap-grp-collapsible" title="An: im Rechner aufklappbar. Aus: Optionen immer sichtbar."><input type="checkbox" data-gid="' +
+            '<label class="ap-grp-collapsible" title="An: im Rechner aufklappbar. Aus: immer sichtbar."><input type="checkbox" data-gid="' +
             adminEsc(g.id) +
             '" ' +
             (g.collapsible === false ? "" : "checked") +
             ' onchange="adminToggleGruppeCollapsible(this.dataset.gid, this.checked)"> aufklappbar</label>';
           html +=
-            '<button class="ap-grp-del" title="Gruppe löschen (Optionen wandern zu „Weitere“)" onclick="adminDeleteGruppe(this.dataset.gid)" data-gid="' +
+            '<button class="ap-grp-del" title="Gruppe löschen (Inhalt bleibt erhalten)" onclick="adminDeleteGruppe(this.dataset.gid)" data-gid="' +
             adminEsc(g.id) +
             '">🗑 Gruppe</button>';
           html += "</div>";
@@ -15209,9 +15234,22 @@
           });
           html += "</div></div>";
         });
-        if (!gruppen.length) html = '<div class="ap-empty">Keine Optionen/Gruppen geladen.</div>';
+        if (!gruppen.length)
+          html = '<div class="ap-empty">Keine ' + (kategorie === "aktion" ? "Aktionen" : "Optionen") + " / Gruppen.</div>";
         el.innerHTML = html;
-        adminInitOptionenSortable();
+        adminInitGruppenSortable(containerId, sortableGroup, kategorie);
+      }
+
+      function adminRenderOptionen() {
+        adminRenderGruppenliste("option", "apOptionenList", "ap-optionen");
+      }
+      function adminRenderAktionen() {
+        adminRenderGruppenliste("aktion", "apAktionenList", "ap-aktionen");
+      }
+      // Beide Listen neu rendern (nach Mutationen, die beide betreffen koennen).
+      function adminRenderOptionenUndAktionen() {
+        adminRenderOptionen();
+        adminRenderAktionen();
       }
 
       function adminMarkOptionenDirty() {
@@ -15405,7 +15443,7 @@
           if (Array.isArray(g.optionen)) g.optionen = g.optionen.filter((k) => k !== key);
         });
         adminMarkOptionenDirty();
-        adminRenderOptionen();
+        adminRenderOptionenUndAktionen();
       }
 
       // ===== Rabatte-Tab =====
@@ -16298,9 +16336,9 @@
         <div class="ap-tabs" id="apTabs">
           <button class="ap-tab active" data-tab="tarife" onclick="adminSwitchTab('tarife')">📱 Tarife</button>
           <button class="ap-tab" data-tab="optionen" onclick="adminSwitchTab('optionen')">🧩 Optionen</button>
+          <button class="ap-tab" data-tab="aktionen" onclick="adminSwitchTab('aktionen')">🎯 Aktionen</button>
           <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ Rabatte</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
-          <button class="ap-tab" data-tab="aktionen" disabled>🎯 Aktionen <span class="soon">bald</span></button>
         </div>
 
         <!-- Tab-Inhalt: Tarife -->
@@ -16394,7 +16432,26 @@
               <div class="ap-optionen-list" id="apOptionenList"></div>
               <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="ap-add-tarif" onclick="adminAddOption()">+ Option hinzufügen</button>
-                <button class="ap-add-tarif" onclick="adminAddGruppe()">+ Gruppe hinzufügen</button>
+                <button class="ap-add-tarif" onclick="adminAddGruppe('option')">+ Gruppe hinzufügen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Aktionen -->
+        <div id="apTabAktionen" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Aktionen</h3>
+              <p class="ap-rabatte-hint">
+                Zeitlich begrenzte Aktionen / Sonderpreise. Gleiches Prinzip wie bei den Optionen:
+                aktiv/inaktiv, per <strong>Drag &amp; Drop</strong> sortieren und in Gruppen ordnen,
+                <strong>Verfügbarkeit</strong> (Familien/Stufen) festlegen. Im Rechner erscheinen sie im
+                Reiter <strong>„Aktionen"</strong>. Werte (Preis/Prozent/Dauer) werden pro Vorgang im Rechner eingegeben.
+              </p>
+              <div class="ap-optionen-list" id="apAktionenList"></div>
+              <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="ap-add-tarif" onclick="adminAddGruppe('aktion')">+ Gruppe hinzufügen</button>
               </div>
             </div>
           </div>
