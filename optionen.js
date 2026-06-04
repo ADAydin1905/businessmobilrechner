@@ -1,6 +1,6 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 01:04:29
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 10:00:48
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
  */
 window.OPTIONEN_DATA = {
@@ -8,7 +8,7 @@ window.OPTIONEN_DATA = {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Zubuchoptionen fuer den Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-03",
+    "stand": "2026-06-04",
     "felderProOption": {
       "name": "Anzeigename der Option",
       "preisNetto": "Standard-Monatspreis netto (Zahl; negativ = Rabatt/Vorteil)",
@@ -27,7 +27,6 @@ window.OPTIONEN_DATA = {
       "optionen": [
         "mobilityConnect",
         "securityOnNetComfort",
-        "festeIPv6Adresse",
         "magentaEinsVorteil",
         "dataunlimitedforfree"
       ]
@@ -93,10 +92,6 @@ window.OPTIONEN_DATA = {
           "Special"
         ]
       }
-    },
-    "festeIPv6Adresse": {
-      "name": "Feste-IPv6-Adresse",
-      "preisNetto": 4.16
     },
     "internationalWorld50": {
       "name": "International World 50",
