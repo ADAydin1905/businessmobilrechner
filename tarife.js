@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 01:04:29
+ * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 10:00:48
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -8,7 +8,7 @@ window.TARIFE_DATA = {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-03",
+    "stand": "2026-06-04",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
