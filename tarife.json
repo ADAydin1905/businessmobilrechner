@@ -3,7 +3,7 @@
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-03",
+    "stand": "2026-06-04",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
