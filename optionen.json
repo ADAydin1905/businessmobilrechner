@@ -3,7 +3,7 @@
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Zubuchoptionen fuer den Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-03",
+    "stand": "2026-06-04",
     "felderProOption": {
       "name": "Anzeigename der Option",
       "preisNetto": "Standard-Monatspreis netto (Zahl; negativ = Rabatt/Vorteil)",
@@ -22,7 +22,6 @@
       "optionen": [
         "mobilityConnect",
         "securityOnNetComfort",
-        "festeIPv6Adresse",
         "magentaEinsVorteil",
         "dataunlimitedforfree"
       ]
@@ -88,10 +87,6 @@
           "Special"
         ]
       }
-    },
-    "festeIPv6Adresse": {
-      "name": "Feste-IPv6-Adresse",
-      "preisNetto": 4.16
     },
     "internationalWorld50": {
       "name": "International World 50",
