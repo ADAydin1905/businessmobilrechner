@@ -1200,6 +1200,9 @@
 
         max-height: 70vh;
 
+        /* Feste Mindesthöhe: Modal springt beim Tab-Wechsel nicht (bessere UX) */
+        min-height: 55vh;
+
         overflow-y: auto;
 
         line-height: 1.6;
@@ -6416,6 +6419,10 @@
         mc.querySelectorAll(".zubuch-pane").forEach((p) => {
           p.style.display = p.dataset.ztab === id ? "" : "none";
         });
+        // Übertragen-Tab: Kartenliste (neu) befüllen
+        if (id === "uebertragen" && typeof ladeKonfigurationsListe === "function") {
+          ladeKonfigurationsListe();
+        }
         setTimeout(() => {
           mc.querySelectorAll('.zubuch-pane[data-ztab="' + id + '"] .discount-toggle .rabatt-btn.active').forEach(
             (b) => moveDiscountSlider(b, false),
