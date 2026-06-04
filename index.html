@@ -4752,6 +4752,7 @@
           if (o.berechnungsTyp) detail.berechnungsTyp = o.berechnungsTyp;
           if (o.prozent != null) detail.prozent = o.prozent;
           if (o.dauerMonate != null) detail.dauerMonate = o.dauerMonate;
+          if (o.betrag != null) detail.betrag = o.betrag;
           if (o.preisProStufe) detail.preisProStufe = o.preisProStufe;
           if (o.rabattToggle) detail.rabattToggle = true;
           if (Array.isArray(o.rabattStufen)) detail.rabattStufen = o.rabattStufen.slice();
@@ -6664,7 +6665,7 @@
 
 
 
-                      <input type="checkbox" id="halbesJahrhalberPreis-checkbox" onchange="saveZubuchoptionen(null, this)" ${currenthalbesJahrhalberPreisSelection ? "checked" : ""}>
+                      <input type="checkbox" class="js-promo-aktion" id="halbesJahrhalberPreis-checkbox" onchange="saveZubuchoptionen(null, this)" ${currenthalbesJahrhalberPreisSelection ? "checked" : ""}>
 
 
 
@@ -6750,7 +6751,7 @@
 
 
 
-                        <input type="checkbox" id="vvlAktion-checkbox" onchange="toggleVvlFelder(); saveZubuchoptionen(null, this);" ${vvlAktiv ? "checked" : ""}>
+                        <input type="checkbox" class="js-promo-aktion" id="vvlAktion-checkbox" onchange="toggleVvlFelder(); saveZubuchoptionen(null, this);" ${vvlAktiv ? "checked" : ""}>
 
 
 
@@ -6836,7 +6837,7 @@
 
 
 
-                        <input type="checkbox" id="aktionspreisHK-checkbox" onchange="toggleAktionspreisFelder(); saveZubuchoptionen(null, this);" ${apAktiv ? "checked" : ""}>
+                        <input type="checkbox" class="js-promo-aktion" id="aktionspreisHK-checkbox" onchange="toggleAktionspreisFelder(); saveZubuchoptionen(null, this);" ${apAktiv ? "checked" : ""}>
 
 
 
@@ -7205,14 +7206,41 @@
                 `;
           }
 
-          // Selbst angelegte ("custom") Optionen als Standard-Checkbox in die Map.
+          // Selbst angelegte ("custom") Optionen/Aktionen in die Map.
           for (const optKey in ZUBUCHOPTIONEN_DETAILS) {
             if (!istCustomOption(optKey)) continue;
             const opt = ZUBUCHOPTIONEN_DETAILS[optKey];
             if (opt.rabattToggle) continue; // Rabatt-Optionen rendert der Rabatt-Loop
             if (!opt.isAvailable(tarif, kartenArt, cardId)) continue;
             const checked = currentOptions[optKey] ? "checked" : "";
-            itemHtmlByKey[optKey] = `
+            if (opt.berechnungsTyp === "prozentual_zeitlich") {
+              // %-Rabatt-Aktion: Checkbox mit "% Rabatt"-Label, Promo (gegenseitig exklusiv)
+              const lbl =
+                (opt.prozent || 0) + "% Rabatt" + (opt.dauerMonate ? ", " + opt.dauerMonate + " Monate" : "");
+              itemHtmlByKey[optKey] = `
+                    <div class="einstellungs-zeile modal-einstellung">
+                        <label for="custom-opt-${optKey}" class="einstellungs-label">${opt.name} (${lbl})</label>
+                        <label class="magenta-checkbox">
+                            <input type="checkbox" class="js-promo-aktion" id="custom-opt-${optKey}" data-opt-key="${optKey}" onchange="saveZubuchoptionen(null, this)" ${checked}>
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>`;
+            } else if (opt.berechnungsTyp === "festbetrag_zeitlich") {
+              // Festbetrag-Rabatt: Euro-Abzug vor RV-/Magenta-Rabatt, Promo (exklusiv)
+              const lbl =
+                formatCurrencyNumber(opt.betrag || 0) +
+                " € Rabatt" +
+                (opt.dauerMonate ? ", " + opt.dauerMonate + " Monate" : "");
+              itemHtmlByKey[optKey] = `
+                    <div class="einstellungs-zeile modal-einstellung">
+                        <label for="custom-opt-${optKey}" class="einstellungs-label">${opt.name} (${lbl})</label>
+                        <label class="magenta-checkbox">
+                            <input type="checkbox" class="js-promo-aktion" id="custom-opt-${optKey}" data-opt-key="${optKey}" onchange="saveZubuchoptionen(null, this)" ${checked}>
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>`;
+            } else {
+              itemHtmlByKey[optKey] = `
                     <div class="einstellungs-zeile modal-einstellung">
                         <label for="custom-opt-${optKey}" class="einstellungs-label">${opt.name} (${getDisplayPrice(
                           opt.getPreisNetto(tarif),
@@ -7222,6 +7250,7 @@
                             <span class="checkmark"></span>
                         </label>
                     </div>`;
+            }
           }
 
           // Optionen-Gruppen (optGruppen) wurden oben bereits ermittelt.
@@ -7393,66 +7422,25 @@
           tempZubuchoptions[cardId] = {};
         }
 
-        if (changedCheckbox && changedCheckbox.checked) {
-          const halbesJahrCheckbox = document.getElementById("halbesJahrhalberPreis-checkbox");
-
-          const vvlCheckbox = document.getElementById("vvlAktion-checkbox");
-
-          const aktionspreisHKCheckbox = document.getElementById("aktionspreisHK-checkbox");
-
-          if (changedCheckbox.id === "halbesJahrhalberPreis-checkbox") {
-            if (vvlCheckbox) {
-              vvlCheckbox.checked = false;
-
+        // Promo-Aktionen (eingebaut + eigene %-Aktionen) sind gegenseitig exklusiv:
+        // max. EINE Aktion pro Karte. Markiert ueber die Klasse .js-promo-aktion.
+        if (changedCheckbox && changedCheckbox.checked && changedCheckbox.classList.contains("js-promo-aktion")) {
+          document.querySelectorAll("#zubuchModalContent .js-promo-aktion").forEach((other) => {
+            if (other === changedCheckbox || !other.checked) return;
+            other.checked = false;
+            const oid = other.id;
+            if (oid === "vvlAktion-checkbox") {
               toggleVvlFelder();
-
-              if (tempZubuchoptions[cardId] && tempZubuchoptions[cardId].vvlAktion) {
-                delete tempZubuchoptions[cardId].vvlAktion;
-              }
-            }
-
-            if (aktionspreisHKCheckbox) {
-              aktionspreisHKCheckbox.checked = false;
-
+              if (tempZubuchoptions[cardId]) delete tempZubuchoptions[cardId].vvlAktion;
+            } else if (oid === "aktionspreisHK-checkbox") {
               toggleAktionspreisFelder();
-
-              if (tempZubuchoptions[cardId] && tempZubuchoptions[cardId].aktionspreisHK) {
-                delete tempZubuchoptions[cardId].aktionspreisHK;
-              }
+              if (tempZubuchoptions[cardId]) delete tempZubuchoptions[cardId].aktionspreisHK;
+            } else if (oid === "halbesJahrhalberPreis-checkbox") {
+              if (tempZubuchoptions[cardId]) tempZubuchoptions[cardId].halbesJahrhalberPreis = false;
+            } else if (other.dataset.optKey) {
+              if (tempZubuchoptions[cardId]) tempZubuchoptions[cardId][other.dataset.optKey] = false;
             }
-          } else if (changedCheckbox.id === "vvlAktion-checkbox") {
-            if (halbesJahrCheckbox) {
-              halbesJahrCheckbox.checked = false;
-
-              tempZubuchoptions[cardId].halbesJahrhalberPreis = false;
-            }
-
-            if (aktionspreisHKCheckbox) {
-              aktionspreisHKCheckbox.checked = false;
-
-              toggleAktionspreisFelder();
-
-              if (tempZubuchoptions[cardId] && tempZubuchoptions[cardId].aktionspreisHK) {
-                delete tempZubuchoptions[cardId].aktionspreisHK;
-              }
-            }
-          } else if (changedCheckbox.id === "aktionspreisHK-checkbox") {
-            if (halbesJahrCheckbox) {
-              halbesJahrCheckbox.checked = false;
-
-              tempZubuchoptions[cardId].halbesJahrhalberPreis = false;
-            }
-
-            if (vvlCheckbox) {
-              vvlCheckbox.checked = false;
-
-              toggleVvlFelder();
-
-              if (tempZubuchoptions[cardId] && tempZubuchoptions[cardId].vvlAktion) {
-                delete tempZubuchoptions[cardId].vvlAktion;
-              }
-            }
-          }
+          });
         }
 
         const dataunlimitedforfreeCheckbox = document.getElementById("dataunlimitedforfree-checkbox");
@@ -10896,6 +10884,19 @@
             };
           }
 
+          // Eigene Festbetrag-Aktionen (festbetrag_zeitlich): fester Euro-Abzug vom
+          // Grundpreis VOR RV-/BGE-Rabatt (wie VVL, aber im Admin vorkonfiguriert).
+          if (!promotionsInfo) {
+            for (const fbKey in options) {
+              if (!options[fbKey]) continue;
+              const fb = ZUBUCHOPTIONEN_DETAILS[fbKey];
+              if (!fb || fb.berechnungsTyp !== "festbetrag_zeitlich") continue;
+              vvlDiscount = fb.betrag || 0;
+              promotionsInfo = { name: fb.name, dauer: fb.dauerMonate, rabatt: fb.betrag || 0 };
+              break;
+            }
+          }
+
           const preisNachVvlPeriode1 = originalTarifPreis - vvlDiscount;
 
           const preisNachVvlPeriode2 = originalTarifPreis;
@@ -10960,6 +10961,19 @@
 
               aktionspreis: aktionspreisHKOptions.preis,
             };
+          }
+
+          // Eigene %-Rabatt-Aktionen (prozentual_zeitlich) – generisch, wie 6-Monats-Aktion.
+          if (!promotionsInfo) {
+            for (const promoKey in options) {
+              if (!options[promoKey] || promoKey === "halbesJahrhalberPreis") continue;
+              const pd = ZUBUCHOPTIONEN_DETAILS[promoKey];
+              if (!pd || pd.berechnungsTyp !== "prozentual_zeitlich") continue;
+              const rabattFaktor = 1 - (pd.prozent || 0) / 100;
+              basisPreisNettoPeriode1 = truncateToTwoDecimals(basisPreisNettoPeriode1 * rabattFaktor);
+              promotionsInfo = { name: pd.name, dauer: pd.dauerMonate };
+              break;
+            }
           }
         } else if (type === "Datenkarte") {
           const originalTarifPreis = details.preis;
@@ -11068,7 +11082,8 @@
               optionDetail.berechnungsTyp !== "prozentual_zeitlich" &&
               optionDetail.berechnungsTyp !== "manuell_zeitlich" &&
               optionDetail.berechnungsTyp !== "festpreis_aktion" &&
-              optionDetail.berechnungsTyp !== "aktionspreis_zeitlich"
+              optionDetail.berechnungsTyp !== "aktionspreis_zeitlich" &&
+              optionDetail.berechnungsTyp !== "festbetrag_zeitlich"
             ) {
               let optionPreisNetto =
                 typeof optionDetail.getPreisNetto === "function"
@@ -15052,6 +15067,19 @@
               '" value="' +
               (o.dauerMonate != null ? o.dauerMonate : "") +
               '" oninput="adminEditOptionDauer(this.dataset.key, this.value)"> Monate</label>';
+          } else if (o.berechnungsTyp === "festbetrag_zeitlich") {
+            html +=
+              '<label>Rabatt (netto, Abzug vor RV/Magenta) <input type="number" step="0.01" data-key="' +
+              adminEsc(key) +
+              '" value="' +
+              (o.betrag != null ? o.betrag : "") +
+              '" oninput="adminEditOptionBetrag(this.dataset.key, this.value)"> €</label>';
+            html +=
+              '<label>Dauer <input type="number" step="1" data-key="' +
+              adminEsc(key) +
+              '" value="' +
+              (o.dauerMonate != null ? o.dauerMonate : "") +
+              '" oninput="adminEditOptionDauer(this.dataset.key, this.value)"> Monate</label>';
           } else if (OPTIONEN_OHNE_FESTPREIS.includes(o.berechnungsTyp)) {
             html += '<span class="ap-opt-note">Preis/Wert wird pro Vorgang im Rechner eingegeben.</span>';
           } else {
@@ -15290,6 +15318,14 @@
         o.dauerMonate = isFinite(n) ? n : 0;
         adminMarkOptionenDirty();
       }
+      // Festbetrag (€) einer Festbetrag-Aktion setzen.
+      function adminEditOptionBetrag(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const n = parseFloat(String(val).replace(",", "."));
+        o.betrag = isFinite(n) ? n : 0;
+        adminMarkOptionenDirty();
+      }
       // Stufen-Ausnahme setzen/loeschen (leer = Standardpreis verwenden).
       function adminEditOptionStufenpreis(key, stufe, val) {
         const o = adminState.optionen[key];
@@ -15426,6 +15462,59 @@
             input.select();
           }
         }, 0);
+      }
+
+      // Neue %-Rabatt-Aktion anlegen (prozentual_zeitlich). Datengetrieben:
+      // Name, Prozent, Dauer. Standardmaessig nur Hauptkarte (wie die eingebaute
+      // 6-Monats-Aktion), da die Promo-Berechnung dort greift.
+      // Gemeinsamer Helper: neue Aktion (mit initialer Definition) anlegen + einsortieren.
+      function adminNeueAktion(def) {
+        adminState.optionen = adminState.optionen || {};
+        let key;
+        do {
+          key = "custom_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        } while (adminState.optionen[key]);
+        adminState.optionen[key] = def;
+        adminState.optionenGruppen = adminState.optionenGruppen || [];
+        let ziel = adminState.optionenGruppen.find((g) => g.id === "aktionen");
+        if (!ziel) ziel = adminState.optionenGruppen.find((g) => (g.kategorie || "option") === "aktion");
+        if (!ziel) {
+          ziel = { id: "aktionen", name: "Aktionen", kategorie: "aktion", collapsible: true, optionen: [] };
+          adminState.optionenGruppen.push(ziel);
+        }
+        ziel.optionen.push(key);
+        adminMarkOptionenDirty();
+        adminRenderAktionen();
+        setTimeout(() => {
+          const input = document.querySelector('#apAktionenList .ap-opt-name[data-key="' + key + '"]');
+          if (input) {
+            input.scrollIntoView({ block: "center" });
+            input.focus();
+            input.select();
+          }
+        }, 0);
+      }
+
+      // %-Rabatt-Aktion (prozentual_zeitlich).
+      function adminAddAktion() {
+        adminNeueAktion({
+          name: "Neue Aktion",
+          berechnungsTyp: "prozentual_zeitlich",
+          prozent: 50,
+          dauerMonate: 6,
+          regeln: { kartenArten: ["Hauptkarte"] },
+        });
+      }
+
+      // Festbetrag-Rabatt-Aktion (festbetrag_zeitlich): Euro-Abzug vor RV-/Magenta-Rabatt.
+      function adminAddFestbetragAktion() {
+        adminNeueAktion({
+          name: "Neue Festbetrag-Aktion",
+          berechnungsTyp: "festbetrag_zeitlich",
+          betrag: 8.4,
+          dauerMonate: 6,
+          regeln: { kartenArten: ["Hauptkarte"] },
+        });
       }
 
       // Option loeschen (auch eingebaute). Eingebaute lassen sich nur ueber
@@ -16458,6 +16547,8 @@
               </p>
               <div class="ap-optionen-list" id="apAktionenList"></div>
               <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="ap-add-tarif" onclick="adminAddAktion()">+ Aktion (%-Rabatt)</button>
+                <button class="ap-add-tarif" onclick="adminAddFestbetragAktion()">+ Aktion (Festbetrag €)</button>
                 <button class="ap-add-tarif" onclick="adminAddGruppe('aktion')">+ Gruppe hinzufügen</button>
               </div>
             </div>
