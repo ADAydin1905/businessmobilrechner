@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 12:29:17
+ * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 12:34:29
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -19,6 +19,7 @@ window.TARIFE_DATA = {
     "XXS",
     "XS",
     "S",
+    "Pro",
     "M",
     "L",
     "XL",
@@ -1039,6 +1040,36 @@ window.TARIFE_DATA = {
     },
     "Business Mobil XXS Premium": {
       "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro eco": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Top Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Premium-Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro Premium": {
+      "preis": 99.99,
       "inclusiveMultiSim": 0,
       "leistungen": [],
       "gruppe": "hauptkarte"
