@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
+ * Einzige Tarifdaten-Quelle. Per <script> geladen, vom Admin-Panel erzeugt.
  * Funktioniert per Doppelklick (file://) UND beim Hosten (https).
  */
 window.TARIFE_DATA = {

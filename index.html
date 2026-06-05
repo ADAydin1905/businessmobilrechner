@@ -14,9 +14,9 @@
 
     <!-- ===================================================================== -->
     <!-- EXTERNE TARIFDATEN (v2.0)                                             -->
-    <!-- tarife.js definiert window.TARIFE_DATA und funktioniert per           -->
-    <!-- Doppelklick (file://). Beim Hosten ueber https wird zusaetzlich       -->
-    <!-- tarife.json per fetch geladen (siehe ladeTarifDaten() weiter unten).  -->
+    <!-- tarife.js definiert window.TARIFE_DATA und wird per <script> geladen. -->
+    <!-- Funktioniert sowohl per Doppelklick (file://) als auch beim Hosten    -->
+    <!-- (GitHub Pages / eigener Webserver). Einzige Tarifdaten-Quelle.         -->
     <!-- Die Datei muss im SELBEN Ordner wie diese HTML-Datei liegen.          -->
     <!-- ===================================================================== -->
     <script src="tarife.js"></script>
@@ -2867,7 +2867,8 @@
         gap: 10px;
       }
       .ap-item-inaktiv {
-        opacity: 0.5;
+        opacity: 0.6;
+        background: rgba(128, 128, 128, 0.16);
       }
       .ap-item-inaktiv .ap-item-price {
         text-decoration: line-through;
@@ -2875,6 +2876,19 @@
       .ap-item-inaktiv-tag {
         font-size: 0.72em;
         background: #c0392b;
+        color: #fff;
+        border-radius: 5px;
+        padding: 1px 5px;
+        margin-left: 4px;
+        vertical-align: middle;
+      }
+      /* Entwurf: neu angelegter, noch nicht ausgefuellter Tarif (Preis/Leistungen) */
+      .ap-item-entwurf {
+        border-left: 3px solid #f39c12;
+      }
+      .ap-item-entwurf-tag {
+        font-size: 0.72em;
+        background: #f39c12;
         color: #fff;
         border-radius: 5px;
         padding: 1px 5px;
@@ -9679,46 +9693,20 @@
       // =====================================================================
       // TARIFDATEN-LADER (v2.0)
       // ---------------------------------------------------------------------
-      // Die Tarifdaten sind ab Version 2.0 in eine externe Datei ausgelagert:
-      //   - tarife.js   (window.TARIFE_DATA)  -> wird per <script> geladen,
-      //                                          funktioniert per Doppelklick.
-      //   - tarife.json (gleicher Inhalt)     -> wird beim Hosten ueber https
-      //                                          per fetch geladen.
+      // Die Tarifdaten liegen in EINER externen Datei:
+      //   - tarife.js (window.TARIFE_DATA) -> wird per <script> geladen.
+      //     Funktioniert per Doppelklick (file://) UND beim Hosten (GitHub
+      //     Pages / eigener Webserver). Synchron verfuegbar, kein fetch noetig.
       //
-      // Vorbereitet (noch ohne Funktion) fuer kommende Schritte:
-      //   - optionen.js / optionen.json   (Zubuchoptionen)
-      //   - rabatte.js  / rabatte.json    (Mitarbeiter-/BGE-Rabatte, Aktionen)
-      //   - aktionen.js / aktionen.json   (zeitlich begrenzte Aktionen)
-      // Diese werden spaeter nach demselben Muster eingebunden.
+      // Gleiches Muster fuer:
+      //   - optionen.js (window.OPTIONEN_DATA)  Zubuchoptionen
+      //   - rabatte.js  (window.RABATTE_DATA)   Mitarbeiter-/BGE-Rabatte
       // =====================================================================
 
       // Liefert die Tarifdaten synchron aus window.TARIFE_DATA (file://-tauglich).
-      // Beim Hosten ueber https kann stattdessen ladeTarifDatenAsync() genutzt
-      // werden (siehe unten) - die Datenstruktur ist identisch.
       function getTarifDatenSync() {
         if (window.TARIFE_DATA && window.TARIFE_DATA.tarife) {
           return window.TARIFE_DATA.tarife;
-        }
-        return null;
-      }
-
-      // Zukunftssicher: laedt tarife.json per fetch (nur ueber http/https sinnvoll).
-      // Wird aktuell NICHT zwingend gebraucht, da tarife.js synchron vorliegt.
-      // Bei einem Umzug auf GitHub Pages kann der Rechner darauf umgestellt werden,
-      // ohne die Datenstruktur zu aendern.
-      async function ladeTarifDatenAsync() {
-        // 1) Bereits per <script src="tarife.js"> geladen? Dann direkt nehmen.
-        const sync = getTarifDatenSync();
-        if (sync) return sync;
-        // 2) Sonst per fetch versuchen (funktioniert NUR ueber http/https).
-        try {
-          const res = await fetch("tarife.json");
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.tarife) return data.tarife;
-          }
-        } catch (e) {
-          console.warn("tarife.json konnte nicht per fetch geladen werden:", e);
         }
         return null;
       }
@@ -9732,9 +9720,7 @@
         const meldung =
           "Die Tarifdaten konnten nicht geladen werden.\n\n" +
           'Bitte sicherstellen, dass die Datei "tarife.js" im selben Ordner ' +
-          "wie der Rechner liegt.\n\n" +
-          "(Beim Hosten ueber einen Webserver/GitHub Pages wird stattdessen " +
-          '"tarife.json" verwendet.)';
+          "wie der Rechner liegt (lokal wie beim Hosten dieselbe Datei).";
         console.error(meldung);
         try {
           document.addEventListener("DOMContentLoaded", function () {
@@ -9785,6 +9771,20 @@
           if (tarifName.endsWith(suf)) return tarifName.slice(0, -suf.length);
         }
         return tarifName; // kein Suffix (z.B. Speedbox Flex)
+      }
+
+      // "Ohne Endgeraete-Zusatz = eco": Ein Tarifname ohne bekanntes Endgeraete-
+      // Suffix, der aber eine Stufe traegt (XS..XXL/Special), ist die eco-Variante
+      // und wird kanonisch zu "<Name> eco" normalisiert. Stufenlose Sonderprodukte
+      // (z.B. "MagentaMobil Business Speedbox Flex") bleiben unveraendert.
+      function normalisiereTarifName(tarifName) {
+        const n = (tarifName || "").trim();
+        if (!n) return n;
+        for (const suf of ENDGERAETE_SUFFIXE) {
+          if (n.endsWith(suf)) return n; // hat bereits ein Endgeraete-Suffix
+        }
+        if (stufeAusName(n) == null) return n; // keine Stufe -> Sonderprodukt (Flex)
+        return n + " eco";
       }
 
       // Ordnet einem Tarif automatisch eine Gruppe zu (für Migration).
@@ -9895,7 +9895,7 @@
       // =====================================================================
       // MITARBEITER-/BGE-RABATTE (v2.0) - aus rabatte.js geladen
       // ---------------------------------------------------------------------
-      // Werte stehen extern in rabatte.js / rabatte.json. Bearbeitung erfolgt
+      // Werte stehen extern in rabatte.js. Bearbeitung erfolgt
       // ueber das Admin-Panel; Aenderungen werden beim Export in beide
       // Dateien geschrieben.
       // Nur explizit aufgefuehrte Tarife erhalten Rabatte, alle anderen 0%.
@@ -14324,8 +14324,8 @@
       // NEUE ADMIN-LOGIK (v2.0) - Master/Detail-Editor
       // ===================================================================
       // Arbeits-State: Kopie der Tarifdaten, auf der editiert wird. Erst beim
-      // Export werden tarife.js + tarife.json erzeugt. Das Original
-      // (window.TARIFE_DATA) bleibt unangetastet, bis exportiert/committet wird.
+      // Export wird tarife.js erzeugt. Das Original (window.TARIFE_DATA)
+      // bleibt unangetastet, bis exportiert/committet wird.
       let adminState = {
         tarife: null, // Arbeitskopie (deep copy von tarifDetails)
         rabatte: null, // Arbeitskopie (deep copy von mitarbeiterRabatte)
@@ -14469,13 +14469,15 @@
             const t = adminState.tarife[k];
             const active = k === adminState.aktiverTarif ? " active" : "";
             const inaktiv = t.aktiv === false ? " ap-item-inaktiv" : "";
+            const entwurf = t.entwurf ? " ap-item-entwurf" : "";
             const preis = typeof t.preis === "number" ? t.preis.toFixed(2) + " €" : "–";
             html +=
-              '<div class="ap-item' + active + inaktiv + '" onclick="adminSelectTarif(this)" data-key="' + adminEsc(k) + '">';
+              '<div class="ap-item' + active + inaktiv + entwurf + '" onclick="adminSelectTarif(this)" data-key="' + adminEsc(k) + '">';
             html +=
               '<span class="ap-item-name">' +
               adminEsc(k) +
               (t.aktiv === false ? ' <span class="ap-item-inaktiv-tag">inaktiv</span>' : "") +
+              (t.entwurf ? ' <span class="ap-item-entwurf-tag">unvollständig</span>' : "") +
               "</span>";
             html += '<span class="ap-item-price">' + preis + "</span>";
             html += "</div>";
@@ -14631,10 +14633,17 @@
         if (el) el.textContent = adminState.dirty ? "● Ungespeicherte Änderungen" : "";
       }
 
+      // Entfernt die Entwurf-Markierung, sobald der Tarif inhaltlich bearbeitet
+      // wird (Preis / Leistungen / MultiSIM). Reines Umbenennen zaehlt NICHT.
+      function adminClearEntwurf(t) {
+        if (t && t.entwurf) delete t.entwurf;
+      }
+
       function adminEditPreis(input) {
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
         t.preis = parseFloat(input.value) || 0;
+        adminClearEntwurf(t);
         adminMarkDirty();
         adminRenderList(); // Preis in Liste aktualisieren
       }
@@ -14654,6 +14663,7 @@
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
         t.inclusiveMultiSim = parseInt(input.value, 10) || 0;
+        adminClearEntwurf(t);
         adminMarkDirty();
       }
 
@@ -14677,6 +14687,7 @@
         if (!t) return;
         const idx = parseInt(input.getAttribute("data-idx"), 10);
         t.leistungen[idx] = input.value;
+        adminClearEntwurf(t);
         adminMarkDirty();
       }
 
@@ -14684,6 +14695,7 @@
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
         t.leistungen.push("");
+        adminClearEntwurf(t);
         adminMarkDirty();
         adminRenderEditor(adminState.aktiverTarif);
       }
@@ -14698,7 +14710,8 @@
 
       function adminEditName(input) {
         const oldKey = adminState.aktiverTarif;
-        const newKey = input.value.trim();
+        // "Ohne Zusatz = eco": stufige Namen ohne Endgeraete-Suffix kanonisch machen.
+        const newKey = normalisiereTarifName(input.value.trim());
         if (!newKey || newKey === oldKey) {
           input.value = oldKey;
           return;
@@ -14786,6 +14799,7 @@
             inclusiveMultiSim: t.inclusiveMultiSim || 0,
             leistungen: JSON.parse(JSON.stringify(t.leistungen)),
             gruppe: gruppe,
+            entwurf: true, // erbt den Quell-Preis -> als unvollständig markiert, bis geprüft
           };
           // Nur einen EXPLIZITEN Stufen-Override erben. Laeuft die Familie auf
           // "Auto" (kein Feld), bleibt die neue Variante ebenfalls auf Auto –
@@ -14795,11 +14809,33 @@
           angelegt++;
         });
 
+        // "Ohne Zusatz = eco": existieren danach sowohl der bare Basis-Tarif als
+        // auch "<Basis> eco", ist der bare Eintrag redundant -> in eco ueberfuehren
+        // (BGE-Rabatt wandert mit, bare wird geloescht). Stufenlose Namen (Flex)
+        // bleiben unberuehrt, da normalisiereTarifName() dort kein eco anhaengt.
+        const ecoName = basis + " eco";
+        let bareEntfernt = false;
+        if (normalisiereTarifName(basis) === ecoName && adminState.tarife[basis] && adminState.tarife[ecoName]) {
+          if (adminState.rabatte) {
+            if (adminState.rabatte[basis] !== undefined && adminState.rabatte[ecoName] === undefined) {
+              adminState.rabatte[ecoName] = adminState.rabatte[basis];
+            }
+            if (adminState.rabatte[basis] !== undefined) {
+              delete adminState.rabatte[basis];
+              adminState.rabatteDirty = true;
+            }
+          }
+          delete adminState.tarife[basis];
+          if (adminState.aktiverTarif === basis) adminState.aktiverTarif = ecoName;
+          bareEntfernt = true;
+        }
+
         adminMarkDirty();
         adminRenderList();
         adminRenderEditor(adminState.aktiverTarif);
         let msg = angelegt + " Substufe(n) angelegt/aktualisiert.";
         if (uebersprungen > 0) msg += " " + uebersprungen + " übersprungen.";
+        if (bareEntfernt) msg += ' Bare "' + basis + '" durch "' + ecoName + '" ersetzt.';
         showAdminStatus("✅ " + msg + " Zum Speichern exportieren.", "success");
       }
 
@@ -14818,6 +14854,8 @@
           inclusiveMultiSim: 0,
           leistungen: [],
           gruppe: "hauptkarte",
+          aktiv: false, // neu -> erst inaktiv (im Rechner ausgeblendet), bis fertig + freigeschaltet
+          entwurf: true, // neu, noch nicht ausgefuellt -> in der Liste markiert
         };
         adminState.aktiverTarif = name;
         adminState.filter = "alle"; // sicherstellen, dass der neue Tarif sichtbar ist
@@ -15918,10 +15956,9 @@
           " * Automatisch erzeugt vom Admin-Panel am " +
           new Date().toLocaleString("de-DE") +
           "\n" +
-          " * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.\n" +
+          " * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.\n" +
           " */\n";
         const tarifeJsText = tarifeJsHeader + "window.TARIFE_DATA = " + tarifeJson + ";\n";
-        files.push({ name: "tarife.json", content: tarifeJson, mime: "application/json" });
         files.push({ name: "tarife.js", content: tarifeJsText, mime: "text/javascript" });
 
         // --- rabatte.* (nur, wenn veraendert) ---
@@ -15943,10 +15980,9 @@
             " * Automatisch erzeugt vom Admin-Panel am " +
             new Date().toLocaleString("de-DE") +
             "\n" +
-            " * Inhalt identisch zu rabatte.json. Beide Dateien nach GitHub committen.\n" +
+            " * Einzige Rabattdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.\n" +
             " */\n";
           const rabatteJsText = rabatteJsHeader + "window.RABATTE_DATA = " + rabatteJson + ";\n";
-          files.push({ name: "rabatte.json", content: rabatteJson, mime: "application/json" });
           files.push({ name: "rabatte.js", content: rabatteJsText, mime: "text/javascript" });
         }
 
@@ -15969,10 +16005,9 @@
             " * Automatisch erzeugt vom Admin-Panel am " +
             new Date().toLocaleString("de-DE") +
             "\n" +
-            " * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.\n" +
+            " * Einzige Optionsdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.\n" +
             " */\n";
           const optionenJsText = optionenJsHeader + "window.OPTIONEN_DATA = " + optionenJson + ";\n";
-          files.push({ name: "optionen.json", content: optionenJson, mime: "application/json" });
           files.push({ name: "optionen.js", content: optionenJsText, mime: "text/javascript" });
         }
         return files;
@@ -16678,7 +16713,7 @@
         <div class="ap-head">
           <div>
             <h2>🔧 Tarif-Administration</h2>
-            <div class="ap-sub">Business Mobil Rechner v2.0 · Daten in tarife.js / tarife.json</div>
+            <div class="ap-sub">Business Mobil Rechner v2.0 · Daten in tarife.js</div>
           </div>
           <div class="ap-spacer"></div>
           <span class="ap-userchip">👤 <strong id="adminUserDisplay">admin</strong></span>

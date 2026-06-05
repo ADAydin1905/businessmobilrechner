@@ -1,7 +1,13 @@
 # Business Mobil Rechner (BETA)
 
 Statischer Tarif-/Rabattrechner für Telekom Business Mobil. Rein client-seitig
-(HTML + JS + JSON), kein Server, kein Build-Schritt.
+(HTML + JS), kein Server, kein Build-Schritt.
+
+Die Daten liegen ausschließlich in den `*.js`-Dateien und werden per `<script>`
+geladen. Das funktioniert in **allen** Fällen identisch: lokal per Doppelklick
+(`file://`), auf GitHub Pages und auf einem eigenen Webserver. Es gibt bewusst
+**keine** parallelen `.json`-Dateien mehr (eine einzige Datenquelle, kein
+Divergenz-Risiko).
 
 ## Hosting (GitHub Pages – kostenlos)
 
@@ -16,10 +22,9 @@ Statischer Tarif-/Rabattrechner für Telekom Business Mobil. Rein client-seitig
 | Datei              | Zweck                                                        |
 |--------------------|-------------------------------------------------------------|
 | `index.html`       | Die komplette App (Rechner + Admin-Panel)                   |
-| `tarife.js`        | Tarifdaten als globale Variable (für `file://`-Nutzung)     |
-| `tarife.json`      | Identische Tarifdaten, werden per `fetch` über http(s) geladen |
-| `rabatte.js`       | Rabattdaten als globale Variable                            |
-| `rabatte.json`     | Identische Rabattdaten per `fetch`                          |
+| `tarife.js`        | Tarifdaten (`window.TARIFE_DATA`) – einzige Tarifdaten-Quelle |
+| `rabatte.js`       | Mitarbeiter-/BGE-Rabatte (`window.RABATTE_DATA`)            |
+| `optionen.js`      | Zubuchoptionen + Aktionen (`window.OPTIONEN_DATA`)          |
 | `github-config.js` | owner/repo/branch für das „Live speichern" des Admin-Panels |
 
 ## Einrichtung des Live-Speicherns
@@ -37,11 +42,11 @@ Statischer Tarif-/Rabattrechner für Telekom Business Mobil. Rein client-seitig
 2. Änderungen vornehmen → **🚀 Live speichern**.
 3. Beim ersten Mal das GitHub-Token eingeben (bleibt nur für die Sitzung im
    `sessionStorage`).
-4. Das Panel committet `tarife.json` + `tarife.js` (und ggf. `rabatte.*`)
-   direkt ins Repo. GitHub Pages baut neu → nach ~1 Min ist es live.
+4. Das Panel committet `tarife.js` (und je nach Änderung `rabatte.js` /
+   `optionen.js`) direkt ins Repo. GitHub Pages baut neu → nach ~1 Min ist es live.
 
-> **Fallback ohne Token:** Button **⬇️ Download** lädt die Dateien lokal
-> herunter; diese dann manuell ins Repo committen.
+> **Fallback ohne Token:** Button **⬇️ Download** lädt die geänderten `*.js`-Dateien
+> lokal herunter; diese dann manuell ins Repo committen.
 
 > ⚠️ **Sicherheit:** Wer ein gültiges Token + Zugriff auf das Admin-Panel hat,
 > schreibt direkt live (kein Review). Das Repo ist öffentlich, also niemals ein

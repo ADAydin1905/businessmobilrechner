@@ -2,12 +2,11 @@
  * rabatte.js  -  Mitarbeiter-/BGE-Rabatte fuer den Business Mobil Rechner (v2.0)
  *
  * Diese Datei wird per <script src="rabatte.js"> eingebunden und funktioniert
- * auch beim Oeffnen per Doppelklick (file://), wo fetch() blockiert waere.
- * Inhalt ist identisch zu rabatte.json. Beim Hosten ueber GitLab Pages /
- * einen Webserver wird stattdessen automatisch rabatte.json per fetch geladen.
+ * sowohl per Doppelklick (file://) als auch beim Hosten (GitHub Pages /
+ * eigener Webserver). Einzige Rabattdaten-Quelle - kein fetch noetig.
  *
- * Bearbeitung erfolgt ueber das Admin-Panel des Rechners. Nach dem Export
- * beide Dateien (rabatte.js UND rabatte.json) nach GitLab committen.
+ * Bearbeitung erfolgt ueber das Admin-Panel des Rechners. Beim Speichern
+ * wird rabatte.js direkt nach GitHub committed.
  */
 window.RABATTE_DATA = {
   "_meta": {
