@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 13:39:45
+ * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 14:28:48
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -16,14 +16,12 @@ window.TARIFE_DATA = {
     }
   },
   "stufen": [
-    "XXS",
     "XS",
     "S",
     "M",
     "L",
     "XL",
-    "XXL",
-    "Pro"
+    "XXL"
   ],
   "tarife": {
     "Business Mobil XS eco": {
@@ -1013,66 +1011,6 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
       ],
       "gruppe": "partnerdatenkarte"
-    },
-    "Business Mobil XXS eco": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil XXS mit Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil XXS mit Top Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil XXS mit Premium-Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil XXS Premium": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil Pro eco": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil Pro mit Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil Pro mit Top Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil Pro mit Premium-Handy": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
-    },
-    "Business Mobil Pro Premium": {
-      "preis": 0,
-      "inclusiveMultiSim": 0,
-      "leistungen": [],
-      "gruppe": "hauptkarte"
     }
   }
 };
