@@ -14,6 +14,7 @@
     "XXS",
     "XS",
     "S",
+    "Pro",
     "M",
     "L",
     "XL",
@@ -1034,6 +1035,36 @@
     },
     "Business Mobil XXS Premium": {
       "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro eco": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Top Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro mit Premium-Handy": {
+      "preis": 99.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil Pro Premium": {
+      "preis": 99.99,
       "inclusiveMultiSim": 0,
       "leistungen": [],
       "gruppe": "hauptkarte"
