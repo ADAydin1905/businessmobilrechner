@@ -1,14 +1,14 @@
 /*
  * optionen.js  -  Zubuchoptionen fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 14:28:48
  * Inhalt identisch zu optionen.json. Beide Dateien nach GitHub committen.
+ * Funktioniert per Doppelklick (file://) UND beim Hosten (https).
  */
 window.OPTIONEN_DATA = {
   "_meta": {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Zubuchoptionen fuer den Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-05",
+    "stand": "2026-06-01",
     "felderProOption": {
       "name": "Anzeigename der Option",
       "preisNetto": "Standard-Monatspreis netto (Zahl; negativ = Rabatt/Vorteil)",
@@ -19,85 +19,16 @@ window.OPTIONEN_DATA = {
       "regeln": "Verfuegbarkeits-Regeln (kartenArten, stufenIncl, stufenExcl, nameExcl, nameExclEnd, nameInclStart, erfordertHauptkartenOption)"
     }
   },
-  "gruppen": [
-    {
-      "id": "haeufig",
-      "name": "Häufig gebuchte Optionen",
-      "collapsible": false,
-      "optionen": [
-        "mobilityConnect",
-        "securityOnNetComfort",
-        "festeIPv6Adresse",
-        "magentaEinsVorteil",
-        "dataunlimitedforfree"
-      ],
-      "kategorie": "option"
-    },
-    {
-      "id": "festnetz",
-      "name": "Festnetzrufnummern",
-      "collapsible": true,
-      "optionen": [
-        "oneNumber",
-        "festnetznummer"
-      ],
-      "kategorie": "option"
-    },
-    {
-      "id": "ausland",
-      "name": "Auslandstelefonie",
-      "collapsible": true,
-      "optionen": [
-        "internationalWorld50",
-        "internationalWorld100",
-        "internationalWorld400",
-        "countryFlatWorld"
-      ],
-      "kategorie": "option"
-    },
-    {
-      "id": "aktionen",
-      "name": "Aktionen",
-      "collapsible": true,
-      "kategorie": "aktion",
-      "optionen": [
-        "halbesJahrhalberPreis",
-        "vvlAktion",
-        "aktionspreisHK",
-        "aktionspreisBusinessCardSpecial"
-      ]
-    },
-    {
-      "id": "weitere",
-      "name": "Weitere Optionen",
-      "collapsible": true,
-      "optionen": [],
-      "kategorie": "option"
-    }
-  ],
   "optionen": {
     "mobilityConnect": {
       "name": "Mobility Connect",
       "preisNetto": 8.36,
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "securityOnNetComfort": {
       "name": "Security OnNet Comfort",
       "preisNetto": 3.32,
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ],
-        "nameExcl": [
-          "Special"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"], "nameExcl": ["Special"] }
     },
     "festeIPv6Adresse": {
       "name": "Feste-IPv6-Adresse",
@@ -107,170 +38,77 @@ window.OPTIONEN_DATA = {
       "name": "International World 50",
       "preisNetto": 8.36,
       "rabattToggle": true,
-      "rabattStufen": [
-        0,
-        50,
-        100
-      ],
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "rabattStufen": [0, 50, 100],
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "internationalWorld100": {
       "name": "International World 100",
       "preisNetto": 16.76,
       "rabattToggle": true,
-      "rabattStufen": [
-        0,
-        50,
-        100
-      ],
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "rabattStufen": [0, 50, 100],
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "internationalWorld400": {
       "name": "International World 400",
       "preisNetto": 33.57,
       "rabattToggle": true,
-      "rabattStufen": [
-        0,
-        50,
-        100
-      ],
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "rabattStufen": [0, 50, 100],
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "countryFlatWorld": {
       "name": "CountryFlat World",
       "preisNetto": 75.62,
       "rabattToggle": true,
-      "rabattStufen": [
-        0,
-        50,
-        100
-      ],
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "rabattStufen": [0, 50, 100],
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "magentaEinsVorteil": {
       "name": "Magenta 1 Business Vorteil",
       "preisNetto": -5,
       "berechnungsTyp": "vorteil",
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte"
-        ],
-        "familienExcl": [
-          "Business Mobil XS"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte"], "familienExcl": ["Business Mobil XS"] }
     },
     "oneNumber": {
       "name": "OneNumber",
       "preisNetto": 8.36,
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "festnetznummer": {
       "name": "Festnetznummer",
       "preisNetto": 4.16,
-      "preisProStufe": {
-        "XL": 8.36,
-        "XXL": 8.36
-      },
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ]
-      }
+      "preisProStufe": { "XL": 8.36, "XXL": 8.36 },
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] }
     },
     "halbesJahrhalberPreis": {
       "name": "6 Monate 50% Rabatt",
       "berechnungsTyp": "prozentual_zeitlich",
       "prozent": 50,
       "dauerMonate": 6,
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte"
-        ],
-        "familienExcl": [
-          "Business Mobil XS"
-        ],
-        "nameExclEnd": [
-          " Premium"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte"], "familienExcl": ["Business Mobil XS"], "nameExclEnd": [" Premium"] }
     },
     "dataunlimitedforfree": {
       "name": "Data Plus Unlimited",
       "preisNetto": 0,
       "regeln": {
-        "kartenArten": [
-          "Hauptkarte",
-          "Partnerkarte"
-        ],
-        "stufenIncl": [
-          "M"
-        ],
+        "kartenArten": ["Hauptkarte", "Partnerkarte"],
+        "stufenIncl": ["M"],
         "erfordertHauptkartenOption": "dataunlimitedforfree"
       }
     },
     "vvlAktion": {
       "name": "Rabatt aus BSP / Carmen / MaVi (Abzug vom Grundpreis vor RV-Rabatt)",
       "berechnungsTyp": "manuell_zeitlich",
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte"] }
     },
     "aktionspreisHK": {
       "name": "Aktionspreis aus BSP / Carmen / MaVi (Endpreis nach Abzug von RV-Rabatt)",
       "berechnungsTyp": "aktionspreis_zeitlich",
-      "regeln": {
-        "kartenArten": [
-          "Hauptkarte"
-        ]
-      }
+      "regeln": { "kartenArten": ["Hauptkarte"] }
     },
     "aktionspreisBusinessCardSpecial": {
       "name": "Aktionspreis Business Card Special",
       "berechnungsTyp": "festpreis_aktion",
-      "regeln": {
-        "nameInclStart": [
-          "Business Card Special"
-        ],
-        "kartenArten": [
-          "Partnerkarte"
-        ],
-        "familienExcl": [
-          "Business Card L",
-          "Business Card M",
-          "Business Card S",
-          "Business Card XL",
-          "Business Card XS"
-        ]
-      }
+      "regeln": { "nameInclStart": ["Business Card Special"] }
     }
   }
 };

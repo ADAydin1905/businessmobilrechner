@@ -2866,6 +2866,33 @@
         align-items: center;
         gap: 10px;
       }
+      .ap-item-inaktiv {
+        opacity: 0.5;
+      }
+      .ap-item-inaktiv .ap-item-price {
+        text-decoration: line-through;
+      }
+      .ap-item-inaktiv-tag {
+        font-size: 0.72em;
+        background: #c0392b;
+        color: #fff;
+        border-radius: 5px;
+        padding: 1px 5px;
+        margin-left: 4px;
+        vertical-align: middle;
+      }
+      .ap-tarif-aktiv {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.9em;
+        font-weight: 600;
+        margin: 2px 0 14px;
+        color: #1f9d55;
+      }
+      .ap-tarif-aktiv.inaktiv {
+        color: #c0392b;
+      }
       .ap-item:hover {
         background: var(--card-bg);
       }
@@ -9852,14 +9879,14 @@
           let varianten = 0;
           endgeraeteOptionen.forEach((opt) => {
             const name = basis + " " + opt;
-            if (tarifDetails[name]) {
+            if (tarifDetails[name] && tarifDetails[name].aktiv !== false) {
               html += '<option value="' + name + '">' + name + "</option>";
               varianten++;
             }
           });
           // Fallback: kein Suffix-Tarif gefunden, aber Basis-Name existiert
           // (z.B. "MagentaMobil Business Speedbox Flex")
-          if (varianten === 0 && tarifDetails[basis]) {
+          if (varianten === 0 && tarifDetails[basis] && tarifDetails[basis].aktiv !== false) {
             html += '<option value="' + basis + '">' + basis + "</option>";
           }
         });
@@ -10493,7 +10520,7 @@
               return optionen
                 .map((o) => {
                   const name = `${t} ${o}`;
-                  return tarifDetails[name] ? `<option value="${name}">${name}</option>` : "";
+                  return tarifDetails[name] && tarifDetails[name].aktiv !== false ? `<option value="${name}">${name}</option>` : "";
                 })
                 .join("");
             })
@@ -10636,7 +10663,7 @@
                 return optionen
                   .map((o) => {
                     const name = `${t} ${o}`;
-                    return tarifDetails[name] ? `<option value="${name}">${name}</option>` : "";
+                    return tarifDetails[name] && tarifDetails[name].aktiv !== false ? `<option value="${name}">${name}</option>` : "";
                   })
                   .join("");
               })
@@ -10648,7 +10675,7 @@
           .map((t) => {
             // Hilfsfunktion: nur ausgeben, wenn der Tarif tatsaechlich existiert
             const opt = (name) =>
-              tarifDetails[name] ? `<option value="${name}">${name}</option>` : "";
+              tarifDetails[name] && tarifDetails[name].aktiv !== false ? `<option value="${name}">${name}</option>` : "";
 
             // Speedbox Flex: ohne Endgeraete-Suffix
             if (t === "MagentaMobil Business Speedbox Flex") {
@@ -14441,9 +14468,15 @@
           groups[g].forEach((k) => {
             const t = adminState.tarife[k];
             const active = k === adminState.aktiverTarif ? " active" : "";
+            const inaktiv = t.aktiv === false ? " ap-item-inaktiv" : "";
             const preis = typeof t.preis === "number" ? t.preis.toFixed(2) + " €" : "–";
-            html += '<div class="ap-item' + active + '" onclick="adminSelectTarif(this)" data-key="' + adminEsc(k) + '">';
-            html += '<span class="ap-item-name">' + adminEsc(k) + "</span>";
+            html +=
+              '<div class="ap-item' + active + inaktiv + '" onclick="adminSelectTarif(this)" data-key="' + adminEsc(k) + '">';
+            html +=
+              '<span class="ap-item-name">' +
+              adminEsc(k) +
+              (t.aktiv === false ? ' <span class="ap-item-inaktiv-tag">inaktiv</span>' : "") +
+              "</span>";
             html += '<span class="ap-item-price">' + preis + "</span>";
             html += "</div>";
           });
@@ -14480,6 +14513,19 @@
           adminEsc(key) +
           '" data-field="name" onchange="adminEditName(this)" />';
         html += "</div>";
+
+        // Aktiv/Inaktiv: inaktive Tarife sind im Rechner ausgeblendet (vorbereitbar)
+        {
+          const tarifAktiv = t.aktiv !== false;
+          html +=
+            '<label class="ap-tarif-aktiv' +
+            (tarifAktiv ? "" : " inaktiv") +
+            '" title="Inaktive Tarife erscheinen NICHT in den Rechner-Dropdowns – zum Vorbereiten und späteren Freischalten."><input type="checkbox" ' +
+            (tarifAktiv ? "checked" : "") +
+            ' onchange="adminToggleTarifAktiv(this.checked)"> ' +
+            (tarifAktiv ? "Aktiv (im Rechner sichtbar)" : "Inaktiv (im Rechner ausgeblendet)") +
+            "</label>";
+        }
 
         // Gruppen-Auswahl (bestimmt, wo der Tarif im Rechner auftaucht)
         const aktuelleGruppe = t.gruppe || ermittleGruppe(key);
@@ -14591,6 +14637,17 @@
         t.preis = parseFloat(input.value) || 0;
         adminMarkDirty();
         adminRenderList(); // Preis in Liste aktualisieren
+      }
+
+      // Tarif aktiv/inaktiv schalten. Inaktiv = im Rechner ausgeblendet (vorbereitbar).
+      function adminToggleTarifAktiv(checked) {
+        const t = adminState.tarife[adminState.aktiverTarif];
+        if (!t) return;
+        if (checked) delete t.aktiv;
+        else t.aktiv = false;
+        adminMarkDirty();
+        adminRenderList();
+        adminRenderEditor(adminState.aktiverTarif);
       }
 
       function adminEditMultiSim(input) {
