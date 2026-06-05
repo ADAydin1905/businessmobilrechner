@@ -6155,10 +6155,11 @@
       // Namens-Fallback. Prueft alle Stufen-Labels als ganze Woerter (\b),
       // laengste zuerst (XXL vor XL, XXS vor XS), damit Teilstrings nicht
       // faelschlich matchen ("Mobil" -> nicht "M"/"L").
-      function stufeAusName(tarifname) {
+      function stufeAusName(tarifname, reihenfolge) {
         if (!tarifname) return null;
         if (tarifname.includes("Special")) return "Special";
-        const sortiert = TARIF_STUFEN_REIHENFOLGE.slice().sort((a, b) => b.length - a.length);
+        const liste = Array.isArray(reihenfolge) && reihenfolge.length ? reihenfolge : TARIF_STUFEN_REIHENFOLGE;
+        const sortiert = liste.slice().sort((a, b) => b.length - a.length);
         for (const label of sortiert) {
           const esc = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           if (new RegExp("\\b" + esc + "\\b").test(tarifname)) return label;
@@ -14417,6 +14418,23 @@
           (groups[g] = groups[g] || []).push(k);
         });
 
+        // Innerhalb jeder Kategorie nach Stufen-Rang sortieren (stabil), damit neue
+        // Tarife korrekt einsortiert werden statt unten zu landen.
+        const stufenliste = adminState.stufen || TARIF_STUFEN_REIHENFOLGE;
+        const rangTarif = (k) => {
+          const t = adminState.tarife[k] || {};
+          const lbl = t.stufe && stufenliste.includes(t.stufe) ? t.stufe : stufeAusName(k, stufenliste);
+          if (lbl === "Special") return 9000;
+          const i = stufenliste.indexOf(lbl);
+          return i === -1 ? 9999 : i;
+        };
+        Object.keys(groups).forEach((g) => {
+          groups[g] = groups[g]
+            .map((k, i) => [k, i])
+            .sort((a, b) => rangTarif(a[0]) - rangTarif(b[0]) || a[1] - b[1])
+            .map((p) => p[0]);
+        });
+
         let html = "";
         Object.keys(groups).forEach((g) => {
           html += '<div class="ap-group-title">' + adminEsc(g) + "</div>";
@@ -14854,7 +14872,7 @@
         };
 
         const familienRank = (basis) => {
-          const lbl = getTarifStufeLabel(basis);
+          const lbl = stufeAusName(basis, stufenListe);
           const i = stufenListe.indexOf(lbl);
           return i === -1 ? (lbl === "Special" ? 9000 : 9999) : i;
         };
@@ -14866,7 +14884,7 @@
           html += '<div class="ap-stufen-group">' + gruppenLabel[g] + "</div>";
           familien.forEach((basis) => {
             const varianten = relevant[g][basis];
-            const autoLabel = stufeAusName(basis) || "—";
+            const autoLabel = stufeAusName(basis, stufenListe) || "—";
             // Override nur, wenn ALLE Varianten dieselbe explizite Stufe tragen
             const gesetzte = new Set(varianten.map((n) => adminState.tarife[n].stufe || ""));
             const override = gesetzte.size === 1 ? [...gesetzte][0] : "";
