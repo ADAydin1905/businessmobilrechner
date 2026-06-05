@@ -3224,6 +3224,57 @@
         gap: 6px;
         margin-top: 8px;
       }
+      /* Editierbare Stufen-Reihenfolge */
+      .ap-stufenreihe {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .ap-stufe-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--card-bg);
+        border: 1px solid var(--ap-border, #ddd);
+        border-radius: 18px;
+        padding: 5px 10px 5px 8px;
+        font-weight: 600;
+        font-size: 0.9em;
+      }
+      .ap-stufe-drag {
+        cursor: grab;
+        color: #b0b0b0;
+      }
+      .ap-stufe-del {
+        border: none;
+        background: transparent;
+        color: #c0392b;
+        cursor: pointer;
+        font-size: 0.95em;
+        line-height: 1;
+        padding: 0 2px;
+      }
+      .ap-stufe-del:hover {
+        color: #fff;
+        background: #c0392b;
+        border-radius: 50%;
+      }
+      .ap-stufen-add {
+        display: flex;
+        gap: 8px;
+        margin: 0 0 18px;
+        flex-wrap: wrap;
+      }
+      .ap-stufen-add input {
+        width: 130px;
+        padding: 8px 10px;
+        border: 1px solid var(--ap-border, #ddd);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-family: var(--font-family);
+      }
       .ap-stufen-group {
         font-weight: 700;
         color: var(--primary-color);
@@ -6082,21 +6133,36 @@
       // (im Admin-Panel pflegbar) gelesen; nur als Notnagel faellt sie auf eine
       // robuste Namens-Erkennung zurueck (fuer Alt-Daten ohne `stufe`).
       // =====================================================================
-      const TARIF_STUFEN_RANG = { XS: 0, S: 1, M: 2, L: 3, XL: 4, XXL: 5 };
-      const TARIF_STUFEN_LABELS = ["XS", "S", "M", "L", "XL", "XXL", "Special"];
+      // Editierbare Stufen-Reihenfolge (Quelle der Wahrheit). Aus TARIFE_DATA.stufen
+      // (im Admin pflegbar) oder Standard. Rang = Listenposition. Treibt Sortierung,
+      // Partnerkarten-Kompatibilitaet und die Auswahl im Tarifstufen-Tab.
+      let TARIF_STUFEN_REIHENFOLGE =
+        window.TARIFE_DATA && Array.isArray(window.TARIFE_DATA.stufen) && window.TARIFE_DATA.stufen.length
+          ? window.TARIFE_DATA.stufen.slice()
+          : ["XS", "S", "M", "L", "XL", "XXL"];
+      let TARIF_STUFEN_RANG = {};
+      let TARIF_STUFEN_LABELS = [];
+      // Leitet RANG (Label->Index) + LABELS (Liste + "Special") aus der Reihenfolge ab.
+      function aktualisiereStufenAbleitungen() {
+        TARIF_STUFEN_RANG = {};
+        TARIF_STUFEN_REIHENFOLGE.forEach((label, i) => {
+          TARIF_STUFEN_RANG[label] = i;
+        });
+        TARIF_STUFEN_LABELS = [...TARIF_STUFEN_REIHENFOLGE, "Special"];
+      }
+      aktualisiereStufenAbleitungen();
 
-      // Namens-Fallback. Wortgrenzen (\b) verhindern, dass Teilstrings wie
-      // "Mobil" faelschlich als "M" oder "L" matchen. Reihenfolge: groesste
-      // bzw. spezifischste zuerst.
+      // Namens-Fallback. Prueft alle Stufen-Labels als ganze Woerter (\b),
+      // laengste zuerst (XXL vor XL, XXS vor XS), damit Teilstrings nicht
+      // faelschlich matchen ("Mobil" -> nicht "M"/"L").
       function stufeAusName(tarifname) {
         if (!tarifname) return null;
         if (tarifname.includes("Special")) return "Special";
-        if (/\bXXL\b/.test(tarifname)) return "XXL";
-        if (/\bXL\b/.test(tarifname)) return "XL";
-        if (/\bXS\b/.test(tarifname)) return "XS";
-        if (/\bL\b/.test(tarifname)) return "L";
-        if (/\bM\b/.test(tarifname)) return "M";
-        if (/\bS\b/.test(tarifname)) return "S";
+        const sortiert = TARIF_STUFEN_REIHENFOLGE.slice().sort((a, b) => b.length - a.length);
+        for (const label of sortiert) {
+          const esc = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          if (new RegExp("\\b" + esc + "\\b").test(tarifname)) return label;
+        }
         return null;
       }
 
@@ -9738,6 +9804,33 @@
         businessCardTarife = merge(businessCardTarife, pk);
         businessDataTarife = merge(businessDataTarife, hdk);
         businessDataCardTarife = merge(businessDataCardTarife, pdk);
+
+        // Nach Stufe sortieren (Listenposition), damit neue Tarife korrekt
+        // einsortiert werden (z.B. XXS vor XS). Unbekannte Stufe ans Ende.
+        const stufeRankBasis = (basis) => {
+          let label = getTarifStufeLabel(basis);
+          if (label == null) {
+            for (const suf of ENDGERAETE_SUFFIXE) {
+              const v = tarifDetails[basis + suf];
+              if (v && v.stufe) {
+                label = v.stufe;
+                break;
+              }
+            }
+          }
+          if (label === "Special") return 9000;
+          const r = TARIF_STUFEN_RANG[label];
+          return r == null ? 9999 : r;
+        };
+        const sortNachStufe = (arr) =>
+          arr
+            .map((x, i) => [x, i])
+            .sort((a, b) => stufeRankBasis(a[0]) - stufeRankBasis(b[0]) || a[1] - b[1])
+            .map((p) => p[0]);
+        businessMobilTarife = sortNachStufe(businessMobilTarife);
+        businessCardTarife = sortNachStufe(businessCardTarife);
+        businessDataTarife = sortNachStufe(businessDataTarife);
+        businessDataCardTarife = sortNachStufe(businessDataCardTarife);
       }
       aktualisiereTarifListen();
 
@@ -14253,6 +14346,8 @@
         adminState.tarife = JSON.parse(JSON.stringify(tarifDetails));
         adminState.rabatte = JSON.parse(JSON.stringify(mitarbeiterRabatte || {}));
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
+        // Editierbare Stufen-Reihenfolge (Arbeitsstand)
+        adminState.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
         // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
         adminState.optionen = JSON.parse(
           JSON.stringify((window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {}),
@@ -14718,7 +14813,32 @@
       function adminRenderStufen() {
         const el = document.getElementById("apStufenList");
         if (!el) return;
+        adminState.stufen = adminState.stufen || TARIF_STUFEN_REIHENFOLGE.slice();
+        const stufenListe = adminState.stufen;
+        const stufenLabels = [...stufenListe, "Special"];
 
+        let html = "";
+
+        // 1) Editierbare Stufen-Reihenfolge (klein -> gross)
+        html += '<div class="ap-stufen-group">⚙️ Stufen-Reihenfolge (klein → groß)</div>';
+        html +=
+          '<p class="ap-rabatte-hint" style="margin:2px 0 10px;">Bestimmt die Sortierung in den Dropdowns <strong>und</strong> die Partnerkarten-Kompatibilität ' +
+          "(eine Partnerkarte passt an jede Hauptkarte mit gleicher oder höherer Stufe). Per Drag&nbsp;&amp;&nbsp;Drop sortieren, neue Größen ergänzen.</p>";
+        html += '<div class="ap-stufenreihe" id="apStufenReihe">';
+        stufenListe.forEach((s) => {
+          html +=
+            '<span class="ap-stufe-chip" data-stufe="' +
+            adminEsc(s) +
+            '"><span class="ap-stufe-drag" title="Verschieben">⠿</span>' +
+            adminEsc(s) +
+            "<button class=\"ap-stufe-del\" title=\"Entfernen\" onclick=\"adminRemoveStufe(this.closest('.ap-stufe-chip').dataset.stufe)\">✕</button></span>";
+        });
+        html += "</div>";
+        html +=
+          '<div class="ap-stufen-add"><input type="text" id="apStufeNeu" placeholder="z.B. XXS" maxlength="6" onkeydown="if(event.key===\'Enter\'){adminAddStufe();}">' +
+          '<button class="ap-btn ap-btn-primary" onclick="adminAddStufe()">+ Stufe hinzufügen</button></div>';
+
+        // 2) Pro Familie: Stufen-Zuordnung (nutzt den Arbeitsstand der Liste)
         // Varianten nach Gruppe + Basis-Familie buendeln (nur Telefonie-Karten)
         const relevant = { hauptkarte: {}, partnerkarte: {} };
         Object.keys(adminState.tarife).forEach((name) => {
@@ -14733,9 +14853,15 @@
           partnerkarte: "💳 Business Card (Partnerkarten)",
         };
 
-        let html = "";
+        const familienRank = (basis) => {
+          const lbl = getTarifStufeLabel(basis);
+          const i = stufenListe.indexOf(lbl);
+          return i === -1 ? (lbl === "Special" ? 9000 : 9999) : i;
+        };
         ["hauptkarte", "partnerkarte"].forEach((g) => {
-          const familien = Object.keys(relevant[g]).sort();
+          const familien = Object.keys(relevant[g]).sort(
+            (a, b) => familienRank(a) - familienRank(b) || a.localeCompare(b),
+          );
           if (!familien.length) return;
           html += '<div class="ap-stufen-group">' + gruppenLabel[g] + "</div>";
           familien.forEach((basis) => {
@@ -14752,8 +14878,8 @@
               adminEsc(basis) +
               '" onchange="adminSetStufenOverride(this.dataset.basis, this.value)">';
             html += '<option value="">Auto – aus Name (' + autoLabel + ")</option>";
-            TARIF_STUFEN_LABELS.forEach((s) => {
-              html += '<option value="' + s + '"' + (s === override ? " selected" : "") + ">" + s + "</option>";
+            stufenLabels.forEach((s) => {
+              html += '<option value="' + adminEsc(s) + '"' + (s === override ? " selected" : "") + ">" + adminEsc(s) + "</option>";
             });
             html += "</select>";
             html +=
@@ -14765,8 +14891,60 @@
             html += "</div>";
           });
         });
-        if (!html) html = '<div class="ap-empty">Keine Business-Mobil-/Business-Card-Tarife vorhanden.</div>';
         el.innerHTML = html;
+        // Drag&Drop fuer die Stufen-Reihenfolge
+        if (typeof Sortable !== "undefined") {
+          const reihe = document.getElementById("apStufenReihe");
+          if (reihe) {
+            new Sortable(reihe, {
+              handle: ".ap-stufe-drag",
+              animation: 150,
+              onEnd: adminSyncStufenAusDOM,
+            });
+          }
+        }
+      }
+
+      // Neue Stufe hinzufuegen (ans Ende). "Special" ist reserviert.
+      function adminAddStufe() {
+        const inp = document.getElementById("apStufeNeu");
+        if (!inp) return;
+        const val = (inp.value || "").trim();
+        if (!val) return;
+        adminState.stufen = adminState.stufen || [];
+        if (val.toLowerCase() === "special") {
+          alert('"Special" ist reserviert und immer verfügbar.');
+          return;
+        }
+        if (adminState.stufen.includes(val)) {
+          alert('Stufe "' + val + '" existiert bereits.');
+          return;
+        }
+        adminState.stufen.push(val);
+        inp.value = "";
+        adminMarkDirty();
+        adminRenderStufen();
+      }
+
+      // Stufe entfernen.
+      function adminRemoveStufe(label) {
+        adminState.stufen = (adminState.stufen || []).filter((s) => s !== label);
+        if (!adminState.stufen.length) {
+          adminState.stufen = [label]; // mindestens eine Stufe behalten
+          alert("Mindestens eine Stufe muss bestehen bleiben.");
+          return;
+        }
+        adminMarkDirty();
+        adminRenderStufen();
+      }
+
+      // Reihenfolge nach Drag&Drop aus dem DOM uebernehmen.
+      function adminSyncStufenAusDOM() {
+        const reihe = document.getElementById("apStufenReihe");
+        if (!reihe) return;
+        adminState.stufen = [...reihe.querySelectorAll(".ap-stufe-chip")].map((c) => c.dataset.stufe);
+        adminMarkDirty();
+        adminRenderStufen();
       }
 
       // Override fuer eine ganze Familie setzen ("" = zurueck auf Namens-Automatik).
@@ -15653,7 +15831,11 @@
             ? JSON.parse(JSON.stringify(window.TARIFE_DATA._meta))
             : { schemaVersion: "1.0", appVersion: "2.0" };
         tarifeMeta.stand = new Date().toISOString().slice(0, 10);
-        const tarifeOut = { _meta: tarifeMeta, tarife: adminState.tarife };
+        const tarifeOut = {
+          _meta: tarifeMeta,
+          stufen: adminState.stufen || TARIF_STUFEN_REIHENFOLGE.slice(),
+          tarife: adminState.tarife,
+        };
         const tarifeJson = JSON.stringify(tarifeOut, null, 2);
         const tarifeJsHeader =
           "/*\n" +
@@ -16084,7 +16266,14 @@
               window.OPTIONEN_DATA.gruppen = JSON.parse(JSON.stringify(adminState.optionenGruppen));
             ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
           }
-          // Basis-Listen neu ableiten und Dropdowns neu aufbauen
+          // Stufen-Reihenfolge uebernehmen + Ableitungen (Rang/Labels) neu rechnen
+          if (Array.isArray(adminState.stufen) && adminState.stufen.length) {
+            TARIF_STUFEN_REIHENFOLGE = adminState.stufen.slice();
+            aktualisiereStufenAbleitungen();
+            window.TARIFE_DATA = window.TARIFE_DATA || {};
+            window.TARIFE_DATA.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
+          }
+          // Basis-Listen neu ableiten und Dropdowns neu aufbauen (jetzt nach Stufe sortiert)
           if (typeof aktualisiereTarifListen === "function") aktualisiereTarifListen();
           if (typeof renderTarifDropdowns === "function") renderTarifDropdowns();
           // Rahmenvertrags-Rabatt-Dropdown global neu befuellen (mit aktueller Liste)
