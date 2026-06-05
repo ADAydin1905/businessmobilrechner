@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 4.6.2026, 21:26:04
+ * Automatisch erzeugt vom Admin-Panel am 5.6.2026, 09:30:19
  * Inhalt identisch zu tarife.json. Beide Dateien nach GitHub committen.
  */
 window.TARIFE_DATA = {
@@ -8,7 +8,7 @@ window.TARIFE_DATA = {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-04",
+    "stand": "2026-06-05",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
@@ -1003,6 +1003,42 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
       ],
       "gruppe": "partnerdatenkarte"
+    },
+    "Business Mobil XXS": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXS eco": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXS mit Handy": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXS mit Top Handy": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXS mit Premium-Handy": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
+    },
+    "Business Mobil XXS Premium": {
+      "preis": 12.56,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte"
     }
   }
 };
