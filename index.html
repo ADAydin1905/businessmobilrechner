@@ -4897,6 +4897,18 @@
         console.warn("optionen.js (window.OPTIONEN_DATA) nicht geladen - Zubuchoptionen fehlen.");
       }
 
+      // Sicherstellen, dass die Preisquelle-Option "multiSim" existiert (falls eine
+      // aeltere optionen.js sie noch nicht enthaelt). Default = frueheres Verhalten
+      // (L/XL/XXL = 25,17, sonst 4,16). Wird NICHT als Checkbox gerendert (siehe
+      // BUILTIN_OPTION_KEYS), nur als Preisquelle fuer getMultiSimPriceNetto.
+      if (window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen && !window.OPTIONEN_DATA.optionen.multiSim) {
+        window.OPTIONEN_DATA.optionen.multiSim = {
+          name: "MultiSIM",
+          preisNetto: 4.16,
+          preisProStufe: { L: 25.17, XL: 25.17, XXL: 25.17 },
+        };
+      }
+
       // Laufzeit-Objekt (let, damit es nach Admin-Aenderungen neu gebaut werden kann).
       let ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
 
@@ -4941,6 +4953,10 @@
         "vvlAktion",
         "aktionspreisHK",
         "aktionspreisBusinessCardSpecial",
+        // MultiSIM: reine Preisquelle-Option (kein Buchungs-Checkbox-Block im Modal).
+        // Hier gelistet, damit der generische Custom-Loop sie NICHT als Checkbox
+        // rendert und sie nicht loeschbar ist. Preis/Ausnahmen pflegt man im Optionen-Tab.
+        "multiSim",
       ];
       function istCustomOption(key) {
         return !BUILTIN_OPTION_KEYS.includes(key);
@@ -6200,24 +6216,13 @@
         }, 100);
       }
 
-      // MultiSIM-Uebermengenpreis (netto): zentral & stufen-basiert. Standardpreis +
-      // optionale Ausnahmen je Stufe, datengetrieben aus TARIFE_DATA.multiSim (im
-      // Tarifstufen-Tab pflegbar). Default entspricht der frueheren Hartcodierung
-      // (L/XL/XXL = 25,17, sonst 4,16).
-      let MULTISIM_CONFIG =
-        window.TARIFE_DATA && window.TARIFE_DATA.multiSim
-          ? JSON.parse(JSON.stringify(window.TARIFE_DATA.multiSim))
-          : { standard: 4.16, proStufe: { L: 25.17, XL: 25.17, XXL: 25.17 } };
-      if (!MULTISIM_CONFIG.proStufe) MULTISIM_CONFIG.proStufe = {};
-
+      // MultiSIM-Uebermengenpreis (netto): kommt aus der Option "multiSim" (Optionen-Tab),
+      // ueber das gewohnte preisNetto + preisProStufe-Muster (wie z.B. Festnetznummer).
+      // optionPreisNetto() liefert die Stufen-Ausnahme oder den Standardpreis.
       function getMultiSimPriceNetto(tarifName) {
-        const std =
-          MULTISIM_CONFIG && typeof MULTISIM_CONFIG.standard === "number" ? MULTISIM_CONFIG.standard : 4.16;
-        if (!tarifName) return std;
-        const label = getTarifStufeLabel(tarifName);
-        const pro = MULTISIM_CONFIG && MULTISIM_CONFIG.proStufe;
-        if (label && pro && pro[label] != null) return pro[label];
-        return std;
+        const od = window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen && window.OPTIONEN_DATA.optionen.multiSim;
+        if (od) return optionPreisNetto(od, tarifName);
+        return 4.16; // Fallback, falls die Option fehlt
       }
 
       function getDisplayName(tarifName) {
@@ -7469,8 +7474,15 @@
             ]);
           } else {
             // Für Haupt- und Partnerkarten die normale Ansicht
+            // MultiSIM-Option-Verfuegbarkeit (im Optionen-Tab pflegbar) beachten: ist die
+            // Option fuer diesen Tarif/Kartenart ausgeschlossen, wird der Mehrkartenservice
+            // (kostenpflichtige MultiSIMs) gar nicht erst angezeigt.
+            const multiSimVerfuegbar =
+              ZUBUCHOPTIONEN_DETAILS.multiSim && typeof ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable === "function"
+                ? ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable(tarif, kartenArt, cardId)
+                : true;
 
-            const mehrkartenserviceHTML = `
+            const mehrkartenserviceHTML = multiSimVerfuegbar ? `
 
 
 
@@ -7558,14 +7570,15 @@
 
 
 
-                        </div>`;
+                        </div>` : "";
             modalContent.innerHTML = zubuchTabShell([
               { id: "optionen", label: "Optionen", html: mehrkartenserviceHTML + gruppenOptionenHTML },
               { id: "aktionen", label: "Aktionen", html: aktionenOptionenHTML },
               { id: "uebertragen", label: "Konfiguration übertragen", html: konfigHTML },
             ]);
 
-            document.getElementById("multisim-select").value = currentMultiSimSelection;
+            const __msSel = document.getElementById("multisim-select");
+            if (__msSel) __msSel.value = currentMultiSimSelection;
           }
         }
 
@@ -11297,10 +11310,28 @@
           }
         }
 
-        if (options.multisim > 0) {
+        // MultiSIM-Option-Verfuegbarkeit (Optionen-Tab) auch in der Berechnung beachten:
+        // ist die Option fuer diesen Tarif/Kartenart ausgeschlossen, werden keine
+        // kostenpflichtigen MultiSIMs berechnet/angezeigt (Schutz fuer Altstand/Konfig-
+        // Uebertragung; im Modal sind sie dann ohnehin nicht waehlbar).
+        const multiSimKartenArt = cardId && cardId.startsWith("pk_")
+          ? "Partnerkarte"
+          : cardId && cardId.startsWith("hdk_")
+            ? "Haupt-Datenkarte"
+            : cardId && cardId.startsWith("pdk_")
+              ? "Partner-Datenkarte"
+              : "Hauptkarte";
+        const multiSimOptDetail = ZUBUCHOPTIONEN_DETAILS && ZUBUCHOPTIONEN_DETAILS.multiSim;
+        const multiSimVerfuegbar =
+          !multiSimOptDetail || typeof multiSimOptDetail.isAvailable !== "function"
+            ? true
+            : multiSimOptDetail.isAvailable(tarif, multiSimKartenArt, cardId);
+        const multiSimAnzahl = multiSimVerfuegbar ? options.multisim || 0 : 0;
+
+        if (multiSimAnzahl > 0) {
           const multiSimRabatt = options.multisimRabatt || 0;
 
-          zubuchungenFixPreisNetto += options.multisim * getMultiSimPriceNetto(tarif) * (1 - multiSimRabatt / 100);
+          zubuchungenFixPreisNetto += multiSimAnzahl * getMultiSimPriceNetto(tarif) * (1 - multiSimRabatt / 100);
         }
 
         // 4. Calculate final prices and other return values
@@ -11362,7 +11393,7 @@
 
           displayGeraetePreis: formatCurrencyNumber(geraetepreisNetto * (istBrutto ? mwst : 1)),
 
-          multiSimCount: options.multisim || 0,
+          multiSimCount: multiSimAnzahl,
 
           multiSimRabatt: options.multisimRabatt || 0,
 
@@ -14451,9 +14482,6 @@
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
         // Editierbare Stufen-Reihenfolge (Arbeitsstand)
         adminState.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
-        // MultiSIM-Uebermengenpreis (Arbeitsstand, zentral/stufen-basiert)
-        adminState.multiSim = JSON.parse(JSON.stringify(MULTISIM_CONFIG || { standard: 4.16, proStufe: {} }));
-        if (!adminState.multiSim.proStufe) adminState.multiSim.proStufe = {};
         // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
         adminState.optionen = JSON.parse(
           JSON.stringify((window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {}),
@@ -14626,17 +14654,19 @@
 
         // Mitarbeiter-/BGE-Rabatt (aus rabatte.js); 0 = kein Rabatt
         const rabattWert = (adminState.rabatte && adminState.rabatte[key]) || 0;
-        // Effektiver MultiSIM-Uebermengenpreis (read-only; zentral im Tarifstufen-Tab gepflegt)
-        const msCfg = adminState.multiSim || { standard: 4.16, proStufe: {} };
+        // Effektiver MultiSIM-Uebermengenpreis (read-only) aus der Option "multiSim"
+        // (Optionen-Tab). preisProStufe[Stufe] sonst preisNetto (Standard).
+        const msOpt = (adminState.optionen && adminState.optionen.multiSim) || null;
         const msLabel = t.stufe || stufeAusName(key, adminState.stufen) || null;
-        const msPrice =
-          msLabel && msCfg.proStufe && msCfg.proStufe[msLabel] != null
-            ? msCfg.proStufe[msLabel]
-            : typeof msCfg.standard === "number"
-              ? msCfg.standard
-              : 4.16;
+        const msPrice = msOpt
+          ? msLabel && msOpt.preisProStufe && msOpt.preisProStufe[msLabel] != null
+            ? msOpt.preisProStufe[msLabel]
+            : typeof msOpt.preisNetto === "number"
+              ? msOpt.preisNetto
+              : 4.16
+          : 4.16;
         const msTitle =
-          "MultiSIM-Preis je Stück über der Inklusiv-Anzahl. Zentral im Tarifstufen-Tab pflegbar" +
+          "MultiSIM-Preis je Stück über der Inklusiv-Anzahl. Zentral im Optionen-Tab (Option „MultiSIM“) pflegbar" +
           (msLabel ? " – Stufe " + msLabel : "") + ".";
 
         // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt in EINER Zeile
@@ -15109,43 +15139,6 @@
           '<div class="ap-stufen-add"><input type="text" id="apStufeNeu" placeholder="z.B. XXS" maxlength="6" onkeydown="if(event.key===\'Enter\'){adminAddStufe();}">' +
           '<button class="ap-btn ap-btn-primary" onclick="adminAddStufe()">+ Stufe hinzufügen</button></div>';
 
-        // 1b) MultiSIM-Uebermengenpreis (zentral, stufen-basiert)
-        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
-        adminState.multiSim.proStufe = adminState.multiSim.proStufe || {};
-        const ms = adminState.multiSim;
-        html += '<div class="ap-stufen-group">📶 MultiSIM-Preis (Übermenge, netto)</div>';
-        html +=
-          '<p class="ap-rabatte-hint" style="margin:2px 0 10px;">Preis pro zusätzlicher MultiSIM <strong>über</strong> die im Tarif inkludierte Anzahl hinaus. ' +
-          "Der <strong>Standard</strong> gilt für alle Stufen; trage nur Abweichungen je Stufe ein (leer = Standard). " +
-          "So gibt es nur wenige Werte statt einen Preis pro Tarif.</p>";
-        html += '<div class="ap-stufen-row">';
-        html += '<span class="ap-stufen-name">Standard (alle Stufen)</span>';
-        html +=
-          '<div class="ap-input-affix" style="max-width:150px;"><input type="number" step="0.01" min="0" value="' +
-          ms.standard +
-          '" onchange="adminSetMultiSimStandard(this.value)" /><span class="affix">€</span></div>';
-        html += "</div>";
-        stufenLabels.forEach((s) => {
-          const hatVal = ms.proStufe[s] != null;
-          html += '<div class="ap-stufen-row">';
-          html += '<span class="ap-stufen-name">' + adminEsc(s) + "</span>";
-          html +=
-            '<div class="ap-input-affix" style="max-width:150px;"><input type="number" step="0.01" min="0" placeholder="Standard (' +
-            ms.standard +
-            ')" value="' +
-            (hatVal ? ms.proStufe[s] : "") +
-            '" data-stufe="' +
-            adminEsc(s) +
-            '" onchange="adminSetMultiSimProStufe(this.dataset.stufe, this.value)" /><span class="affix">€</span></div>';
-          html +=
-            '<span class="ap-stufen-eff">wirkt: <strong>' +
-            Number(hatVal ? ms.proStufe[s] : ms.standard).toFixed(2).replace(".", ",") +
-            " €</strong>" +
-            (hatVal ? ' <span class="ap-stufen-tag">abweichend</span>' : "") +
-            "</span>";
-          html += "</div>";
-        });
-
         // 2) Pro Familie: Stufen-Zuordnung (nutzt den Arbeitsstand der Liste)
         // Varianten nach Gruppe + Basis-Familie buendeln (nur Telefonie-Karten)
         const relevant = { hauptkarte: {}, partnerkarte: {} };
@@ -15266,32 +15259,6 @@
           count++;
         });
         if (count) adminMarkDirty();
-        adminRenderStufen();
-      }
-
-      // MultiSIM-Standardpreis setzen (#7: Preis >= 0).
-      function adminSetMultiSimStandard(val) {
-        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
-        let n = parseFloat(val);
-        if (!isFinite(n) || n < 0) n = 0;
-        adminState.multiSim.standard = n;
-        adminMarkDirty();
-        adminRenderStufen();
-      }
-
-      // MultiSIM-Ausnahmepreis je Stufe setzen ("" = zurueck auf Standard; #7: Preis >= 0).
-      function adminSetMultiSimProStufe(stufe, val) {
-        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
-        adminState.multiSim.proStufe = adminState.multiSim.proStufe || {};
-        const s = val == null ? "" : String(val).trim();
-        if (s === "") {
-          delete adminState.multiSim.proStufe[stufe];
-        } else {
-          let n = parseFloat(s);
-          if (!isFinite(n) || n < 0) n = 0;
-          adminState.multiSim.proStufe[stufe] = n;
-        }
-        adminMarkDirty();
         adminRenderStufen();
       }
 
@@ -16168,7 +16135,6 @@
         const tarifeOut = {
           _meta: tarifeMeta,
           stufen: adminState.stufen || TARIF_STUFEN_REIHENFOLGE.slice(),
-          multiSim: adminState.multiSim || { standard: 4.16, proStufe: {} },
           tarife: adminState.tarife,
         };
         const tarifeJson = JSON.stringify(tarifeOut, null, 2);
@@ -16605,13 +16571,8 @@
             window.TARIFE_DATA = window.TARIFE_DATA || {};
             window.TARIFE_DATA.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
           }
-          // MultiSIM-Uebermengenpreis uebernehmen (zentral/stufen-basiert)
-          if (adminState.multiSim) {
-            MULTISIM_CONFIG = JSON.parse(JSON.stringify(adminState.multiSim));
-            if (!MULTISIM_CONFIG.proStufe) MULTISIM_CONFIG.proStufe = {};
-            window.TARIFE_DATA = window.TARIFE_DATA || {};
-            window.TARIFE_DATA.multiSim = JSON.parse(JSON.stringify(adminState.multiSim));
-          }
+          // (MultiSIM-Preis kommt jetzt aus der Option "multiSim" und wird oben mit den
+          //  uebrigen Optionen in window.OPTIONEN_DATA uebernommen.)
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen (jetzt nach Stufe sortiert)
           if (typeof aktualisiereTarifListen === "function") aktualisiereTarifListen();
           if (typeof renderTarifDropdowns === "function") renderTarifDropdowns();
