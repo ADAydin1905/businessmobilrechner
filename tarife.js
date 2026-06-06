@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 6.6.2026, 01:35:31
+ * Automatisch erzeugt vom Admin-Panel am 6.6.2026, 10:19:28
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -8,7 +8,7 @@ window.TARIFE_DATA = {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-05",
+    "stand": "2026-06-06",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
@@ -1025,12 +1025,10 @@ window.TARIFE_DATA = {
       "gruppe": "hauptkarte"
     },
     "Business Mobil XXL mit Top Handy": {
-      "preis": 0,
+      "preis": 44.55,
       "inclusiveMultiSim": 0,
       "leistungen": [],
-      "gruppe": "hauptkarte",
-      "entwurf": true,
-      "aktiv": false
+      "gruppe": "partnerkarte"
     },
     "Business Mobil XXL mit Premium-Handy": {
       "preis": 0,
