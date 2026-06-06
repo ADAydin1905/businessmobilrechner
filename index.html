@@ -2958,20 +2958,20 @@
       }
       .ap-field label {
         display: block;
-        font-size: 0.78em;
+        font-size: 0.74em;
         font-weight: 600;
         color: var(--ap-muted);
         text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin-bottom: 6px;
+        letter-spacing: 0.3px;
+        margin-bottom: 5px;
       }
       .ap-field input[type="text"],
       .ap-field input[type="number"] {
         width: 100%;
-        padding: 10px 13px;
+        padding: 9px 11px;
         border: 1px solid var(--ap-border);
         border-radius: 8px;
-        font-size: 0.95em;
+        font-size: 0.9em;
         background: var(--card-bg);
         color: var(--text-color);
         box-sizing: border-box;
@@ -2980,6 +2980,16 @@
         outline: none;
         border-color: var(--primary-color);
         box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
+      }
+      /* Nicht editierbares Feld (nur Anzeige, z.B. abgeleiteter MultiSIM-Preis) */
+      .ap-field input[readonly] {
+        background: rgba(128, 128, 128, 0.12);
+        color: var(--ap-muted);
+        cursor: not-allowed;
+      }
+      .ap-field input[readonly]:focus {
+        border-color: var(--ap-border);
+        box-shadow: none;
       }
       .ap-row2 {
         display: grid;
@@ -2991,9 +3001,33 @@
         grid-template-columns: 1fr 1fr 1fr;
         gap: 16px;
       }
+      /* 4 kompakte Felder nebeneinander (Preis · inkl. MultiSIM · MultiSIM-Preis · Rabatt) */
+      .ap-row4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .ap-row4 .ap-field label {
+        font-size: 0.64em;
+        letter-spacing: 0.2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ap-row4 .ap-field input {
+        padding: 8px 22px 8px 8px;
+        font-size: 0.8em;
+      }
+      .ap-row4 .ap-input-affix .affix {
+        right: 7px;
+        font-size: 0.72em;
+      }
       @media (max-width: 700px) {
         .ap-row3 {
           grid-template-columns: 1fr;
+        }
+        .ap-row4 {
+          grid-template-columns: 1fr 1fr;
         }
       }
       .ap-input-affix {
@@ -4866,10 +4900,31 @@
       // Laufzeit-Objekt (let, damit es nach Admin-Aenderungen neu gebaut werden kann).
       let ZUBUCHOPTIONEN_DETAILS = baueOptionenDetails(window.OPTIONEN_DATA);
 
-      // Eingebaute Optionen: im ⚙️-Menue + saveZubuchoptionen fest verdrahtet
-      // (teils mit Spezial-Handlern/Gruppierung). Sie sind editierbar, aber NICHT
-      // loeschbar. Alles andere gilt als selbst angelegte ("custom") Option und
-      // wird im Menue generisch gerendert + ist loeschbar.
+      // ===================================================================
+      // EINGEBAUTE OPTIONEN vs. CUSTOM-OPTIONEN  (Architektur-Hinweis #5)
+      // ===================================================================
+      // Die hier gelisteten "eingebauten" Optionen werden im Zubuch-Modal
+      // (openZubuchModal) mit JE EIGENEM, fest verdrahtetem HTML-Block gerendert
+      // (feste Element-IDs, eigene currentXxx-Variablen) und haben Spezial-Handler
+      // in saveZubuchoptionen() und in der Preisberechnung (calculateCardPrice).
+      // Selbst angelegte ("custom") Optionen werden dagegen GENERISCH aus den Daten
+      // gerendert. -> Bewusste Asymmetrie, Haupt-Wartungsfalle.
+      //
+      // Das Admin-Panel aendert nur DATEN (Name, Preis, preisProStufe, Verfuegbarkeit,
+      // Gruppe, aktiv/inaktiv); diese fliessen via ZUBUCHOPTIONEN_DETAILS auch in die
+      // eingebauten Bloecke. Was das Admin-Panel NICHT kann: das VERHALTEN bzw. den
+      // Berechnungstyp einer eingebauten Option aendern oder neue Sonderlogik anlegen
+      // — das erfordert weiterhin Code (hier + im Modal + in der Berechnung).
+      //
+      // "Loeschen" einer eingebauten Option im Admin: ZUBUCHOPTIONEN_DETAILS[key]
+      // verschwindet, der hartcodierte Block faellt auf OPTION_STUB (isAvailable=false)
+      // zurueck -> rendert nichts, kein Crash. Eingebaute Optionen sind daher
+      // editierbar, aber NICHT loeschbar.
+      //
+      // Mittelfristige Aufraeum-Option (groesser, eigenes Projekt): die eingebauten
+      // Bloecke generisch ziehen, sodass auch sie rein datengetrieben sind. Beruehrt
+      // die Preis-Kernlogik -> nur mit ausfuehrlichen Tests angehen.
+      // ===================================================================
       const BUILTIN_OPTION_KEYS = [
         "mobilityConnect",
         "securityOnNetComfort",
@@ -6145,16 +6200,24 @@
         }, 100);
       }
 
+      // MultiSIM-Uebermengenpreis (netto): zentral & stufen-basiert. Standardpreis +
+      // optionale Ausnahmen je Stufe, datengetrieben aus TARIFE_DATA.multiSim (im
+      // Tarifstufen-Tab pflegbar). Default entspricht der frueheren Hartcodierung
+      // (L/XL/XXL = 25,17, sonst 4,16).
+      let MULTISIM_CONFIG =
+        window.TARIFE_DATA && window.TARIFE_DATA.multiSim
+          ? JSON.parse(JSON.stringify(window.TARIFE_DATA.multiSim))
+          : { standard: 4.16, proStufe: { L: 25.17, XL: 25.17, XXL: 25.17 } };
+      if (!MULTISIM_CONFIG.proStufe) MULTISIM_CONFIG.proStufe = {};
+
       function getMultiSimPriceNetto(tarifName) {
-        if (!tarifName) return 4.16;
-
-        const tarifStufeVal = tarifStufe(tarifName);
-
-        if (tarifStufeVal >= 3) {
-          return 25.17;
-        }
-
-        return 4.16;
+        const std =
+          MULTISIM_CONFIG && typeof MULTISIM_CONFIG.standard === "number" ? MULTISIM_CONFIG.standard : 4.16;
+        if (!tarifName) return std;
+        const label = getTarifStufeLabel(tarifName);
+        const pro = MULTISIM_CONFIG && MULTISIM_CONFIG.proStufe;
+        if (label && pro && pro[label] != null) return pro[label];
+        return std;
       }
 
       function getDisplayName(tarifName) {
@@ -9648,6 +9711,18 @@
         return null;
       }
 
+      // -------------------------------------------------------------------
+      // SORTIER-SEED fuer die Dropdown-Reihenfolge — NICHT die Mitglieder-Quelle!
+      // -------------------------------------------------------------------
+      // ACHTUNG: Diese vier Arrays bestimmen NICHT, welche Tarife im Rechner
+      // erscheinen. Die Mitgliedschaft kommt vollstaendig aus `tarifDetails`
+      // (tarife.js) und wird in aktualisiereTarifListen() neu aufgebaut; danach
+      // sortiert sortNachStufe() nach Tarifstufe. Diese Arrays wirken nur noch als
+      // REIHENFOLGE-Seed (Tie-Break) fuer Familien MIT GLEICHER STUFE, z.B.
+      // "Speedbox S" vs. "Business Mobil Data S" in den Datenkarten-Dropdowns.
+      // -> Einen Tarif HIER zu entfernen hat KEINEN Effekt (er kommt aus tarifDetails
+      //    zurueck). Tarife pflegt man im Admin-Panel bzw. in tarife.js; hier nur die
+      //    Reihenfolge gleichrangiger Familien anpassen.
       let businessMobilTarife = [
         "Business Mobil XS",
         "Business Mobil S",
@@ -14376,6 +14451,9 @@
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
         // Editierbare Stufen-Reihenfolge (Arbeitsstand)
         adminState.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
+        // MultiSIM-Uebermengenpreis (Arbeitsstand, zentral/stufen-basiert)
+        adminState.multiSim = JSON.parse(JSON.stringify(MULTISIM_CONFIG || { standard: 4.16, proStufe: {} }));
+        if (!adminState.multiSim.proStufe) adminState.multiSim.proStufe = {};
         // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
         adminState.optionen = JSON.parse(
           JSON.stringify((window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {}),
@@ -14546,21 +14624,44 @@
         });
         html += "</select></div>";
 
-        html += '<div class="ap-row3">';
+        // Mitarbeiter-/BGE-Rabatt (aus rabatte.js); 0 = kein Rabatt
+        const rabattWert = (adminState.rabatte && adminState.rabatte[key]) || 0;
+        // Effektiver MultiSIM-Uebermengenpreis (read-only; zentral im Tarifstufen-Tab gepflegt)
+        const msCfg = adminState.multiSim || { standard: 4.16, proStufe: {} };
+        const msLabel = t.stufe || stufeAusName(key, adminState.stufen) || null;
+        const msPrice =
+          msLabel && msCfg.proStufe && msCfg.proStufe[msLabel] != null
+            ? msCfg.proStufe[msLabel]
+            : typeof msCfg.standard === "number"
+              ? msCfg.standard
+              : 4.16;
+        const msTitle =
+          "MultiSIM-Preis je Stück über der Inklusiv-Anzahl. Zentral im Tarifstufen-Tab pflegbar" +
+          (msLabel ? " – Stufe " + msLabel : "") + ".";
+
+        // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt in EINER Zeile
+        html += '<div class="ap-row4">';
         html +=
-          '<div class="ap-field"><label>Preis (netto / Monat)</label><div class="ap-input-affix">' +
+          '<div class="ap-field"><label title="Preis netto pro Monat">Preis netto/Mon.</label><div class="ap-input-affix">' +
           '<input type="number" step="0.01" value="' +
           t.preis +
           '" data-field="preis" oninput="adminEditPreis(this)" /><span class="affix">€</span></div></div>';
         html +=
-          '<div class="ap-field"><label>Inklusive MultiSIM</label><div class="ap-input-affix">' +
+          '<div class="ap-field"><label title="Im Tarif enthaltene MultiSIM-Karten">Inkl. MultiSIM</label><div class="ap-input-affix">' +
           '<input type="number" step="1" value="' +
           (t.inclusiveMultiSim || 0) +
           '" data-field="multisim" oninput="adminEditMultiSim(this)" /><span class="affix">Stk</span></div></div>';
-        // Mitarbeiter-/BGE-Rabatt (aus rabatte.js); 0 = kein Rabatt
-        const rabattWert = (adminState.rabatte && adminState.rabatte[key]) || 0;
         html +=
-          '<div class="ap-field"><label title="Mitarbeiter-/BGE-Rahmenvertrag-Rabatt">Mitarbeiter-Rabatt</label>' +
+          '<div class="ap-field"><label title="' +
+          adminEsc(msTitle) +
+          '">MultiSIM-Preis</label><div class="ap-input-affix">' +
+          '<input type="text" value="' +
+          Number(msPrice).toFixed(2).replace(".", ",") +
+          '" readonly title="' +
+          adminEsc(msTitle) +
+          '" /><span class="affix">€</span></div></div>';
+        html +=
+          '<div class="ap-field"><label title="Mitarbeiter-/BGE-Rahmenvertrag-Rabatt">Mitarb.-Rabatt</label>' +
           '<div class="ap-input-affix"><input type="number" step="0.001" min="0" max="100" value="' +
           rabattWert +
           '" data-field="rabatt" oninput="adminEditRabatt(this)" /><span class="affix">%</span></div></div>';
@@ -14642,7 +14743,9 @@
       function adminEditPreis(input) {
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
-        t.preis = parseFloat(input.value) || 0;
+        let p = parseFloat(input.value);
+        if (!isFinite(p) || p < 0) p = 0; // #7: kein negativer Preis
+        t.preis = p;
         adminClearEntwurf(t);
         adminMarkDirty();
         adminRenderList(); // Preis in Liste aktualisieren
@@ -14662,7 +14765,10 @@
       function adminEditMultiSim(input) {
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
-        t.inclusiveMultiSim = parseInt(input.value, 10) || 0;
+        let n = parseInt(input.value, 10) || 0;
+        if (n < 0) n = 0;
+        if (n > 7) n = 7; // #7: max. 7 MultiSIM pro Karte -> sonst bricht der Zubuch-Dialog
+        t.inclusiveMultiSim = n;
         adminClearEntwurf(t);
         adminMarkDirty();
       }
@@ -14708,6 +14814,47 @@
         adminRenderEditor(adminState.aktiverTarif);
       }
 
+      // Migriert/entfernt die namensbasierten Verfuegbarkeits-Referenzen in ALLEN
+      // Optionen/Aktionen, wenn ein Tarif umbenannt (newName gesetzt) oder geloescht
+      // (newName = null) wird. Betroffen sind die exakt gepflegten Referenzen:
+      //   - tarifeExcl  = volle Tarifnamen (einzelne Varianten)
+      //   - familienExcl = Basis-/Familiennamen
+      // Pattern-Regeln (nameExcl/nameExclEnd/nameInclStart) sind Geschaeftsregel-Seeds
+      // und bleiben unangetastet. MUSS aufgerufen werden, NACHDEM adminState.tarife
+      // bereits aktualisiert wurde. Liefert die Anzahl angepasster Regeln.
+      function adminMigriereRegelReferenzen(oldName, newName) {
+        const opts = adminState.optionen || {};
+        const oldBasis = tarifBasisName(oldName);
+        const newBasis = newName ? tarifBasisName(newName) : null;
+        // Existiert die alte Familie nach der Aktion noch (andere Varianten)?
+        const familieBleibt = Object.keys(adminState.tarife).some(
+          (k) => tarifBasisName(k) === oldBasis,
+        );
+        let geaendert = 0;
+        for (const key in opts) {
+          const r = opts[key] && opts[key].regeln;
+          if (!r) continue;
+          // tarifeExcl: exakter Vollname -> umhaengen bzw. entfernen
+          if (Array.isArray(r.tarifeExcl) && r.tarifeExcl.includes(oldName)) {
+            r.tarifeExcl = r.tarifeExcl.filter((t) => t !== oldName);
+            if (newName && !r.tarifeExcl.includes(newName)) r.tarifeExcl.push(newName);
+            if (r.tarifeExcl.length === 0) delete r.tarifeExcl;
+            geaendert++;
+          }
+          // familienExcl: nur anfassen, wenn die alte Familie nicht mehr existiert
+          if (!familieBleibt && Array.isArray(r.familienExcl) && r.familienExcl.includes(oldBasis)) {
+            r.familienExcl = r.familienExcl.filter((b) => b !== oldBasis);
+            if (newBasis && newBasis !== oldBasis && !r.familienExcl.includes(newBasis)) {
+              r.familienExcl.push(newBasis);
+            }
+            if (r.familienExcl.length === 0) delete r.familienExcl;
+            geaendert++;
+          }
+        }
+        if (geaendert > 0) adminState.optionenDirty = true;
+        return geaendert;
+      }
+
       function adminEditName(input) {
         const oldKey = adminState.aktiverTarif;
         // "Ohne Zusatz = eco": stufige Namen ohne Endgeraete-Suffix kanonisch machen.
@@ -14734,10 +14881,15 @@
           delete adminState.rabatte[oldKey];
           adminState.rabatteDirty = true;
         }
+        // Verfuegbarkeits-Referenzen in Optionen/Aktionen mitziehen (sonst stiller Bruch)
+        const refs = adminMigriereRegelReferenzen(oldKey, newKey);
         adminState.aktiverTarif = newKey;
         adminMarkDirty();
         adminRenderList();
         adminRenderEditor(newKey);
+        if (refs > 0) {
+          showAdminStatus("✅ Umbenannt. " + refs + " Verfügbarkeits-Regel(n) angepasst.", "success");
+        }
       }
 
       // ---- Gruppe ändern ----
@@ -14826,6 +14978,8 @@
             }
           }
           delete adminState.tarife[basis];
+          // Verfuegbarkeits-Referenzen vom bare Namen auf eco umziehen
+          adminMigriereRegelReferenzen(basis, ecoName);
           if (adminState.aktiverTarif === basis) adminState.aktiverTarif = ecoName;
           bareEntfernt = true;
         }
@@ -14888,12 +15042,16 @@
           delete adminState.rabatte[key];
           adminState.rabatteDirty = true;
         }
+        // Verwaiste Verfuegbarkeits-Referenzen in Optionen/Aktionen entfernen
+        const refs = adminMigriereRegelReferenzen(key, null);
         adminState.aktiverTarif = null;
         adminState.dirty = true;
         adminRenderList();
         adminRenderEditorEmpty();
         adminUpdateDirty();
-        showAdminStatus('Tarif "' + key + '" wurde gelöscht. Zum Speichern exportieren.', "success");
+        let dmsg = 'Tarif "' + key + '" wurde gelöscht.';
+        if (refs > 0) dmsg += " " + refs + " Verfügbarkeits-Regel(n) bereinigt.";
+        showAdminStatus(dmsg + " Zum Speichern exportieren.", "success");
       }
 
       // ---- Tab-Wechsel (aktuell nur "tarife" aktiv) ----
@@ -14950,6 +15108,43 @@
         html +=
           '<div class="ap-stufen-add"><input type="text" id="apStufeNeu" placeholder="z.B. XXS" maxlength="6" onkeydown="if(event.key===\'Enter\'){adminAddStufe();}">' +
           '<button class="ap-btn ap-btn-primary" onclick="adminAddStufe()">+ Stufe hinzufügen</button></div>';
+
+        // 1b) MultiSIM-Uebermengenpreis (zentral, stufen-basiert)
+        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
+        adminState.multiSim.proStufe = adminState.multiSim.proStufe || {};
+        const ms = adminState.multiSim;
+        html += '<div class="ap-stufen-group">📶 MultiSIM-Preis (Übermenge, netto)</div>';
+        html +=
+          '<p class="ap-rabatte-hint" style="margin:2px 0 10px;">Preis pro zusätzlicher MultiSIM <strong>über</strong> die im Tarif inkludierte Anzahl hinaus. ' +
+          "Der <strong>Standard</strong> gilt für alle Stufen; trage nur Abweichungen je Stufe ein (leer = Standard). " +
+          "So gibt es nur wenige Werte statt einen Preis pro Tarif.</p>";
+        html += '<div class="ap-stufen-row">';
+        html += '<span class="ap-stufen-name">Standard (alle Stufen)</span>';
+        html +=
+          '<div class="ap-input-affix" style="max-width:150px;"><input type="number" step="0.01" min="0" value="' +
+          ms.standard +
+          '" onchange="adminSetMultiSimStandard(this.value)" /><span class="affix">€</span></div>';
+        html += "</div>";
+        stufenLabels.forEach((s) => {
+          const hatVal = ms.proStufe[s] != null;
+          html += '<div class="ap-stufen-row">';
+          html += '<span class="ap-stufen-name">' + adminEsc(s) + "</span>";
+          html +=
+            '<div class="ap-input-affix" style="max-width:150px;"><input type="number" step="0.01" min="0" placeholder="Standard (' +
+            ms.standard +
+            ')" value="' +
+            (hatVal ? ms.proStufe[s] : "") +
+            '" data-stufe="' +
+            adminEsc(s) +
+            '" onchange="adminSetMultiSimProStufe(this.dataset.stufe, this.value)" /><span class="affix">€</span></div>';
+          html +=
+            '<span class="ap-stufen-eff">wirkt: <strong>' +
+            Number(hatVal ? ms.proStufe[s] : ms.standard).toFixed(2).replace(".", ",") +
+            " €</strong>" +
+            (hatVal ? ' <span class="ap-stufen-tag">abweichend</span>' : "") +
+            "</span>";
+          html += "</div>";
+        });
 
         // 2) Pro Familie: Stufen-Zuordnung (nutzt den Arbeitsstand der Liste)
         // Varianten nach Gruppe + Basis-Familie buendeln (nur Telefonie-Karten)
@@ -15071,6 +15266,32 @@
           count++;
         });
         if (count) adminMarkDirty();
+        adminRenderStufen();
+      }
+
+      // MultiSIM-Standardpreis setzen (#7: Preis >= 0).
+      function adminSetMultiSimStandard(val) {
+        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
+        let n = parseFloat(val);
+        if (!isFinite(n) || n < 0) n = 0;
+        adminState.multiSim.standard = n;
+        adminMarkDirty();
+        adminRenderStufen();
+      }
+
+      // MultiSIM-Ausnahmepreis je Stufe setzen ("" = zurueck auf Standard; #7: Preis >= 0).
+      function adminSetMultiSimProStufe(stufe, val) {
+        adminState.multiSim = adminState.multiSim || { standard: 4.16, proStufe: {} };
+        adminState.multiSim.proStufe = adminState.multiSim.proStufe || {};
+        const s = val == null ? "" : String(val).trim();
+        if (s === "") {
+          delete adminState.multiSim.proStufe[stufe];
+        } else {
+          let n = parseFloat(s);
+          if (!isFinite(n) || n < 0) n = 0;
+          adminState.multiSim.proStufe[stufe] = n;
+        }
+        adminMarkDirty();
         adminRenderStufen();
       }
 
@@ -15947,6 +16168,7 @@
         const tarifeOut = {
           _meta: tarifeMeta,
           stufen: adminState.stufen || TARIF_STUFEN_REIHENFOLGE.slice(),
+          multiSim: adminState.multiSim || { standard: 4.16, proStufe: {} },
           tarife: adminState.tarife,
         };
         const tarifeJson = JSON.stringify(tarifeOut, null, 2);
@@ -16382,6 +16604,13 @@
             aktualisiereStufenAbleitungen();
             window.TARIFE_DATA = window.TARIFE_DATA || {};
             window.TARIFE_DATA.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
+          }
+          // MultiSIM-Uebermengenpreis uebernehmen (zentral/stufen-basiert)
+          if (adminState.multiSim) {
+            MULTISIM_CONFIG = JSON.parse(JSON.stringify(adminState.multiSim));
+            if (!MULTISIM_CONFIG.proStufe) MULTISIM_CONFIG.proStufe = {};
+            window.TARIFE_DATA = window.TARIFE_DATA || {};
+            window.TARIFE_DATA.multiSim = JSON.parse(JSON.stringify(adminState.multiSim));
           }
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen (jetzt nach Stufe sortiert)
           if (typeof aktualisiereTarifListen === "function") aktualisiereTarifListen();
