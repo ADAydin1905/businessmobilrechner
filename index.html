@@ -7431,14 +7431,47 @@
 
           // Optionen-Gruppen (optGruppen) wurden oben bereits ermittelt.
           // Getrennt nach Kategorie: Optionen-Tab vs. Aktionen-Tab.
+          // Datenkarte? + MultiSIM-Verfuegbarkeit vorab — steuert die Mehrkartenservice-Gruppe.
+          const istDatenkarte = kartenArt === "Haupt-Datenkarte" || kartenArt === "Partner-Datenkarte";
+          const multiSimVerfuegbar =
+            ZUBUCHOPTIONEN_DETAILS.multiSim && typeof ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable === "function"
+              ? ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable(tarif, kartenArt, cardId)
+              : true;
+          // Hardcodierter MultiSIM-Mengen-Block OHNE eigene Ueberschrift (die liefert die Gruppe).
+          // Wird als Lead-Inhalt der Gruppe "mehrkartenservice" gerendert -> die Gruppe bestimmt
+          // Position UND Inhalt; weitere dort einsortierte Optionen erscheinen direkt darunter.
+          // Nur fuer Telefon-Karten und nur wenn die MultiSIM-Option verfuegbar ist.
+          const multiSimBlockHTML =
+            !istDatenkarte && multiSimVerfuegbar
+              ? `<div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group modal-einstellung" style="flex: 1; min-width: 200px;">
+                        <label for="multisim-select">Anzahl kostenpflichtige MultiSIMs:</label>
+                        <p style="font-size: 0.8em; color: #666; margin-top: -5px; margin-bottom: 10px;">Tarif "${getDisplayName(tarif)}" enthält ${inclusiveMultiSim} MultiSIM(s). Maximal 7 insgesamt möglich.</p>
+                        <select id="multisim-select" onchange="saveZubuchoptionen()">${optionsHTML}</select>
+                    </div>
+                    <div class="input-group modal-einstellung">
+                        <label>Rabatt auf MultiSIMs</label>
+                        <div class="discount-toggle" data-option-key="multisimRabatt" style="width: 280px;">
+                            <div class="toggle-slider"></div>
+                            <button class="rabatt-btn ${currentMultiSimRabatt === 0 ? "active" : ""}" data-value="0" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">0%</button>
+                            <button class="rabatt-btn ${currentMultiSimRabatt === 50 ? "active" : ""}" data-value="50" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">50%</button>
+                            <button class="rabatt-btn ${currentMultiSimRabatt === 100 ? "active" : ""}" data-value="100" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">100%</button>
+                        </div>
+                    </div>
+                </div>`
+              : "";
+
           let gruppenOptionenHTML = "";
           let aktionenOptionenHTML = "";
           optGruppen.forEach((g) => {
+            // Lead-Inhalt fuer die Mehrkartenservice-Gruppe (MultiSIM-Mengenauswahl)
+            const lead = g.id === "mehrkartenservice" ? multiSimBlockHTML : "";
             const items = (g.optionen || [])
               .map((k) => itemHtmlByKey[k])
               .filter(Boolean)
               .join("");
-            if (!items) return; // Gruppe ohne verfuegbare Optionen ausblenden
+            const inner = lead + items;
+            if (!inner) return; // Gruppe ohne Inhalt ausblenden
             const titel = adminEsc(g.name || "");
             let block;
             if (g.collapsible === false) {
@@ -7446,7 +7479,7 @@
                 '<h4 style="margin: 20px 0 0 0; color: var(--primary-color);">' +
                 titel +
                 '</h4><hr style="margin: 10px 0 20px 0;">' +
-                items;
+                inner;
             } else {
               block =
                 '<div class="opt-gruppe-wrapper"><div class="collapsible-header" onclick="toggleCollapsible(this)">' +
@@ -7454,16 +7487,12 @@
                 titel +
                 '</h4><span class="arrow-icon"></span></div>' +
                 '<div class="collapsible-content"><hr style="margin: 0 0 20px 0;">' +
-                items +
+                inner +
                 "</div></div>";
             }
             if (g.kategorie === "aktion") aktionenOptionenHTML += block;
             else gruppenOptionenHTML += block;
           });
-
-          // Prüfen, ob es sich um eine Datenkarte handelt
-
-          const istDatenkarte = kartenArt === "Haupt-Datenkarte" || kartenArt === "Partner-Datenkarte";
 
           if (istDatenkarte) {
             // Datenkarten: 3-Tab-Menü (Optionen / Aktionen / Konfiguration übertragen)
@@ -7474,105 +7503,8 @@
             ]);
           } else {
             // Für Haupt- und Partnerkarten die normale Ansicht
-            // MultiSIM-Option-Verfuegbarkeit (im Optionen-Tab pflegbar) beachten: ist die
-            // Option fuer diesen Tarif/Kartenart ausgeschlossen, wird der Mehrkartenservice
-            // (kostenpflichtige MultiSIMs) gar nicht erst angezeigt.
-            const multiSimVerfuegbar =
-              ZUBUCHOPTIONEN_DETAILS.multiSim && typeof ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable === "function"
-                ? ZUBUCHOPTIONEN_DETAILS.multiSim.isAvailable(tarif, kartenArt, cardId)
-                : true;
-
-            const mehrkartenserviceHTML = multiSimVerfuegbar ? `
-
-
-
-                    <h4 style="margin: 0; color: var(--primary-color);">Mehrkartenservice</h4>
-
-
-
-                    <hr style="margin: 10px 0 20px 0;">
-
-
-
-                    <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
-
-
-
-                        <div class="input-group modal-einstellung" style="flex: 1; min-width: 200px;">
-
-
-
-                            <label for="multisim-select">Anzahl kostenpflichtige MultiSIMs:</label>
-
-
-
-                            <p style="font-size: 0.8em; color: #666; margin-top: -5px; margin-bottom: 10px;">
-
-
-
-                                Tarif "${getDisplayName(tarif)}" enthält ${inclusiveMultiSim} MultiSIM(s). Maximal 7 insgesamt möglich.
-
-
-
-                            </p>
-
-
-
-                            <select id="multisim-select" onchange="saveZubuchoptionen()">
-
-
-
-                                ${optionsHTML}
-
-
-
-                            </select>
-
-
-
-                        </div>
-
-
-
-                        <div class="input-group modal-einstellung">
-
-
-
-                            <label>Rabatt auf MultiSIMs</label>
-
-
-
-                            <div class="discount-toggle" data-option-key="multisimRabatt" style="width: 280px;">
-
-
-
-                                <div class="toggle-slider"></div>
-
-
-
-                                <button class="rabatt-btn ${currentMultiSimRabatt === 0 ? "active" : ""}" data-value="0" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">0%</button>
-
-
-
-                                <button class="rabatt-btn ${currentMultiSimRabatt === 50 ? "active" : ""}" data-value="50" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">50%</button>
-
-
-
-                                <button class="rabatt-btn ${currentMultiSimRabatt === 100 ? "active" : ""}" data-value="100" onclick="saveZubuchoptionen(this); moveDiscountSlider(this);">100%</button>
-
-
-
-                            </div>
-
-
-
-                            </div>
-
-
-
-                        </div>` : "";
             modalContent.innerHTML = zubuchTabShell([
-              { id: "optionen", label: "Optionen", html: mehrkartenserviceHTML + gruppenOptionenHTML },
+              { id: "optionen", label: "Optionen", html: gruppenOptionenHTML },
               { id: "aktionen", label: "Aktionen", html: aktionenOptionenHTML },
               { id: "uebertragen", label: "Konfiguration übertragen", html: konfigHTML },
             ]);
@@ -15290,6 +15222,14 @@
       // Standard-Gruppen + Zuordnung (spiegelt die bisherigen ⚙️-Menue-Sektionen).
       const OPTION_GRUPPEN_DEFAULT = [
         {
+          // Feste Sektion: enthaelt den MultiSIM-Mengen-Block (im Modal als Lead-Inhalt
+          // dieser Gruppe). Weitere hier einsortierte Optionen erscheinen direkt darunter.
+          id: "mehrkartenservice",
+          name: "Mehrkartenservice",
+          collapsible: false,
+          optionen: ["multiSim"],
+        },
+        {
           id: "haeufig",
           name: "Häufig gebuchte Optionen",
           collapsible: false,
@@ -15324,6 +15264,16 @@
           // Kategorie sicherstellen: 'aktionen'-Gruppe = Aktion, sonst Option.
           if (!x.kategorie) x.kategorie = x.id === "aktionen" ? "aktion" : "option";
         });
+        // Feste "Mehrkartenservice"-Gruppe garantieren: sie traegt im Modal den MultiSIM-
+        // Mengen-Block. Fehlt sie (Altdaten/geloescht), neu anlegen; multiSim dort verankern.
+        let mksGrp = g.find((x) => x.id === "mehrkartenservice");
+        if (!mksGrp) {
+          mksGrp = { id: "mehrkartenservice", name: "Mehrkartenservice", collapsible: false, kategorie: "option", optionen: [] };
+          g.unshift(mksGrp);
+        }
+        if (optionen.multiSim && !g.some((x) => (x.optionen || []).includes("multiSim"))) {
+          mksGrp.optionen.push("multiSim");
+        }
         const zugeordnet = new Set();
         g.forEach((x) => x.optionen.forEach((k) => zugeordnet.add(k)));
         const fehlende = Object.keys(optionen).filter((k) => !zugeordnet.has(k));
@@ -15590,21 +15540,25 @@
               });
               html += "</div></details>";
 
-              // Rabatt-Auswahl (Rabatt-Toggle statt Checkbox im Rechner-Menü)
-              html +=
-                '<label class="ap-opt-rabatt-chk" title="Im Menü erscheint statt einer Checkbox eine Rabatt-Auswahl (0% = voller Preis, 100% = 0 €). Optionen derselben Gruppe sind dann gegenseitig exklusiv."><input type="checkbox" data-key="' +
-                adminEsc(key) +
-                '" ' +
-                (o.rabattToggle ? "checked" : "") +
-                ' onchange="adminToggleOptionRabatt(this.dataset.key, this.checked)"> Rabatt-Auswahl statt Checkbox</label>';
-              if (o.rabattToggle) {
-                const stufenStr = (Array.isArray(o.rabattStufen) ? o.rabattStufen : [0, 50, 100]).join(", ");
+              // Rabatt-Auswahl (Rabatt-Toggle statt Checkbox im Rechner-Menü).
+              // Fuer die MultiSIM-Preisquelle-Option sinnlos (sie bietet immer Anzahl +
+              // Rabatt-Auswahl, niemals eine Checkbox) -> dort ausblenden.
+              if (key !== "multiSim") {
                 html +=
-                  '<label class="ap-opt-rabatt-stufen">Rabattstufen (%) <input type="text" data-key="' +
+                  '<label class="ap-opt-rabatt-chk" title="Im Menü erscheint statt einer Checkbox eine Rabatt-Auswahl (0% = voller Preis, 100% = 0 €). Optionen derselben Gruppe sind dann gegenseitig exklusiv."><input type="checkbox" data-key="' +
                   adminEsc(key) +
-                  '" value="' +
-                  adminEsc(stufenStr) +
-                  '" oninput="adminEditOptionRabattStufen(this.dataset.key, this.value)" placeholder="z.B. 0, 50, 100"></label>';
+                  '" ' +
+                  (o.rabattToggle ? "checked" : "") +
+                  ' onchange="adminToggleOptionRabatt(this.dataset.key, this.checked)"> Rabatt-Auswahl statt Checkbox</label>';
+                if (o.rabattToggle) {
+                  const stufenStr = (Array.isArray(o.rabattStufen) ? o.rabattStufen : [0, 50, 100]).join(", ");
+                  html +=
+                    '<label class="ap-opt-rabatt-stufen">Rabattstufen (%) <input type="text" data-key="' +
+                    adminEsc(key) +
+                    '" value="' +
+                    adminEsc(stufenStr) +
+                    '" oninput="adminEditOptionRabattStufen(this.dataset.key, this.value)" placeholder="z.B. 0, 50, 100"></label>';
+                }
               }
             }
           }
