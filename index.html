@@ -3538,19 +3538,22 @@
       }
       .ap-opt-del {
         flex: 0 0 auto;
-        border: 1px solid var(--ap-border, #ddd);
-        background: var(--card-bg);
-        color: #c0392b;
-        border-radius: 6px;
-        padding: 3px 9px;
-        cursor: pointer;
-        font-size: 0.95em;
-        line-height: 1;
-      }
-      .ap-opt-del:hover {
+        border: none;
         background: #c0392b;
         color: #fff;
-        border-color: #c0392b;
+        border-radius: 6px;
+        padding: 6px 8px;
+        cursor: pointer;
+        line-height: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ap-opt-del:hover {
+        background: #a5281b;
+      }
+      .ap-opt-del svg {
+        display: block;
       }
       .ap-opt-preis {
         display: flex;
@@ -15561,14 +15564,12 @@
             '" ' +
             (aktiv ? "checked" : "") +
             ' onchange="adminToggleOptionAktiv(this)"> aktiv</label>';
-          if (o.berechnungsTyp) html += '<span class="ap-opt-typ">' + adminEsc(o.berechnungsTyp) + "</span>";
-          if (!istCustomOption(key)) {
-            html += '<span class="ap-opt-builtin" title="Eingebaute Option">eingebaut</span>';
-          }
+          // Hinweis: technischer berechnungsTyp ("manuell_zeitlich" etc.) und das
+          // "eingebaut"-Tag werden bewusst NICHT angezeigt – sie sind nur intern relevant.
           html +=
             '<button class="ap-opt-del" title="Diese Option löschen" onclick="adminDeleteOption(this.dataset.key)" data-key="' +
             adminEsc(key) +
-            '">🗑</button>';
+            '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
           html += "</div>";
 
           html += '<div class="ap-opt-preis">';
