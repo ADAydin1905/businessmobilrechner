@@ -5254,63 +5254,44 @@
           errorMessage = "Karte hat keinen Tarif ausgewählt";
         }
 
-        // REGEL 1: Partnerkarten (PK) dürfen NICHT zu Haupt-Datenkarten (HDK)
+        // Ziel-Haupttarif + Partnergruppe bestimmen
+        const partnerGruppe = cardType === "pdk" ? "partnerdatenkarte" : "partnerkarte";
 
-        if (!isInvalid && cardType === "pk" && isTargetHDK) {
-          isInvalid = true;
+        const targetMainSelect = document.getElementById(
+          `${isTargetHDK ? "hdk" : "hk"}_tarif_${targetGroupNum}`,
+        );
 
-          errorMessage = "Partnerkarten können nicht zu Haupt-Datenkarten zugewiesen werden";
+        const targetMainTarif = targetMainSelect ? targetMainSelect.value : "";
+
+        // REGEL 1+3+4: Kompatibilitaet zentral (nimmt Partner? Typ erlaubt? Groesse passt?)
+
+        if (!isInvalid) {
+          if (targetMainTarif) {
+            if (!partnerPasstZuHaupt(partnerGruppe, cardTarif, targetMainTarif)) {
+              isInvalid = true;
+
+              errorMessage = `Nicht kompatibel mit ${isTargetHDK ? "Haupt-Datenkarte" : "Hauptkarte"} ${targetGroupNum}`;
+            }
+          } else if (cardType === "pk" && isTargetHDK) {
+            // Ohne gewaehlten Ziel-Tarif: struktureller Default (Business Card nicht an Daten-Haupt)
+
+            isInvalid = true;
+
+            errorMessage = "Partnerkarten können nicht zu Haupt-Datenkarten zugewiesen werden";
+          }
         }
 
-        // REGEL 2: Limit-Prüfung (zähle aktuelle Karten im Ziel, INKLUSIVE der neu hinzugefügten)
+        // REGEL 2: Limit-Pruefung (konfigurierbare max. Anzahl je Hauptkarte; ohne Ziel-Tarif Default)
 
         if (!isInvalid) {
           const currentCardsInTarget = targetList.querySelectorAll(".assignment-tile");
 
-          const maxLimit = isTargetHDK ? 4 : 10;
+          const maxLimit = targetMainTarif ? hauptMaxPartner(targetMainTarif) : isTargetHDK ? 4 : 10;
 
           if (currentCardsInTarget.length > maxLimit) {
             isInvalid = true;
 
             errorMessage = `Maximale Anzahl (${maxLimit}) erreicht`;
-          }
-        }
-
-        // REGEL 3: Tarifstufen-Kompatibilität für PK → HK
-
-        if (!isInvalid && cardType === "pk" && !isTargetHDK) {
-          const hauptkarteTarifSelect = document.getElementById(`hk_tarif_${targetGroupNum}`);
-
-          if (hauptkarteTarifSelect && hauptkarteTarifSelect.value) {
-            const hauptkarteTarif = hauptkarteTarifSelect.value;
-
-            if (!partnerkarteErlaubt(cardTarif, hauptkarteTarif)) {
-              isInvalid = true;
-
-              errorMessage = `Tarif nicht kompatibel mit Hauptkarte ${targetGroupNum}`;
-            }
-          }
-        }
-
-        // REGEL 4: Tarifstufen-Kompatibilität für PDK → HDK
-
-        if (!isInvalid && cardType === "pdk" && isTargetHDK) {
-          const hdkTarifSelect = document.getElementById(`hdk_tarif_${targetGroupNum}`);
-
-          if (hdkTarifSelect && hdkTarifSelect.value) {
-            const hdkTarif = hdkTarifSelect.value;
-
-            const hdkLevel = datenkartenLevel(hdkTarif);
-
-            const pdkLevel = datenkartenLevel(cardTarif);
-
-            const dataTarifLevels = { S: 1, M: 2, L: 3 };
-
-            if (hdkLevel && pdkLevel && dataTarifLevels[pdkLevel] > dataTarifLevels[hdkLevel]) {
-              isInvalid = true;
-
-              errorMessage = `Datenkarten-Tarif nicht kompatibel mit Haupt-Datenkarte ${targetGroupNum}`;
-            }
           }
         }
 
@@ -5871,7 +5852,8 @@
         mainCardGroups.forEach((groupId) => {
           const isHDK = groupId.startsWith("hdk");
 
-          const maxCards = isHDK ? 4 : 10;
+          const maxCardsMainTarif = document.getElementById(groupId.replace("_", "_tarif_"))?.value || "";
+          const maxCards = maxCardsMainTarif ? hauptMaxPartner(maxCardsMainTarif) : isHDK ? 4 : 10;
 
           const list = document.getElementById(`assign-list-${groupId}`);
 
@@ -5964,77 +5946,31 @@
 
               let errorMessage = "";
 
-              // Validierung 1: Business Card (pk) darf NICHT zu hdk_* zugewiesen werden
-
-              // Partner-Datenkarten (pdk) dürfen zu beiden Typen (hk und hdk) zugewiesen werden
-
-              if (cardType === "pk" && isHDK) {
-                const displayName = `Partnerkarte ${cardIndex}`;
+              // Kompatibilitaet zentral: nimmt Partner? Typ erlaubt? Groesse passt?
+              {
+                const partnerGruppe = cardType === "pdk" ? "partnerdatenkarte" : "partnerkarte";
 
                 const groupNum = groupId.split("_")[1];
 
-                errorMessage = `${displayName} (${partnerTarif}) ist nicht kompatibel mit Haupt-Datenkarte ${groupNum}.`;
+                const mainSelect = document.getElementById(`${isHDK ? "hdk" : "hk"}_tarif_${groupNum}`);
 
-                isInvalid = true;
-              }
+                const mainTarif = mainSelect ? mainSelect.value : "";
 
-              // Validierung 2: Tarifstufenprüfung für normale Partnerkarten zu Hauptkarten
+                if (partnerTarif && mainTarif) {
+                  if (!partnerPasstZuHaupt(partnerGruppe, partnerTarif, mainTarif)) {
+                    const displayName =
+                      cardType === "pdk" ? `Partner-Datenkarte ${cardIndex}` : `Partnerkarte ${cardIndex}`;
 
-              if (cardType === "pk" && !isHDK && partnerTarif) {
-                const groupNum = groupId.split("_")[1];
-
-                const hauptkartenTarifSelect = document.getElementById(`hk_tarif_${groupNum}`);
-
-                if (hauptkartenTarifSelect && hauptkartenTarifSelect.value) {
-                  const hauptkartenTarif = hauptkartenTarifSelect.value;
-
-                  if (!partnerkarteErlaubt(partnerTarif, hauptkartenTarif)) {
-                    const displayName = `Partnerkarte ${cardIndex}`;
-
-                    errorMessage = `${displayName} (${partnerTarif}) kann nicht zu Hauptkarte ${groupNum} (${hauptkartenTarif}) zugewiesen werden. Der Partnerkarten-Tarif ist höher als erlaubt.`;
+                    errorMessage = `${displayName} (${partnerTarif}) ist nicht kompatibel mit ${isHDK ? "Haupt-Datenkarte" : "Hauptkarte"} ${groupNum} (${mainTarif}).`;
 
                     isInvalid = true;
                   }
-                }
-              }
+                } else if (cardType === "pk" && isHDK) {
+                  const displayName = `Partnerkarte ${cardIndex}`;
 
-              // Validierung 3: Tarifstufenprüfung für Partner-Datenkarten zu Haupt-Datenkarten
+                  errorMessage = `${displayName} (${partnerTarif}) ist nicht kompatibel mit Haupt-Datenkarte ${groupNum}.`;
 
-              if (cardType === "pdk" && isHDK && partnerTarif) {
-                const dataTarifLevels = { S: 1, M: 2, L: 3 };
-
-                const groupNum = groupId.split("_")[1];
-
-                const hauptdatenkartenTarifSelect = document.getElementById(`hdk_tarif_${groupNum}`);
-
-                if (hauptdatenkartenTarifSelect && hauptdatenkartenTarifSelect.value) {
-                  const hdkTarif = hauptdatenkartenTarifSelect.value;
-
-                  // Inline datenkartenLevel Logik
-
-                  const getDataLevel = (tarifname) => {
-                    if (!tarifname) return null;
-
-                    if (tarifname.includes(" Data S")) return "S";
-
-                    if (tarifname.includes(" Data M")) return "M";
-
-                    if (tarifname.includes(" Data L")) return "L";
-
-                    return null;
-                  };
-
-                  const hdkLevel = getDataLevel(hdkTarif);
-
-                  const pdkLevel = getDataLevel(partnerTarif);
-
-                  if (hdkLevel && pdkLevel && dataTarifLevels[pdkLevel] > dataTarifLevels[hdkLevel]) {
-                    const displayName = `Partner-Datenkarte ${cardIndex}`;
-
-                    errorMessage = `${displayName} (${partnerTarif}) kann nicht zu Haupt-Datenkarte ${groupNum} (${hdkTarif}) zugewiesen werden. Der Partner-Datenkarten-Tarif ist höher als erlaubt.`;
-
-                    isInvalid = true;
-                  }
+                  isInvalid = true;
                 }
               }
 
@@ -6293,6 +6229,70 @@
         if (pk == null || hk == null) return false;
         if (hk === "Special") return false; // Special-Hauptkarte: nur Special-Partner
         return TARIF_STUFEN_RANG[pk] <= TARIF_STUFEN_RANG[hk];
+      }
+
+      // Groessen-Kompatibilitaet Partner-Datenkarte (CombiCard) -> Haupt-Datenkarte ueber die
+      // EDITIERBAREN Tarifstufen (ersetzt die frueher hartcodierte {S:1,M:2,L:3}-Logik).
+      // Lenient bei fehlender/nicht vergleichbarer Stufe (z.B. Speedbox Flex) -> keine
+      // Groessenbeschraenkung. Reine GROESSEN-Pruefung; ob eine Karte ueberhaupt Partner
+      // aufnimmt, entscheidet separat die Partnerkarten-Aufnahme (Phase 2).
+      function partnerDatenkarteGroessePasst(pdkTarif, hdkTarif) {
+        const p = getTarifStufeLabel(pdkTarif);
+        const h = getTarifStufeLabel(hdkTarif);
+        if (p === "Special" || h === "Special") return true;
+        const pr = TARIF_STUFEN_RANG[p];
+        const hr = TARIF_STUFEN_RANG[h];
+        if (pr == null || hr == null) return true; // keine vergleichbare Stufe -> keine Beschraenkung
+        return pr <= hr;
+      }
+
+      // =====================================================================
+      // PARTNERKARTEN-AUFNAHME pro Haupt-Familie (Dimension 1, Phase 2)
+      // ---------------------------------------------------------------------
+      // Pro Haupt-Tarif (auf der Familie gepflegt) konfigurierbar:
+      //   nimmtPartner (bool) | partnerTypen (["partnerkarte","partnerdatenkarte"]) | maxPartner (Zahl)
+      // Sind die Felder nicht gesetzt, gelten gruppen-abhaengige Defaults, die das
+      // bisherige Verhalten exakt bewahren.
+      // =====================================================================
+      const PARTNER_DEFAULTS = {
+        hauptkarte: { typen: ["partnerkarte", "partnerdatenkarte"], max: 10 },
+        hauptdatenkarte: { typen: ["partnerdatenkarte"], max: 4 },
+      };
+      function hauptPartnerDefaults(hauptTarif) {
+        const t = tarifDetails[hauptTarif];
+        const g = (t && t.gruppe) || ermittleGruppe(hauptTarif || "");
+        return PARTNER_DEFAULTS[g] || PARTNER_DEFAULTS.hauptkarte;
+      }
+      function hauptNimmtPartner(hauptTarif) {
+        const t = tarifDetails[hauptTarif];
+        if (t && typeof t.nimmtPartner === "boolean") return t.nimmtPartner;
+        return true; // Default: nimmt Partnerkarten auf
+      }
+      function hauptPartnerTypen(hauptTarif) {
+        const t = tarifDetails[hauptTarif];
+        if (t && Array.isArray(t.partnerTypen)) return t.partnerTypen;
+        return hauptPartnerDefaults(hauptTarif).typen;
+      }
+      function hauptMaxPartner(hauptTarif) {
+        const t = tarifDetails[hauptTarif];
+        if (t && typeof t.maxPartner === "number" && t.maxPartner >= 0) return t.maxPartner;
+        return hauptPartnerDefaults(hauptTarif).max;
+      }
+      // Gesamtpruefung (ohne Kapazitaet): nimmt Partner? + Typ erlaubt? + Groesse passt?
+      // partnerGruppe: "partnerkarte" (Business Card) oder "partnerdatenkarte" (CombiCard).
+      function partnerPasstZuHaupt(partnerGruppe, partnerTarif, hauptTarif) {
+        if (!hauptNimmtPartner(hauptTarif)) return false;
+        if (!hauptPartnerTypen(hauptTarif).includes(partnerGruppe)) return false;
+        if (partnerGruppe === "partnerkarte") {
+          // Normale Partnerkarte (Business Card): Stufen-Pruefung an der Telefon-Hauptkarte.
+          return partnerkarteErlaubt(partnerTarif, hauptTarif);
+        }
+        // Partner-Datenkarte (CombiCard): Groessen-Pruefung NUR an einer Haupt-Datenkarte
+        // (Daten-Stufe vs Daten-Stufe). An einer Telefon-Hauptkarte gibt es – wie bisher –
+        // keine Groessenbeschraenkung (nur Typ + Aufnahme entscheiden).
+        const hg = (tarifDetails[hauptTarif] && tarifDetails[hauptTarif].gruppe) || ermittleGruppe(hauptTarif || "");
+        if (hg === "hauptdatenkarte") return partnerDatenkarteGroessePasst(partnerTarif, hauptTarif);
+        return true;
       }
 
       // Numerische Stufe (Rueckwaertskompatibel: XS=0..XL=4, XXL=5,
@@ -9113,7 +9113,14 @@
 
           const partnerkarten = gruppen[hauptkartenId];
 
-          const limit = isHDK ? 4 : 10;
+          const limit =
+            hauptkartenTarif && hauptkartenTarif !== "Kein Tarif"
+              ? hauptNimmtPartner(hauptkartenTarif)
+                ? hauptMaxPartner(hauptkartenTarif)
+                : 0
+              : isHDK
+                ? 4
+                : 10;
 
           const restSlots = limit - partnerkarten.length;
 
@@ -9326,14 +9333,14 @@
 
           const hauptkartenTarif = hauptkartenTarifSelect.value;
 
-          if (gruppen[targetHauptkarteId].length >= 10) {
+          if (gruppen[targetHauptkarteId].length >= hauptMaxPartner(hauptkartenTarif)) {
             fehlerListe.push(
-              `❌ Partnerkarte ${pk.id}: Manuelle Zuweisung zu Hauptkarte ${hauptkarteNummer} fehlgeschlagen. Gruppe ist bereits voll (max. 10).`,
+              `❌ Partnerkarte ${pk.id}: Manuelle Zuweisung zu Hauptkarte ${hauptkarteNummer} fehlgeschlagen. Gruppe ist bereits voll (max. ${hauptMaxPartner(hauptkartenTarif)}).`,
             );
 
             pkTarifSelect.style.border = "2px solid red";
             automatischeZuweisungenPK.push(pk);
-          } else if (!partnerkarteErlaubt(pk.tarif, hauptkartenTarif)) {
+          } else if (!partnerPasstZuHaupt("partnerkarte", pk.tarif, hauptkartenTarif)) {
             fehlerListe.push(
               `❌ Partnerkarte ${pk.id} (${getDisplayName(pk.tarif)}): Tarif ist nicht mit Hauptkarte ${hauptkarteNummer} (${getDisplayName(hauptkartenTarif)}) kompatibel. Die Zuordnung wurde auf automatisch zurückgesetzt.`,
             );
@@ -9359,10 +9366,10 @@
 
             const hauptkartenTarif = hauptkartenTarifSelect.value;
 
-            if (partnerkarteErlaubt(pk.tarif, hauptkartenTarif)) {
+            if (partnerPasstZuHaupt("partnerkarte", pk.tarif, hauptkartenTarif)) {
               kompatibleHauptkarteGefunden = true;
 
-              if (gruppen[hauptkartenId].length < 10) {
+              if (gruppen[hauptkartenId].length < hauptMaxPartner(hauptkartenTarif)) {
                 gruppen[hauptkartenId].push(pk);
                 zugewiesen = true;
                 break;
@@ -9421,13 +9428,15 @@
 
           const pdkTarifSelect = document.getElementById(`pdk_tarif_${pdk.id}`);
 
-          const limit = targetId.startsWith("hdk") ? 4 : 10;
+          const mainTarifSelect = document.getElementById(targetId.replace("_", "_tarif_"));
 
-          const limitText = targetId.startsWith("hdk") ? "max. 4" : "max. 10";
+          const mainTarif = mainTarifSelect ? mainTarifSelect.value : "";
+
+          const limit = mainTarif ? hauptMaxPartner(mainTarif) : targetId.startsWith("hdk") ? 4 : 10;
 
           if (gruppen[targetId].length >= limit) {
             fehlerListe.push(
-              `❌ Partner Datenkarte ${pdk.id}: Manuelle Zuweisung zu ${targetType === "HDK" ? "Haupt Datenkarte" : "Hauptkarte"} ${targetNummer} fehlgeschlagen. Gruppe ist bereits voll (${limitText}).`,
+              `❌ Partner Datenkarte ${pdk.id}: Manuelle Zuweisung zu ${targetType === "HDK" ? "Haupt Datenkarte" : "Hauptkarte"} ${targetNummer} fehlgeschlagen. Gruppe ist bereits voll (max. ${limit}).`,
             );
 
             pdkTarifSelect.style.border = "2px solid red";
@@ -9435,36 +9444,24 @@
             return;
           }
 
-          if (targetType === "HDK") {
-            const hdkTarifSelect = document.getElementById(targetId.replace("_", "_tarif_"));
+          if (targetType === "HDK" && !mainTarif) {
+            fehlerListe.push(
+              `❌ Partner Datenkarte ${pdk.id}: Manuelle Zuweisung zu Haupt Datenkarte ${targetNummer} fehlgeschlagen, da diese keinen Tarif hat.`,
+            );
 
-            if (!hdkTarifSelect || !hdkTarifSelect.value) {
-              fehlerListe.push(
-                `❌ Partner Datenkarte ${pdk.id}: Manuelle Zuweisung zu Haupt Datenkarte ${targetNummer} fehlgeschlagen, da diese keinen Tarif hat.`,
-              );
-
-              pdkTarifSelect.style.border = "2px solid red";
-              automatischeZuweisungenPDK.push(pdk);
-              return;
-            }
-
-            const hdkTarif = hdkTarifSelect.value;
-
-            const hdkLevel = datenkartenLevel(hdkTarif);
-
-            const pdkLevel = datenkartenLevel(pdk.tarif);
-
-            if (dataTarifLevels[pdkLevel] > dataTarifLevels[hdkLevel]) {
-              fehlerListe.push(
-                `❌ Partner Datenkarte ${pdk.id} (${getDisplayName(pdk.tarif)}): Tarif ist nicht mit Haupt Datenkarte ${targetNummer} (${getDisplayName(hdkTarif)}) kompatibel.`,
-              );
-
-              automatischeZuweisungenPDK.push(pdk);
-              return;
-            }
+            pdkTarifSelect.style.border = "2px solid red";
+            automatischeZuweisungenPDK.push(pdk);
+            return;
           }
 
-          // No compatibility check for assigning to HK
+          if (mainTarif && !partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, mainTarif)) {
+            fehlerListe.push(
+              `❌ Partner Datenkarte ${pdk.id} (${getDisplayName(pdk.tarif)}): Tarif ist nicht mit ${targetType === "HDK" ? "Haupt Datenkarte" : "Hauptkarte"} ${targetNummer} (${getDisplayName(mainTarif)}) kompatibel.`,
+            );
+
+            automatischeZuweisungenPDK.push(pdk);
+            return;
+          }
 
           gruppen[targetId].push(pdk);
         });
@@ -9473,8 +9470,6 @@
           let zugewiesen = false;
 
           const pdkTarifSelect = document.getElementById(`pdk_tarif_${pdk.id}`);
-
-          const pdkLevel = datenkartenLevel(pdk.tarif);
 
           // Priority 1: Assign to HDK
 
@@ -9487,9 +9482,10 @@
 
             const hdkTarif = hdkTarifSelect.value;
 
-            const hdkLevel = datenkartenLevel(hdkTarif);
-
-            if (dataTarifLevels[pdkLevel] <= dataTarifLevels[hdkLevel] && gruppen[hdkId].length < 4) {
+            if (
+              partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, hdkTarif) &&
+              gruppen[hdkId].length < hauptMaxPartner(hdkTarif)
+            ) {
               gruppen[hdkId].push(pdk);
 
               zugewiesen = true;
@@ -9507,7 +9503,12 @@
 
               if (!hkTarifSelect || !hkTarifSelect.value) continue;
 
-              if (gruppen[hkId].length < 10) {
+              const hkTarif = hkTarifSelect.value;
+
+              if (
+                partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, hkTarif) &&
+                gruppen[hkId].length < hauptMaxPartner(hkTarif)
+              ) {
                 gruppen[hkId].push(pdk);
 
                 zugewiesen = true;
@@ -9642,19 +9643,9 @@
         document.removeEventListener("keydown", escListenerModal);
       }
 
-      const dataTarifLevels = { S: 1, M: 2, L: 3 };
-
-      function datenkartenLevel(tarifname) {
-        if (!tarifname) return null;
-
-        if (tarifname.includes(" Data S")) return "S";
-
-        if (tarifname.includes(" Data M")) return "M";
-
-        if (tarifname.includes(" Data L")) return "L";
-
-        return null;
-      }
+      // (Ehemals hartcodierte Datenkarten-Level {S:1,M:2,L:3} + datenkartenLevel() entfernt —
+      //  Groessen-Kompatibilitaet laeuft jetzt ueber die editierbaren Tarifstufen via
+      //  partnerDatenkarteGroessePasst().)
 
       // -------------------------------------------------------------------
       // SORTIER-SEED fuer die Dropdown-Reihenfolge — NICHT die Mitglieder-Quelle!
@@ -12262,7 +12253,15 @@
 
               const kartenArtText = isHDK ? "Haupt Datenkarte" : "Hauptkarte";
 
-              const limit = isHDK ? 4 : 10;
+              const slotMainSel = document.getElementById(hauptkartenId.replace("_", "_tarif_"));
+              const slotMainTarif = slotMainSel ? slotMainSel.value : "";
+              const limit = slotMainTarif
+                ? hauptNimmtPartner(slotMainTarif)
+                  ? hauptMaxPartner(slotMainTarif)
+                  : 0
+                : isHDK
+                  ? 4
+                  : 10;
 
               const restSlots = limit - gruppen[hauptkartenId].length;
 
@@ -15072,11 +15071,12 @@
           '<button class="ap-btn ap-btn-primary" onclick="adminAddStufe()">+ Stufe hinzufügen</button></div>';
 
         // 2) Pro Familie: Stufen-Zuordnung (nutzt den Arbeitsstand der Liste)
-        // Varianten nach Gruppe + Basis-Familie buendeln (nur Telefonie-Karten)
-        const relevant = { hauptkarte: {}, partnerkarte: {} };
+        // Varianten nach Gruppe + Basis-Familie buendeln (Telefon- UND Datenkarten).
+        const stufenGruppen = ["hauptkarte", "partnerkarte", "hauptdatenkarte", "partnerdatenkarte"];
+        const relevant = { hauptkarte: {}, partnerkarte: {}, hauptdatenkarte: {}, partnerdatenkarte: {} };
         Object.keys(adminState.tarife).forEach((name) => {
           const g = adminState.tarife[name].gruppe || ermittleGruppe(name);
-          if (g !== "hauptkarte" && g !== "partnerkarte") return;
+          if (!stufenGruppen.includes(g)) return;
           const basis = tarifBasisName(name);
           (relevant[g][basis] = relevant[g][basis] || []).push(name);
         });
@@ -15084,6 +15084,8 @@
         const gruppenLabel = {
           hauptkarte: "📱 Business Mobil (Hauptkarten)",
           partnerkarte: "💳 Business Card (Partnerkarten)",
+          hauptdatenkarte: "📡 Speedbox / Mobil Data (Haupt-Datenkarten)",
+          partnerdatenkarte: "📊 CombiCard (Partner-Datenkarten)",
         };
 
         const familienRank = (basis) => {
@@ -15091,7 +15093,7 @@
           const i = stufenListe.indexOf(lbl);
           return i === -1 ? (lbl === "Special" ? 9000 : 9999) : i;
         };
-        ["hauptkarte", "partnerkarte"].forEach((g) => {
+        stufenGruppen.forEach((g) => {
           const familien = Object.keys(relevant[g]).sort(
             (a, b) => familienRank(a) - familienRank(b) || a.localeCompare(b),
           );
@@ -15122,6 +15124,51 @@
               (override ? ' <span class="ap-stufen-tag">manuell</span>' : "") +
               "</span>";
             html += "</div>";
+
+            // Partnerkarten-Aufnahme: nur fuer Haupt-Familien (Telefon- & Daten-Hauptkarten)
+            if (g === "hauptkarte" || g === "hauptdatenkarte") {
+              const v0 = adminState.tarife[varianten[0]] || {};
+              const nimmt = typeof v0.nimmtPartner === "boolean" ? v0.nimmtPartner : true;
+              const typen = adminFamilieTypen(basis, g);
+              const maxP =
+                typeof v0.maxPartner === "number"
+                  ? v0.maxPartner
+                  : (PARTNER_DEFAULTS[g] || PARTNER_DEFAULTS.hauptkarte).max;
+              html +=
+                '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:-2px 0 12px 4px;font-size:0.86em;color:var(--ap-muted);">';
+              html +=
+                '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" data-basis="' +
+                adminEsc(basis) +
+                '" ' +
+                (nimmt ? "checked" : "") +
+                ' onchange="adminSetFamilieNimmtPartner(this.dataset.basis, this.checked)"> Nimmt Partnerkarten auf</label>';
+              if (nimmt) {
+                html +=
+                  '<span style="display:flex;align-items:center;gap:10px;">Typen:' +
+                  '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" data-basis="' +
+                  adminEsc(basis) +
+                  '" data-gruppe="' +
+                  g +
+                  '" data-typ="partnerkarte" ' +
+                  (typen.includes("partnerkarte") ? "checked" : "") +
+                  ' onchange="adminToggleFamiliePartnerTyp(this.dataset.basis, this.dataset.gruppe, this.dataset.typ, this.checked)"> normal</label>' +
+                  '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" data-basis="' +
+                  adminEsc(basis) +
+                  '" data-gruppe="' +
+                  g +
+                  '" data-typ="partnerdatenkarte" ' +
+                  (typen.includes("partnerdatenkarte") ? "checked" : "") +
+                  ' onchange="adminToggleFamiliePartnerTyp(this.dataset.basis, this.dataset.gruppe, this.dataset.typ, this.checked)"> Daten</label>' +
+                  "</span>";
+                html +=
+                  '<label style="display:flex;align-items:center;gap:5px;">max. <input type="number" min="0" step="1" value="' +
+                  maxP +
+                  '" data-basis="' +
+                  adminEsc(basis) +
+                  '" onchange="adminSetFamilieMaxPartner(this.dataset.basis, this.value)" style="width:64px;padding:6px 8px;"></label>';
+              }
+              html += "</div>";
+            }
           });
         });
         el.innerHTML = html;
@@ -15192,6 +15239,48 @@
         });
         if (count) adminMarkDirty();
         adminRenderStufen();
+      }
+
+      // ----- Partnerkarten-Aufnahme pro Haupt-Familie (Phase 2) -----
+      // Liest die akzeptierten Typen einer Familie aus dem Arbeitsstand (oder Default).
+      function adminFamilieTypen(basis, gruppe) {
+        const name = Object.keys(adminState.tarife).find((n) => tarifBasisName(n) === basis);
+        const t = name ? adminState.tarife[name] : null;
+        if (t && Array.isArray(t.partnerTypen)) return t.partnerTypen.slice();
+        return (PARTNER_DEFAULTS[gruppe] || PARTNER_DEFAULTS.hauptkarte).typen.slice();
+      }
+      // Setzt eine Eigenschaft auf ALLE Varianten einer Familie (wie adminSetStufenOverride).
+      function adminSetzeAufFamilie(basis, fn) {
+        let count = 0;
+        Object.keys(adminState.tarife).forEach((name) => {
+          if (tarifBasisName(name) !== basis) return;
+          fn(adminState.tarife[name]);
+          count++;
+        });
+        if (count) adminMarkDirty();
+        adminRenderStufen();
+      }
+      function adminSetFamilieNimmtPartner(basis, checked) {
+        adminSetzeAufFamilie(basis, (t) => {
+          if (checked) delete t.nimmtPartner; // Default = true -> kein Feld noetig
+          else t.nimmtPartner = false;
+        });
+      }
+      function adminToggleFamiliePartnerTyp(basis, gruppe, typ, checked) {
+        const set = new Set(adminFamilieTypen(basis, gruppe));
+        if (checked) set.add(typ);
+        else set.delete(typ);
+        const arr = ["partnerkarte", "partnerdatenkarte"].filter((x) => set.has(x));
+        adminSetzeAufFamilie(basis, (t) => {
+          t.partnerTypen = arr.slice();
+        });
+      }
+      function adminSetFamilieMaxPartner(basis, val) {
+        let n = parseInt(val, 10);
+        if (!isFinite(n) || n < 0) n = 0; // #7: keine negative Anzahl
+        adminSetzeAufFamilie(basis, (t) => {
+          t.maxPartner = n;
+        });
       }
 
       // ===== Optionen-Tab =====
@@ -16945,9 +17034,10 @@
             <div class="ap-rabatte-section">
               <h3 class="ap-rabatte-title">Tarifstufen (Partnerkarten-Kompatibilität)</h3>
               <p class="ap-rabatte-hint">
-                Die Stufe bestimmt, welche Partnerkarten an eine Hauptkarte passen:
-                eine Partnerkarte passt an jede Hauptkarte mit <strong>gleicher oder höherer</strong>
-                Stufe (XS &lt; S &lt; M &lt; L &lt; XL &lt; XXL). <strong>„Special"</strong> passt an jede Hauptkarte.<br />
+                Die Stufe bestimmt, welche Partnerkarten an eine Hauptkarte passen – für
+                <strong>Telefon- und Datenkarten</strong>: eine Partner(-Daten)karte passt an jede
+                Haupt(-Daten)karte mit <strong>gleicher oder höherer</strong> Stufe
+                (XS &lt; S &lt; M &lt; L &lt; XL &lt; XXL). <strong>„Special"</strong> passt an jede Hauptkarte.<br />
                 Die Stufe wird <strong>automatisch aus dem Tarifnamen</strong> erkannt – du musst hier
                 normalerweise nichts tun. Stelle eine Stufe nur dann manuell ein, wenn ein Name
                 nicht eindeutig ist. Die Einstellung gilt für <strong>alle Endgeräte-Varianten</strong> der Familie.
