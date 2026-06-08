@@ -1,14 +1,14 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Einzige Tarifdaten-Quelle. Per <script> geladen, vom Admin-Panel erzeugt.
- * Funktioniert per Doppelklick (file://) UND beim Hosten (https).
+ * Automatisch erzeugt vom Admin-Panel am 8.6.2026, 23:07:47
+ * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
   "_meta": {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-05-28",
+    "stand": "2026-06-08",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
@@ -33,7 +33,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XS mit Handy": {
       "preis": 37.77,
@@ -44,7 +45,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XS mit Top Handy": {
       "preis": 46.18,
@@ -55,7 +57,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XS mit Premium-Handy": {
       "preis": 54.58,
@@ -66,7 +69,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XS Premium": {
       "preis": 54.58,
@@ -78,7 +82,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil S eco": {
       "preis": 37.77,
@@ -89,7 +94,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil S mit Handy": {
       "preis": 46.18,
@@ -100,7 +106,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil S mit Top Handy": {
       "preis": 54.58,
@@ -111,7 +118,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil S mit Premium-Handy": {
       "preis": 62.98,
@@ -122,7 +130,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil S Premium": {
       "preis": 62.98,
@@ -134,7 +143,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil M eco": {
       "preis": 46.18,
@@ -146,7 +156,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil M mit Handy": {
       "preis": 54.58,
@@ -158,7 +169,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil M mit Top Handy": {
       "preis": 62.98,
@@ -170,7 +182,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil M mit Premium-Handy": {
       "preis": 71.38,
@@ -182,7 +195,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil M Premium": {
       "preis": 71.38,
@@ -195,7 +209,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil L eco": {
       "preis": 58.78,
@@ -207,7 +222,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil L mit Handy": {
       "preis": 67.18,
@@ -219,7 +235,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil L mit Top Handy": {
       "preis": 75.59,
@@ -231,7 +248,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil L mit Premium-Handy": {
       "preis": 83.99,
@@ -243,7 +261,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil L Premium": {
       "preis": 83.99,
@@ -256,7 +275,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XL eco": {
       "preis": 79.79,
@@ -268,7 +288,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "60 Minuten & Welcome Pass 5GB, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XL mit Handy": {
       "preis": 88.19,
@@ -280,7 +301,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "60 Minuten & Welcome Pass 5GB, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XL mit Top Handy": {
       "preis": 96.6,
@@ -292,7 +314,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "60 Minuten & Welcome Pass 5GB, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XL mit Premium-Handy": {
       "preis": 105,
@@ -304,7 +327,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "60 Minuten & Welcome Pass 5GB, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "Business Mobil XL Premium": {
       "preis": 105,
@@ -317,7 +341,8 @@ window.TARIFE_DATA = {
         "60 Minuten & Welcome Pass 5GB, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "hauptkarte"
     },
     "MagentaMobil Business Speedbox Flex": {
       "preis": 0,
@@ -325,7 +350,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Surfen innerhalb Deutschlands ( LTE / 5G )",
         "100GB Daten bei Bedarf zubuchbar"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox S eco": {
       "preis": 33.57,
@@ -333,7 +360,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "100 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox S mit Handy": {
       "preis": 33.57,
@@ -341,7 +370,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "100 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox S mit Gerät": {
       "preis": 33.57,
@@ -349,7 +380,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "100 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox M eco": {
       "preis": 46.18,
@@ -357,7 +390,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "200 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox M mit Handy": {
       "preis": 46.18,
@@ -365,7 +400,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "200 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox M mit Gerät": {
       "preis": 46.18,
@@ -373,7 +410,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "200 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox L eco": {
       "preis": 62.98,
@@ -381,7 +420,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "400 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox L mit Handy": {
       "preis": 62.98,
@@ -389,7 +430,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "400 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox L mit Gerät": {
       "preis": 62.98,
@@ -397,7 +440,9 @@ window.TARIFE_DATA = {
       "leistungen": [
         "400 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "nimmtPartner": false
     },
     "MagentaMobil Business Speedbox L Plus eco": {
       "preis": 160,
@@ -405,7 +450,10 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenztes HighSpeed Datenvolumen ( LTE/5G )",
         "Surfen innerhalb Deutschlands"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte",
+      "maxPartner": 4,
+      "nimmtPartner": false
     },
     "Business Card Special eco": {
       "preis": 16.76,
@@ -415,7 +463,8 @@ window.TARIFE_DATA = {
         "Business Mobil XS: 20 GB, Business Mobil S: 30 GB, Business Mobil M: 50 GB, Business Mobil L: 80 GB und Business Mobil XL: unbegrenztes Datenvolumen",
         "Telefonie Flat innerhalb Deutschlands und ins Ausland: EU Länder + Großbritannien und Schweiz",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card Special mit Handy": {
       "preis": 25.17,
@@ -425,7 +474,8 @@ window.TARIFE_DATA = {
         "Business Mobil XS: 20 GB, Business Mobil S: 30 GB, Business Mobil M: 50 GB, Business Mobil L: 80 GB und Business Mobil XL: unbegrenztes Datenvolumen",
         "Telefonie Flat innerhalb Deutschlands und ins Ausland: EU Länder + Großbritannien und Schweiz",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card Special mit Top Handy": {
       "preis": 33.57,
@@ -435,7 +485,8 @@ window.TARIFE_DATA = {
         "Business Mobil XS: 20 GB, Business Mobil S: 30 GB, Business Mobil M: 50 GB, Business Mobil L: 80 GB und Business Mobil XL: unbegrenztes Datenvolumen",
         "Telefonie Flat innerhalb Deutschlands und ins Ausland: EU Länder + Großbritannien und Schweiz",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XS eco": {
       "preis": 29.37,
@@ -446,7 +497,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XS mit Handy": {
       "preis": 29.37,
@@ -457,7 +509,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XS mit Top Handy": {
       "preis": 29.37,
@@ -468,7 +521,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XS mit Premium-Handy": {
       "preis": 29.37,
@@ -479,7 +533,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XS Premium": {
       "preis": 29.37,
@@ -491,7 +546,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card S eco": {
       "preis": 37.77,
@@ -502,7 +558,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card S mit Handy": {
       "preis": 37.77,
@@ -513,7 +570,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card S mit Top Handy": {
       "preis": 37.77,
@@ -524,7 +582,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card S mit Premium-Handy": {
       "preis": 37.77,
@@ -535,7 +594,8 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card S Premium": {
       "preis": 37.77,
@@ -547,7 +607,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card M eco": {
       "preis": 46.18,
@@ -559,7 +620,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card M mit Handy": {
       "preis": 46.18,
@@ -571,7 +633,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card M mit Top Handy": {
       "preis": 46.18,
@@ -583,7 +646,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card M mit Premium-Handy": {
       "preis": 46.18,
@@ -595,7 +659,8 @@ window.TARIFE_DATA = {
         "1x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card M Premium": {
       "preis": 46.18,
@@ -608,7 +673,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card L eco": {
       "preis": 58.78,
@@ -620,7 +686,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card L mit Handy": {
       "preis": 58.78,
@@ -632,7 +699,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card L mit Top Handy": {
       "preis": 58.78,
@@ -644,7 +712,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card L mit Premium-Handy": {
       "preis": 58.78,
@@ -656,7 +725,8 @@ window.TARIFE_DATA = {
         "2x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card L Premium": {
       "preis": 58.78,
@@ -669,7 +739,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XL eco": {
       "preis": 79.79,
@@ -681,7 +752,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XL mit Handy": {
       "preis": 79.79,
@@ -693,7 +765,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XL mit Top Handy": {
       "preis": 79.79,
@@ -705,7 +778,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XL mit Premium-Handy": {
       "preis": 79.79,
@@ -717,7 +791,8 @@ window.TARIFE_DATA = {
         "3x Kostenfreie MultiSIM",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Card XL Premium": {
       "preis": 79.79,
@@ -730,7 +805,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
-      ]
+      ],
+      "gruppe": "partnerkarte"
     },
     "Business Mobil Data S eco": {
       "preis": 12.56,
@@ -738,7 +814,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data S mit Gerät": {
       "preis": 20.96,
@@ -746,7 +823,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data S mit Premium-Gerät": {
       "preis": 37.77,
@@ -754,7 +832,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data M eco": {
       "preis": 16.76,
@@ -762,7 +841,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data M mit Gerät": {
       "preis": 25.16,
@@ -770,7 +850,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data M mit Premium-Gerät": {
       "preis": 41.97,
@@ -778,7 +859,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L eco": {
       "preis": 25.17,
@@ -786,7 +868,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L mit Gerät": {
       "preis": 33.57,
@@ -794,7 +877,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L mit Premium-Gerät": {
       "preis": 50.38,
@@ -802,7 +886,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L Flat eco": {
       "preis": 58.78,
@@ -810,7 +895,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L Flat mit Gerät": {
       "preis": 67.18,
@@ -818,7 +904,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "Business Mobil Data L Flat mit Premium-Gerät": {
       "preis": 83.99,
@@ -826,7 +913,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "hauptdatenkarte"
     },
     "CombiCard Business Mobil Data S eco": {
       "preis": 8.36,
@@ -834,7 +922,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data S mit Gerät": {
       "preis": 16.76,
@@ -842,7 +931,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data S mit Premium-Gerät": {
       "preis": 33.57,
@@ -850,7 +940,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "5 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data M eco": {
       "preis": 12.56,
@@ -858,7 +949,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data M mit Gerät": {
       "preis": 20.96,
@@ -866,7 +958,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data M mit Premium-Gerät": {
       "preis": 37.77,
@@ -874,7 +967,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "10 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L eco": {
       "preis": 20.96,
@@ -882,7 +976,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L mit Gerät": {
       "preis": 29.36,
@@ -890,7 +985,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L mit Premium-Gerät": {
       "preis": 46.17,
@@ -898,7 +994,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "25 GB HighSpeed Datenvolumen ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L Flat eco": {
       "preis": 54.58,
@@ -906,7 +1003,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L Flat mit Gerät": {
       "preis": 62.98,
@@ -914,7 +1012,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     },
     "CombiCard Business Mobil Data L Flat mit Premium-Gerät": {
       "preis": 79.79,
@@ -922,7 +1021,8 @@ window.TARIFE_DATA = {
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen in Deutschland ( LTE/5G )",
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
-      ]
+      ],
+      "gruppe": "partnerdatenkarte"
     }
   }
 };
