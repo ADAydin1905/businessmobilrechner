@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 9.6.2026, 14:29:30
+ * Automatisch erzeugt vom Admin-Panel am 9.6.2026, 14:39:53
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -25,14 +25,14 @@ window.TARIFE_DATA = {
   ],
   "tarife": {
     "Business Mobil XS eco": {
-      "preis": 29.37,
+      "preis": 33.57,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
         "Telefonie Flat innerhalb Deutschlands und ins Ausland: EU Länder + Großbritannien und Schweiz",
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
-        "Security OnNet Basic"
+        "Security OnNet Basic - Kostenfrei zubuchbar"
       ],
       "gruppe": "hauptkarte"
     },
