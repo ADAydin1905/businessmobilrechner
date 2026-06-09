@@ -14548,7 +14548,9 @@
         const ed = document.getElementById("apEditor");
         let html = "";
 
-        html += '<div class="ap-field">';
+        // Tarifname (links, flexibel) + Aktiv-Schalter (rechts daneben) in einer Zeile
+        html += '<div class="ap-field" style="display:flex; align-items:flex-end; gap:16px;">';
+        html += '<div style="flex:1; min-width:0;">';
         html += "<label>Tarifname</label>";
         html +=
           '<input type="text" value="' +
@@ -14562,12 +14564,13 @@
           html +=
             '<label class="ap-tarif-aktiv' +
             (tarifAktiv ? "" : " inaktiv") +
-            '" title="Inaktive Tarife erscheinen NICHT in den Rechner-Dropdowns – zum Vorbereiten und späteren Freischalten."><input type="checkbox" ' +
+            '" style="margin:0 0 9px 0; white-space:nowrap; flex:0 0 auto;" title="Inaktive Tarife erscheinen NICHT in den Rechner-Dropdowns – zum Vorbereiten und späteren Freischalten."><input type="checkbox" ' +
             (tarifAktiv ? "checked" : "") +
             ' onchange="adminToggleTarifAktiv(this.checked)"> ' +
             (tarifAktiv ? "Aktiv (im Rechner sichtbar)" : "Inaktiv (im Rechner ausgeblendet)") +
             "</label>";
         }
+        html += "</div>";
 
         // Gruppen-Auswahl (bestimmt, wo der Tarif im Rechner auftaucht)
         const aktuelleGruppe = t.gruppe || ermittleGruppe(key);
