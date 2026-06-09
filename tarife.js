@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 9.6.2026, 14:28:05
+ * Automatisch erzeugt vom Admin-Panel am 9.6.2026, 14:29:30
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -32,7 +32,7 @@ window.TARIFE_DATA = {
         "Telefonie Flat innerhalb Deutschlands und ins Ausland: EU Länder + Großbritannien und Schweiz",
         "EU Roaming inkl. Großbritannien und Schweiz",
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
-        "Security OnNet Basic - Kostenfrei zubuchbar"
+        "Security OnNet Basic"
       ],
       "gruppe": "hauptkarte"
     },
