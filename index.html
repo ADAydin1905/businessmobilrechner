@@ -4902,14 +4902,21 @@
 
       // Sicherstellen, dass die Preisquelle-Option "multiSim" existiert (falls eine
       // aeltere optionen.js sie noch nicht enthaelt). Default = frueheres Verhalten
-      // (L/XL/XXL = 25,17, sonst 4,16). Wird NICHT als Checkbox gerendert (siehe
-      // BUILTIN_OPTION_KEYS), nur als Preisquelle fuer getMultiSimPriceNetto.
-      if (window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen && !window.OPTIONEN_DATA.optionen.multiSim) {
-        window.OPTIONEN_DATA.optionen.multiSim = {
-          name: "MultiSIM",
-          preisNetto: 4.16,
-          preisProStufe: { L: 25.17, XL: 25.17, XXL: 25.17 },
-        };
+      // (L/XL/XXL = 25,17, sonst 4,16). Nur Telefonkarten (keine Datenkarten) -> regeln.
+      // Wird NICHT als Checkbox gerendert (siehe BUILTIN_OPTION_KEYS), nur als Preisquelle.
+      if (window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) {
+        const _ms = window.OPTIONEN_DATA.optionen.multiSim;
+        if (!_ms) {
+          window.OPTIONEN_DATA.optionen.multiSim = {
+            name: "MultiSIM",
+            preisNetto: 4.16,
+            preisProStufe: { L: 25.17, XL: 25.17, XXL: 25.17 },
+            regeln: { kartenArten: ["Hauptkarte", "Partnerkarte"] },
+          };
+        } else if (!_ms.regeln) {
+          // Migration: aelterer multiSim-Eintrag ohne Regeln -> auf Telefonkarten beschraenken.
+          _ms.regeln = { kartenArten: ["Hauptkarte", "Partnerkarte"] };
+        }
       }
 
       // Laufzeit-Objekt (let, damit es nach Admin-Aenderungen neu gebaut werden kann).
@@ -7443,9 +7450,10 @@
           // Hardcodierter MultiSIM-Mengen-Block OHNE eigene Ueberschrift (die liefert die Gruppe).
           // Wird als Lead-Inhalt der Gruppe "mehrkartenservice" gerendert -> die Gruppe bestimmt
           // Position UND Inhalt; weitere dort einsortierte Optionen erscheinen direkt darunter.
-          // Nur fuer Telefon-Karten und nur wenn die MultiSIM-Option verfuegbar ist.
+          // Sichtbarkeit komplett ueber die Verfuegbarkeit der MultiSIM-Option (regeln.kartenArten
+          // = nur Telefonkarten) – datengetrieben, kein Datenkarten-Hardcode mehr.
           const multiSimBlockHTML =
-            !istDatenkarte && multiSimVerfuegbar
+            multiSimVerfuegbar
               ? `<div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
                     <div class="input-group modal-einstellung" style="flex: 1; min-width: 200px;">
                         <label for="multisim-select">Anzahl kostenpflichtige MultiSIMs:</label>
@@ -14548,9 +14556,10 @@
         const ed = document.getElementById("apEditor");
         let html = "";
 
-        // Tarifname (links, flexibel) + Aktiv-Schalter (rechts daneben) in einer Zeile
-        html += '<div class="ap-field" style="display:flex; align-items:flex-end; gap:16px;">';
-        html += '<div style="flex:1; min-width:0;">';
+        // Tarifname (links, flexibel) + Aktiv-Schalter (rechts) in einer Zeile.
+        // Aussen KEIN .ap-field, sonst erbt das Aktiv-Label die Feld-Label-Styles.
+        html += '<div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:18px;">';
+        html += '<div class="ap-field" style="flex:1; min-width:0; margin-bottom:0;">';
         html += "<label>Tarifname</label>";
         html +=
           '<input type="text" value="' +
@@ -14558,16 +14567,16 @@
           '" data-field="name" onchange="adminEditName(this)" />';
         html += "</div>";
 
-        // Aktiv/Inaktiv: inaktive Tarife sind im Rechner ausgeblendet (vorbereitbar)
+        // Aktiv/Inaktiv: feste Mindestbreite -> Text wechselt, ohne dass das Namensfeld springt.
         {
           const tarifAktiv = t.aktiv !== false;
           html +=
             '<label class="ap-tarif-aktiv' +
             (tarifAktiv ? "" : " inaktiv") +
-            '" style="margin:0 0 9px 0; white-space:nowrap; flex:0 0 auto;" title="Inaktive Tarife erscheinen NICHT in den Rechner-Dropdowns – zum Vorbereiten und späteren Freischalten."><input type="checkbox" ' +
+            '" style="margin:0 0 9px 0; white-space:nowrap; flex:0 0 auto; min-width:96px;" title="Inaktive Tarife erscheinen NICHT in den Rechner-Dropdowns – zum Vorbereiten und späteren Freischalten."><input type="checkbox" ' +
             (tarifAktiv ? "checked" : "") +
             ' onchange="adminToggleTarifAktiv(this.checked)"> ' +
-            (tarifAktiv ? "Aktiv (im Rechner sichtbar)" : "Inaktiv (im Rechner ausgeblendet)") +
+            (tarifAktiv ? "Aktiv" : "Inaktiv") +
             "</label>";
         }
         html += "</div>";
@@ -15753,6 +15762,75 @@
             });
             html += "</div></details>";
           });
+
+          // 3) Stufen: verfügbar für welche Tarifstufen (Whitelist, gespeichert als stufenIncl)
+          {
+            const stufenAlle = [...stufen, "Special"];
+            const incl = Array.isArray(r.stufenIncl) ? new Set(r.stufenIncl) : null;
+            const excl = Array.isArray(r.stufenExcl) ? new Set(r.stufenExcl) : null;
+            const stVerf = (s) => (incl ? incl.has(s) : excl ? !excl.has(s) : true);
+            html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Stufen:</span>';
+            stufenAlle.forEach((s) => {
+              html +=
+                '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
+                adminEsc(key) +
+                '" data-stufe="' +
+                adminEsc(s) +
+                '" ' +
+                (stVerf(s) ? "checked" : "") +
+                ' onchange="adminToggleOptionStufe(this)"> ' +
+                adminEsc(s) +
+                "</label>";
+            });
+            html += "</div>";
+          }
+
+          // 4) Weitere Regeln (Name-Muster + Abhängigkeit) – selten, aber 100% editierbar
+          {
+            const advKey = key + "::adv";
+            html +=
+              '<details class="ap-opt-grp" data-openkey="' +
+              adminEsc(advKey) +
+              '" ontoggle="adminOptRememberOpen(this)"' +
+              (adminOptUiOpen.has(advKey) ? " open" : "") +
+              "><summary>Weitere Regeln (Name / Abhängigkeit)</summary>";
+            html += '<div class="ap-opt-fam-list" style="padding:4px 0;">';
+            const nameRow = (feld, lbl, arr) =>
+              '<label style="display:flex; align-items:center; gap:8px; margin:5px 0; font-size:0.85em;">' +
+              '<span style="flex:0 0 180px; color:var(--ap-muted);">' +
+              lbl +
+              "</span>" +
+              '<input type="text" data-key="' +
+              adminEsc(key) +
+              '" data-feld="' +
+              feld +
+              '" value="' +
+              adminEsc((arr || []).join(", ")) +
+              '" placeholder="kommagetrennt · leer = keine" style="flex:1; padding:6px 8px;" onchange="adminSetOptionNameRule(this.dataset.key, this.dataset.feld, this.value)"></label>';
+            html += nameRow("nameInclStart", "Name beginnt mit", r.nameInclStart);
+            html += nameRow("nameExcl", "Name enthält NICHT", r.nameExcl);
+            html += nameRow("nameExclEnd", "Name endet NICHT auf", r.nameExclEnd);
+            // erfordertHauptkartenOption: Abhängigkeit von einer Hauptkarten-Option
+            html +=
+              '<label style="display:flex; align-items:center; gap:8px; margin:5px 0; font-size:0.85em;">' +
+              '<span style="flex:0 0 180px; color:var(--ap-muted);">Nur wenn Hauptkarte Option hat</span>' +
+              '<select data-key="' +
+              adminEsc(key) +
+              '" style="flex:1; padding:6px 8px;" onchange="adminSetOptionErfordert(this.dataset.key, this.value)"><option value="">— keine —</option>';
+            Object.keys(adminState.optionen).forEach((ok) => {
+              html +=
+                '<option value="' +
+                adminEsc(ok) +
+                '"' +
+                (ok === (r.erfordertHauptkartenOption || "") ? " selected" : "") +
+                ">" +
+                adminEsc(adminState.optionen[ok].name || ok) +
+                "</option>";
+            });
+            html += "</select></label>";
+            html += "</div></details>";
+          }
+
           html += "</div></details>";
           html += "</div>";
           return html;
@@ -15956,6 +16034,52 @@
         adminMarkOptionenDirty();
         const sum = cb.closest(".ap-opt-verf")?.querySelector("summary");
         if (sum) sum.textContent = "Verfügbarkeit: " + optionRegelnText(o.regeln);
+      }
+
+      // Verfuegbarkeit nach Stufe: Whitelist via regeln.stufenIncl (alle an = keine Regel).
+      // Migriert ein evtl. vorhandenes stufenExcl beim ersten Klick automatisch mit.
+      function adminToggleOptionStufe(cb) {
+        const o = adminState.optionen[cb.dataset.key];
+        if (!o) return;
+        const stufenAlle = Object.keys(TARIF_STUFEN_RANG).concat("Special");
+        o.regeln = o.regeln || {};
+        const incl = Array.isArray(o.regeln.stufenIncl) ? new Set(o.regeln.stufenIncl) : null;
+        const excl = Array.isArray(o.regeln.stufenExcl) ? new Set(o.regeln.stufenExcl) : null;
+        const verf = (s) => (incl ? incl.has(s) : excl ? !excl.has(s) : true);
+        const aktiv = new Set(stufenAlle.filter(verf));
+        if (cb.checked) aktiv.add(cb.dataset.stufe);
+        else aktiv.delete(cb.dataset.stufe);
+        delete o.regeln.stufenExcl; // einheitlich als Whitelist speichern
+        if (aktiv.size >= stufenAlle.length) delete o.regeln.stufenIncl;
+        else o.regeln.stufenIncl = stufenAlle.filter((s) => aktiv.has(s));
+        adminMarkOptionenDirty();
+        adminRenderOptionenUndAktionen();
+      }
+
+      // Name-Muster-Regel setzen (kommagetrennt). feld: nameInclStart|nameExcl|nameExclEnd.
+      function adminSetOptionNameRule(key, feld, value) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        o.regeln = o.regeln || {};
+        const arr = String(value || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (arr.length) o.regeln[feld] = arr;
+        else delete o.regeln[feld];
+        adminMarkOptionenDirty();
+        adminRenderOptionenUndAktionen();
+      }
+
+      // Abhaengigkeit von einer Hauptkarten-Option setzen ("" = keine).
+      function adminSetOptionErfordert(key, value) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        o.regeln = o.regeln || {};
+        if (value) o.regeln.erfordertHauptkartenOption = value;
+        else delete o.regeln.erfordertHauptkartenOption;
+        adminMarkOptionenDirty();
+        adminRenderOptionenUndAktionen();
       }
 
       // Neue (eigene) Option anlegen. Standard-Typ: Name + Monatspreis, ohne

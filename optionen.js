@@ -83,7 +83,8 @@ window.OPTIONEN_DATA = {
       "name": "MultiSIM",
       "preisNetto": 4.16,
       "preisProStufe": { "L": 25.17, "XL": 25.17, "XXL": 25.17 },
-      "_hinweis": "Preis je MultiSIM ueber der im Tarif inkludierten Anzahl. Wird NICHT als Buchungs-Checkbox angezeigt (Menge laeuft ueber den MultiSIM-Zaehler), dient nur als Preisquelle."
+      "regeln": { "kartenArten": ["Hauptkarte", "Partnerkarte"] },
+      "_hinweis": "Preis je MultiSIM ueber der im Tarif inkludierten Anzahl. Nur Telefonkarten (keine Datenkarten). Wird NICHT als Buchungs-Checkbox angezeigt (Menge laeuft ueber den MultiSIM-Zaehler), dient nur als Preisquelle."
     },
     "halbesJahrhalberPreis": {
       "name": "6 Monate 50% Rabatt",
