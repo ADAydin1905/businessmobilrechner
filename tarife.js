@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 12.6.2026, 11:27:49
+ * Automatisch erzeugt vom Admin-Panel am 12.6.2026, 11:39:06
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -95,7 +95,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "maxPartner": 15
     },
     "Business Mobil S mit Handy": {
       "preis": 46.18,
@@ -107,7 +108,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "maxPartner": 15
     },
     "Business Mobil S mit Top Handy": {
       "preis": 54.58,
@@ -119,7 +121,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "maxPartner": 15
     },
     "Business Mobil S mit Premium-Handy": {
       "preis": 62.98,
@@ -131,7 +134,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "maxPartner": 15
     },
     "Business Mobil S Premium": {
       "preis": 62.98,
@@ -144,7 +148,8 @@ window.TARIFE_DATA = {
         "Security OnNet Basic",
         "12 Monate vor Ablauf der Bindefrist mit einem neuen Gerät verlängerbar"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "maxPartner": 15
     },
     "Business Mobil M eco": {
       "preis": 46.18,
