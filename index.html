@@ -4812,6 +4812,10 @@
 
       let lastCardCounts = { pk: 0, pdk: 0 };
 
+      // Zuletzt uebernommener Haupttarif je Karte (z.B. "hk_1" -> Tarifname). Dient als
+      // "vorheriger Wert" fuer die Kontingent-Rueckfrage beim Haupttarif-Wechsel.
+      let lastHauptTarife = {};
+
       // =====================================================================
       // ZUBUCHOPTIONEN (datengetrieben aus optionen.js / window.OPTIONEN_DATA)
       // ---------------------------------------------------------------------
@@ -10098,6 +10102,140 @@
         berechneTarife();
       }
 
+      // =====================================================================
+      // PARTNERKARTEN-KONTINGENT beim Haupttarif-Wechsel
+      // ---------------------------------------------------------------------
+      // Wird ein Haupttarif auf einen mit kleinerer Partnerkarten-Kapazitaet
+      // gewechselt, passen evtl. nicht mehr alle bereits gewaehlten Partnerkarten.
+      // Statt stiller Korrektur fragt der Rechner nach: ueberzaehlige Partnerkarten
+      // ENTFERNEN oder den Tarifwechsel ZURUECKNEHMEN.
+      // =====================================================================
+
+      // Enthaelt der Tarifname ein Endgeraet? (Sichtbarkeit der Geraetepreis-Felder)
+      function tarifHatGeraet(tarif) {
+        return (
+          tarif.includes("mit Handy") ||
+          tarif.includes("mit Top Handy") ||
+          tarif.includes("mit Premium-Handy") ||
+          tarif.includes("mit Gerät") ||
+          tarif.includes("mit Premium-Gerät") ||
+          tarif.includes("Premium")
+        );
+      }
+
+      // Summe der Partnerkarten-Slots ueber alle Haupt-/Haupt-Datenkarten (live aus dem DOM).
+      function partnerSlotSummen() {
+        const hk = parseInt(document.getElementById("hauptkarten").value) || 0;
+        const hdk = parseInt(document.getElementById("hauptdatenkarten").value) || 0;
+        let totalHk = 0,
+          totalHdk = 0;
+        for (let i = 1; i <= hk; i++)
+          totalHk += hauptPartnerSlots(document.getElementById(`hk_tarif_${i}`)?.value || "", "hauptkarte");
+        for (let i = 1; i <= hdk; i++)
+          totalHdk += hauptPartnerSlots(document.getElementById(`hdk_tarif_${i}`)?.value || "", "hauptdatenkarte");
+        return { totalHk, totalHdk, total: totalHk + totalHdk };
+      }
+
+      // Reduziert die Anzahl Partner-/Partner-Datenkarten auf das verfuegbare Kontingent.
+      // Gleiche Prioritaet wie die Eingabe-Begrenzung: PDK bevorzugt auf HDK-Slots,
+      // zuerst PK kuerzen, dann PDK.
+      function reducePartnerkartenAufKapazitaet() {
+        const { totalHk, totalHdk, total } = partnerSlotSummen();
+        let pk = parseInt(document.getElementById("partnerkarten").value) || 0;
+        let pdk = parseInt(document.getElementById("partnerdatenkarten").value) || 0;
+        const pdkSpillover = Math.max(0, pdk - totalHdk);
+        const maxPk = Math.max(0, totalHk - pdkSpillover);
+        if (pk > maxPk) pk = maxPk;
+        if (pk + pdk > total) {
+          const maxPdk = Math.max(0, total - pk);
+          if (pdk > maxPdk) pdk = maxPdk;
+        }
+        document.getElementById("partnerkarten").value = pk;
+        document.getElementById("partnerdatenkarten").value = pdk;
+      }
+
+      // Zwei-Wege-Rueckfrage (nutzt das fehlerModal wie showConfirmationModal).
+      function zeigePartnerKapazitaetDialog(meldung, onEntfernen, onZuruecksetzen) {
+        const modal = document.getElementById("fehlerModal");
+        const modalText = document.getElementById("fehlerModalText");
+        const modalButtons = document.getElementById("fehlerModalButtons");
+        const modalTitle = modal.querySelector("h3");
+        const modalTabs = document.getElementById("fehlerModalTabs");
+        modalTitle.textContent = "Partnerkarten-Kontingent";
+        modalTabs.innerHTML = "";
+        modalTabs.style.display = "none";
+        modalText.innerHTML = `<div>${meldung}</div>`;
+        modalButtons.innerHTML =
+          '<button class="primary" id="kapEntfernenBtn">Partnerkarten entfernen</button>' +
+          '<button class="secondary" id="kapZuruecksetzenBtn" style="margin-left:10px;">Tarif zurücksetzen</button>';
+        document.getElementById("kapEntfernenBtn").addEventListener(
+          "click",
+          function () {
+            closeModal("fehlerModal");
+            setTimeout(onEntfernen, 310);
+          },
+          { once: true },
+        );
+        document.getElementById("kapZuruecksetzenBtn").addEventListener(
+          "click",
+          function () {
+            closeModal("fehlerModal");
+            if (typeof onZuruecksetzen === "function") setTimeout(onZuruecksetzen, 310);
+          },
+          { once: true },
+        );
+        openModal("fehlerModal");
+      }
+
+      // Baut die Konflikt-Meldung. slots = Kapazitaet des neuen Tarifs (je Karte),
+      // proLabel haengt z.B. " je Hauptkarte" an (Sammel-Aenderung mehrerer Karten).
+      function partnerKapazitaetMeldung(tarif, slots, kapazitaet, gewaehlt, proLabel) {
+        const p = (n) => (n === 1 ? "" : "n");
+        return (
+          `Der Tarif <strong>${getDisplayName(tarif)}</strong> nimmt nur <strong>${slots}</strong> Partnerkarte${p(slots)}` +
+          (proLabel || "") +
+          ` auf. Dadurch passen insgesamt nur noch <strong>${kapazitaet}</strong> Partnerkarte${p(kapazitaet)}, ` +
+          `aktuell sind <strong>${gewaehlt}</strong> ausgewählt.<br><br>` +
+          `Sollen die überzähligen Partnerkarten entfernt oder der Tarifwechsel zurückgenommen werden?`
+        );
+      }
+
+      // onchange-Handler der Haupt-/Haupt-Datenkarten-Tarife (statt direkt toggleGeraeteFelder).
+      function handleHauptTarifChange(selectElement, kartenArt, index) {
+        const cardKey = `${kartenArt}_${index}`;
+        const neuerTarif = selectElement.value;
+        const vorherigerTarif = lastHauptTarife[cardKey] || "";
+
+        const gewaehlt =
+          (parseInt(document.getElementById("partnerkarten").value) || 0) +
+          (parseInt(document.getElementById("partnerdatenkarten").value) || 0);
+        const kapazitaet = partnerSlotSummen().total; // selectElement.value ist bereits der neue Tarif
+
+        if (gewaehlt > kapazitaet) {
+          // Erst sichtbar auf den vorherigen Tarif zuruecksetzen (konsistenter Zustand),
+          // dann den Nutzer entscheiden lassen.
+          if (vorherigerTarif) selectElement.value = vorherigerTarif;
+          else selectElement.selectedIndex = 0;
+
+          const slots = hauptPartnerSlots(neuerTarif, kartenArt === "hdk" ? "hauptdatenkarte" : "hauptkarte");
+          zeigePartnerKapazitaetDialog(
+            partnerKapazitaetMeldung(neuerTarif, slots, kapazitaet, gewaehlt, ""),
+            function onEntfernen() {
+              selectElement.value = neuerTarif;
+              lastHauptTarife[cardKey] = neuerTarif;
+              reducePartnerkartenAufKapazitaet();
+              renderTarifDropdowns(); // baut mit neuem Tarif + reduzierter Partnerzahl neu auf (ruft berechneTarife)
+            },
+            null, // bereits sichtbar zurueckgesetzt -> nichts weiter noetig
+          );
+          return;
+        }
+
+        // Kein Konflikt: normal uebernehmen (leichtgewichtig wie bisher).
+        lastHauptTarife[cardKey] = neuerTarif;
+        toggleGeraeteFelder(selectElement, kartenArt, index);
+      }
+
       // === URL State Management Start ===
 
       function generateState() {
@@ -10524,27 +10662,54 @@
             if (!this.value) return;
 
             const tarif = this.value;
-
+            const gleichSelect = this;
+            // Vorzustand merken (fuer "Tarif zuruecksetzen").
+            const snapshot = {};
             for (let i = 1; i <= hauptkarten; i++) {
-              const dropdown = document.getElementById(`hk_tarif_${i}`);
-
-              if (dropdown) {
-                dropdown.value = tarif;
-
-                const geraeteFelderDiv = document.getElementById(`hk_geraete_felder_${i}`);
-
-                if (geraeteFelderDiv) {
-                  geraeteFelderDiv.style.display =
-                    tarif.includes("mit Handy") ||
-                    tarif.includes("mit Top Handy") ||
-                    tarif.includes("mit Premium-Handy") ||
-                    tarif.includes("mit Gerät") ||
-                    tarif.includes("mit Premium-Gerät") ||
-                    tarif.includes("Premium")
-                      ? "block"
-                      : "none";
-                }
+              const d = document.getElementById(`hk_tarif_${i}`);
+              if (d) snapshot[i] = d.value;
+            }
+            const setHk = (wert) => {
+              for (let i = 1; i <= hauptkarten; i++) {
+                const d = document.getElementById(`hk_tarif_${i}`);
+                if (!d) continue;
+                d.value = wert;
+                lastHauptTarife[`hk_${i}`] = wert;
+                const div = document.getElementById(`hk_geraete_felder_${i}`);
+                if (div) div.style.display = tarifHatGeraet(wert || "") ? "block" : "none";
               }
+            };
+
+            setHk(tarif);
+
+            const gewaehlt =
+              (parseInt(document.getElementById("partnerkarten").value) || 0) +
+              (parseInt(document.getElementById("partnerdatenkarten").value) || 0);
+            const kapazitaet = partnerSlotSummen().total;
+
+            if (gewaehlt > kapazitaet) {
+              // Sammel-Aenderung je Karte auf den Vorzustand zuruecksetzen.
+              for (let i = 1; i <= hauptkarten; i++) {
+                const d = document.getElementById(`hk_tarif_${i}`);
+                if (!d) continue;
+                d.value = snapshot[i];
+                lastHauptTarife[`hk_${i}`] = snapshot[i];
+                const div = document.getElementById(`hk_geraete_felder_${i}`);
+                if (div) div.style.display = tarifHatGeraet(snapshot[i] || "") ? "block" : "none";
+              }
+              gleichSelect.value = "";
+              zeigePartnerKapazitaetDialog(
+                partnerKapazitaetMeldung(tarif, hauptPartnerSlots(tarif, "hauptkarte"), kapazitaet, gewaehlt, " je Hauptkarte"),
+                function onEntfernen() {
+                  setHk(tarif);
+                  reducePartnerkartenAufKapazitaet();
+                  renderTarifDropdowns();
+                },
+                function onZuruecksetzen() {
+                  berechneTarife();
+                },
+              );
+              return;
             }
 
             berechneTarife();
@@ -10663,7 +10828,7 @@
 
           // Verwendet jetzt endgeraeteOptionenHauptkarten
 
-          hauptkartenTarifauswahlContentDiv.innerHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Hauptkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Hauptkarte', ${i})" title="Zubuchoptionen für Hauptkarte ${i}">⚙️</button></div><select id="${id}" onchange="toggleGeraeteFelder(this, 'hk', ${i})"><option value="" selected disabled>-- Keine Auswahl --</option>${getDropdownOptions(businessMobilTarife, endgeraeteOptionenHauptkarten)}</select>${rufnummerFeld}${bereitstellungFeld}${rabattUebersteuernFeld}${geraeteFelderHTML}</div></div>`;
+          hauptkartenTarifauswahlContentDiv.innerHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Hauptkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Hauptkarte', ${i})" title="Zubuchoptionen für Hauptkarte ${i}">⚙️</button></div><select id="${id}" onchange="handleHauptTarifChange(this, 'hk', ${i})"><option value="" selected disabled>-- Keine Auswahl --</option>${getDropdownOptions(businessMobilTarife, endgeraeteOptionenHauptkarten)}</select>${rufnummerFeld}${bereitstellungFeld}${rabattUebersteuernFeld}${geraeteFelderHTML}</div></div>`;
         }
 
         if (partnerkarten > 0) {
@@ -10771,15 +10936,53 @@
             if (!this.value) return;
 
             const tarif = this.value;
-
+            const gleichSelect = this;
+            const snapshot = {};
             for (let i = 1; i <= hauptdatenkarten; i++) {
-              const dropdown = document.getElementById(`hdk_tarif_${i}`);
-
-              if (dropdown) {
-                dropdown.value = tarif;
-
-                toggleGeraeteFelder(dropdown, "hdk", i);
+              const d = document.getElementById(`hdk_tarif_${i}`);
+              if (d) snapshot[i] = d.value;
+            }
+            const setHdk = (wert, reinigen) => {
+              for (let i = 1; i <= hauptdatenkarten; i++) {
+                const d = document.getElementById(`hdk_tarif_${i}`);
+                if (!d) continue;
+                d.value = wert;
+                lastHauptTarife[`hdk_${i}`] = wert;
+                if (reinigen && wert) validateAndCleanZubuchoptionen(`hdk_${i}`, wert);
+                const div = document.getElementById(`hdk_geraete_felder_${i}`);
+                if (div) div.style.display = tarifHatGeraet(wert || "") ? "block" : "none";
               }
+            };
+
+            setHdk(tarif, true);
+
+            const gewaehlt =
+              (parseInt(document.getElementById("partnerkarten").value) || 0) +
+              (parseInt(document.getElementById("partnerdatenkarten").value) || 0);
+            const kapazitaet = partnerSlotSummen().total;
+
+            if (gewaehlt > kapazitaet) {
+              for (let i = 1; i <= hauptdatenkarten; i++) {
+                const d = document.getElementById(`hdk_tarif_${i}`);
+                if (!d) continue;
+                d.value = snapshot[i];
+                lastHauptTarife[`hdk_${i}`] = snapshot[i];
+                const div = document.getElementById(`hdk_geraete_felder_${i}`);
+                if (div) div.style.display = tarifHatGeraet(snapshot[i] || "") ? "block" : "none";
+              }
+              gleichSelect.value = "";
+              zeigePartnerKapazitaetDialog(
+                partnerKapazitaetMeldung(tarif, hauptPartnerSlots(tarif, "hauptdatenkarte"), kapazitaet, gewaehlt, " je Haupt-Datenkarte"),
+                function onEntfernen() {
+                  setHdk(tarif, true);
+                  reducePartnerkartenAufKapazitaet();
+                  renderTarifDropdowns();
+                },
+                function onZuruecksetzen() {
+                  berechneTarife();
+                },
+              );
+              return;
             }
 
             berechneTarife();
@@ -10824,7 +11027,7 @@
 
           const geraeteFelderHTML = `<div id="${geraeteFelderID}" class="geraete-felder"><div class="input-group"><label for="${geraeteNameID}">Gerät:</label><input type="text" id="${geraeteNameID}" value="Sonstiges Gerät" onchange="berechneTarife()"></div><div class="input-group"><label for="${geraetePreisID}">Gerätepreis (Netto):</label><input type="number" id="${geraetePreisID}" value="0" min="0" step="0.01" onchange="berechneTarife()"></div></div>`;
 
-          hauptdatenkartenTarifauswahlContentDiv.innerHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Haupt Datenkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Haupt-Datenkarte', ${i})" title="Zubuchoptionen für Haupt Datenkarte ${i}">⚙️</button></div><select id="${id}" onchange="toggleGeraeteFelder(this, 'hdk', ${i})"><option value="" selected disabled>-- Keine Auswahl --</option>${hdkOptionsHTML}</select>${rufnummerFeld}${bereitstellungFeld}${rabattUebersteuernFeld}${geraeteFelderHTML}</div></div>`;
+          hauptdatenkartenTarifauswahlContentDiv.innerHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Haupt Datenkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Haupt-Datenkarte', ${i})" title="Zubuchoptionen für Haupt Datenkarte ${i}">⚙️</button></div><select id="${id}" onchange="handleHauptTarifChange(this, 'hdk', ${i})"><option value="" selected disabled>-- Keine Auswahl --</option>${hdkOptionsHTML}</select>${rufnummerFeld}${bereitstellungFeld}${rabattUebersteuernFeld}${geraeteFelderHTML}</div></div>`;
         }
 
         if (partnerdatenkarten >= 2) {
@@ -10946,6 +11149,13 @@
         lastCardCounts.pk = partnerkarten;
 
         lastCardCounts.pdk = partnerdatenkarten;
+
+        // Zuletzt uebernommene Haupttarife festhalten (Basis fuer die Kontingent-Rueckfrage).
+        lastHauptTarife = {};
+        for (let i = 1; i <= hauptkarten; i++)
+          lastHauptTarife[`hk_${i}`] = document.getElementById(`hk_tarif_${i}`)?.value || "";
+        for (let i = 1; i <= hauptdatenkarten; i++)
+          lastHauptTarife[`hdk_${i}`] = document.getElementById(`hdk_tarif_${i}`)?.value || "";
       }
 
       function handleInputChange(event) {
