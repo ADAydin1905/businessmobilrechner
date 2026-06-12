@@ -16,6 +16,7 @@ window.RABATTE_DATA = {
     "stand": "2026-05-29",
     "felder": {
       "rahmenvertragsRabatte": "Liste der waehlbaren festen Rahmenvertrags-Rabatte in Prozent (Zahlen, sortiert aufsteigend, 0 immer enthalten)",
+      "bereitstellungsPreise": "Liste der waehlbaren Bereitstellungspreise (netto, in EUR) fuer die Bereitstellungs-Dropdowns",
       "mitarbeiterRabatte": "Objekt: Tarifname -> Rabatt in Prozent (tarifspezifisch)"
     }
   },
@@ -29,6 +30,12 @@ window.RABATTE_DATA = {
     18,
     20,
     25
+  ],
+  "bereitstellungsPreise": [
+    8.36,
+    16.76,
+    25.17,
+    33.57
   ],
   "mitarbeiterRabatte": {
     "Business Mobil XS eco": 42.935,

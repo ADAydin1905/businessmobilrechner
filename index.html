@@ -5680,7 +5680,7 @@
               : "";
 
             const bereitstellungFeld = showBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
               : "";
 
             let hauptkartenOptionsHTML = "";
@@ -5743,7 +5743,7 @@
               : "";
 
             const bereitstellungFeld = showBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
               : "";
 
             let hauptkartenOptionsHTML = "";
@@ -9940,6 +9940,25 @@
           ? JSON.parse(JSON.stringify(window.RABATTE_DATA.rahmenvertragsRabatte))
           : [0, 5, 7.5, 8, 10, 15, 18, 20, 25];
 
+      // Waehlbare Bereitstellungspreise (netto). Aus rabatte.js (im Admin pflegbar) oder
+      // Fallback. const -> Inhalt wird vom Admin in-place ersetzt (wie rahmenvertragsRabatte).
+      const bereitstellungsPreise =
+        window.RABATTE_DATA && Array.isArray(window.RABATTE_DATA.bereitstellungsPreise)
+          ? JSON.parse(JSON.stringify(window.RABATTE_DATA.bereitstellungsPreise))
+          : [8.36, 16.76, 25.17, 33.57];
+
+      // Erzeugt das <option>-HTML fuer einen Bereitstellungs-Dropdown (netto-Werte;
+      // die Netto/Brutto-Anzeige uebernimmt updateBereitstellungsPreisOptionen()).
+      function buildBereitstellungOptionsHTML(leerLabel) {
+        let html = '<option value="">' + leerLabel + "</option>";
+        Array.from(new Set(bereitstellungsPreise))
+          .sort((a, b) => a - b)
+          .forEach((p) => {
+            html += '<option value="' + p + '">' + formatCurrencyNumber(p) + " €</option>";
+          });
+        return html;
+      }
+
       // Helfer: erzeugt das <option>-HTML fuer einen Rabatt-Dropdown.
       // mitMitarbeiter=true haengt zusaetzlich den "Mitarbeiter/BGE"-Eintrag an.
       function buildRabattOptionsHTML(mitMitarbeiter) {
@@ -10480,7 +10499,7 @@
           const tarifDropdownHTML = `<div class="input-group full-width"><label for="gleichsetzenhk">Alle Hauptkarten auf einen Tarif setzen:</label><select id="gleichsetzenhk"><option value="">-- Keine Auswahl --</option>${getDropdownOptions(businessMobilTarife, endgeraeteOptionenHauptkarten)}</select></div>`;
 
           let bereitDropdownHTML = zeigeBereitstellung
-            ? `<div class="input-group full-width"><label for="bereitAlleHK">Bereitstellungspreis für Hauptkarten:</label><select id="bereitAlleHK"><option value="">– Keine Auswahl –</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25,17 €</option><option value="33.57">33,57 €</option></select></div>`
+            ? `<div class="input-group full-width"><label for="bereitAlleHK">Bereitstellungspreis für Hauptkarten:</label><select id="bereitAlleHK">${buildBereitstellungOptionsHTML("– Keine Auswahl –")}</select></div>`
             : "";
 
           einstellungContainerhk.innerHTML = `<div class="zeilenblock">${tarifDropdownHTML}${bereitDropdownHTML}</div>`;
@@ -10549,7 +10568,7 @@
             .join("")}</select></div>`;
 
           let bereitDropdownHTML = zeigeBereitstellung
-            ? `<div class="input-group full-width"><label for="bereitAllePK">Bereitstellungspreis für Partnerkarten:</label><select id="bereitAllePK"><option value="">– Keine Auswahl –</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25,17 €</option><option value="33.57">33,57 €</option></select></div>`
+            ? `<div class="input-group full-width"><label for="bereitAllePK">Bereitstellungspreis für Partnerkarten:</label><select id="bereitAllePK">${buildBereitstellungOptionsHTML("– Keine Auswahl –")}</select></div>`
             : "";
 
           einstellungContainerpk.innerHTML = `<div class="zeilenblock">${tarifDropdownHTML}${bereitDropdownHTML}</div>`;
@@ -10617,7 +10636,7 @@
             : "";
 
           const bereitstellungFeld = zeigeBereitstellung
-            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
@@ -10660,7 +10679,7 @@
               : "";
 
             const bereitstellungFeld = zeigeBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
               : "";
 
             let zuweisungFeld = manuelleZuweisungAktiv
@@ -10727,7 +10746,7 @@
           const tarifDropdownHTML = `<div class="input-group full-width"><label for="gleichsetzenhdk">Alle Haupt Datenkarten auf einen Tarif setzen:</label><select id="gleichsetzenhdk"><option value="">-- Keine Auswahl --</option>${hdkOptionsHTML}</select></div>`;
 
           let bereitDropdownHTML = zeigeBereitstellung
-            ? `<div class="input-group full-width"><label for="bereitAlleHDK">Bereitstellungspreis für Haupt Datenkarten:</label><select id="bereitAlleHDK"><option value="">– Keine Auswahl –</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25,17 €</option><option value="33.57">33,57 €</option></select></div>`
+            ? `<div class="input-group full-width"><label for="bereitAlleHDK">Bereitstellungspreis für Haupt Datenkarten:</label><select id="bereitAlleHDK">${buildBereitstellungOptionsHTML("– Keine Auswahl –")}</select></div>`
             : "";
 
           einstellungContainerhdk.innerHTML = `<div class="zeilenblock">${tarifDropdownHTML}${bereitDropdownHTML}</div>`;
@@ -10780,7 +10799,7 @@
             : "";
 
           const bereitstellungFeld = zeigeBereitstellung
-            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
@@ -10796,7 +10815,7 @@
           const tarifDropdownHTML = `<div class="input-group full-width"><label for="gleichsetzenpdk">Alle Partner Datenkarten auf einen Tarif setzen:</label><select id="gleichsetzenpdk"><option value="">-- Keine Auswahl --</option>${getDropdownOptions(businessDataCardTarife, endgeraeteOptionenDatenkarten)}</select></div>`;
 
           let bereitDropdownHTML = zeigeBereitstellung
-            ? `<div class="input-group full-width"><label for="bereitAllePDK">Bereitstellungspreis für Partner Datenkarten:</label><select id="bereitAllePDK"><option value="">– Keine Auswahl –</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25,17 €</option><option value="33.57">33,57 €</option></select></div>`
+            ? `<div class="input-group full-width"><label for="bereitAllePDK">Bereitstellungspreis für Partner Datenkarten:</label><select id="bereitAllePDK">${buildBereitstellungOptionsHTML("– Keine Auswahl –")}</select></div>`
             : "";
 
           einstellungContainerpdk.innerHTML = `<div class="zeilenblock">${tarifDropdownHTML}${bereitDropdownHTML}</div>`;
@@ -10877,7 +10896,7 @@
               : "";
 
             const bereitstellungFeld = zeigeBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()"><option value="">Kein Bereitstellungspreis</option><option value="8.36">8,36 €</option><option value="16.76">16,76 €</option><option value="25.17">25.17 €</option><option value="33.57">33.57 €</option></select>`
+              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
               : "";
 
             const geraeteFelderID = `pdk_geraete_felder_${i}`,
@@ -14422,6 +14441,7 @@
         adminState.tarife = JSON.parse(JSON.stringify(tarifDetails));
         adminState.rabatte = JSON.parse(JSON.stringify(mitarbeiterRabatte || {}));
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
+        adminState.bereitstellungsPreise = JSON.parse(JSON.stringify(bereitstellungsPreise || []));
         // Editierbare Stufen-Reihenfolge (Arbeitsstand)
         adminState.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
         // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
@@ -14439,6 +14459,7 @@
         adminState.rabatteDirty = false;
         adminState.optionenDirty = false;
         adminState.rahmenvertragsRabatteDirty = false;
+        adminState.bereitstellungDirty = false;
         adminRenderFilterChips();
         adminRenderList();
         adminRenderEditorEmpty();
@@ -16195,6 +16216,7 @@
       // ===== Rabatte-Tab =====
       function adminRenderRabatte() {
         adminRenderRabattChips();
+        adminRenderBereitstellungChips();
         adminRenderMitarbeiterUebersicht();
       }
 
@@ -16252,6 +16274,56 @@
         adminState.rahmenvertragsRabatteDirty = true;
         adminMarkDirty();
         adminRenderRabattChips();
+      }
+
+      // ----- Bereitstellungspreise (gleiche Mechanik wie Rahmenvertrags-Rabatte) -----
+      function adminRenderBereitstellungChips() {
+        const el = document.getElementById("apBereitstellungChips");
+        if (!el) return;
+        const liste = (adminState.bereitstellungsPreise || []).slice().sort((a, b) => a - b);
+        let html = "";
+        liste.forEach((p) => {
+          html +=
+            '<span class="ap-rab-chip" data-preis="' +
+            p +
+            '">' +
+            formatCurrencyNumber(p) +
+            " €" +
+            '<button class="x" title="Entfernen" onclick="adminRemoveBereitstellung(' + p + ')">✕</button>' +
+            "</span>";
+        });
+        el.innerHTML = html;
+      }
+
+      function adminAddBereitstellung() {
+        const input = document.getElementById("apBereitstellungNeu");
+        if (!input) return;
+        const raw = input.value.trim().replace(",", ".");
+        const wert = parseFloat(raw);
+        if (!isFinite(wert) || wert < 0) {
+          alert("Bitte einen gültigen Preis (≥ 0) eingeben.");
+          return;
+        }
+        const gerundet = Math.round(wert * 100) / 100;
+        if ((adminState.bereitstellungsPreise || []).includes(gerundet)) {
+          alert(formatCurrencyNumber(gerundet) + " € ist bereits in der Liste.");
+          return;
+        }
+        adminState.bereitstellungsPreise = (adminState.bereitstellungsPreise || [])
+          .concat([gerundet])
+          .sort((a, b) => a - b);
+        adminState.bereitstellungDirty = true;
+        adminMarkDirty();
+        input.value = "";
+        adminRenderBereitstellungChips();
+      }
+
+      function adminRemoveBereitstellung(p) {
+        if (!confirm("Bereitstellungspreis " + formatCurrencyNumber(p) + " € entfernen?")) return;
+        adminState.bereitstellungsPreise = (adminState.bereitstellungsPreise || []).filter((x) => x !== p);
+        adminState.bereitstellungDirty = true;
+        adminMarkDirty();
+        adminRenderBereitstellungChips();
       }
 
       function adminRenderMitarbeiterUebersicht() {
@@ -16321,7 +16393,7 @@
         files.push({ name: "tarife.js", content: tarifeJsText, mime: "text/javascript" });
 
         // --- rabatte.* (nur, wenn veraendert) ---
-        if (adminState.rabatteDirty || adminState.rahmenvertragsRabatteDirty) {
+        if (adminState.rabatteDirty || adminState.rahmenvertragsRabatteDirty || adminState.bereitstellungDirty) {
           const rabatteMeta =
             window.RABATTE_DATA && window.RABATTE_DATA._meta
               ? JSON.parse(JSON.stringify(window.RABATTE_DATA._meta))
@@ -16330,6 +16402,7 @@
           const rabatteOut = {
             _meta: rabatteMeta,
             rahmenvertragsRabatte: adminState.rahmenvertragsRabatte || [],
+            bereitstellungsPreise: adminState.bereitstellungsPreise || [],
             mitarbeiterRabatte: adminState.rabatte,
           };
           const rabatteJson = JSON.stringify(rabatteOut, null, 2);
@@ -16726,6 +16799,13 @@
           if (Array.isArray(adminState.rahmenvertragsRabatte)) {
             rahmenvertragsRabatte.length = 0;
             adminState.rahmenvertragsRabatte.forEach((p) => rahmenvertragsRabatte.push(p));
+          }
+          // Liste der Bereitstellungspreise uebernehmen (Dropdowns werden unten neu gebaut)
+          if (Array.isArray(adminState.bereitstellungsPreise)) {
+            bereitstellungsPreise.length = 0;
+            adminState.bereitstellungsPreise.forEach((p) => bereitstellungsPreise.push(p));
+            window.RABATTE_DATA = window.RABATTE_DATA || {};
+            window.RABATTE_DATA.bereitstellungsPreise = adminState.bereitstellungsPreise.slice();
           }
           // Zubuchoptionen uebernehmen: Quelle aktualisieren + Laufzeit-Objekt neu bauen
           if (adminState.optionen) {
@@ -17141,6 +17221,27 @@
                 />
                 <span class="affix-static">%</span>
                 <button class="ap-btn ap-btn-primary" onclick="adminAddRahmenvertragsRabatt()">+ Prozentwert hinzufügen</button>
+              </div>
+            </div>
+
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Bereitstellungspreise</h3>
+              <p class="ap-rabatte-hint">
+                Diese Netto-Preise stehen in allen "Bereitstellungspreis"-Dropdowns (pro Karte und
+                "für alle …") zur Auswahl. Die Brutto-Anzeige wird automatisch berechnet.
+              </p>
+              <div class="ap-rabatte-chips" id="apBereitstellungChips"></div>
+              <div class="ap-rabatte-add">
+                <input
+                  type="number"
+                  id="apBereitstellungNeu"
+                  step="0.01"
+                  min="0"
+                  placeholder="z.B. 16.76"
+                  onkeydown="if(event.key==='Enter') adminAddBereitstellung()"
+                />
+                <span class="affix-static">€</span>
+                <button class="ap-btn ap-btn-primary" onclick="adminAddBereitstellung()">+ Preis hinzufügen</button>
               </div>
             </div>
 
