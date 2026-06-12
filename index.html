@@ -6288,6 +6288,20 @@
         if (t && typeof t.maxPartner === "number" && t.maxPartner >= 0) return t.maxPartner;
         return hauptPartnerDefaults(hauptTarif).max;
       }
+      // Partner-Kontingent eines Haupt-Tarifs fuer die ANZAHL-Begrenzung der Eingabe
+      // (max. buchbare Partnerkarten insgesamt). Datengetrieben pro Tarif statt frueher
+      // hart 10 (Hauptkarte) / 4 (Haupt-Datenkarte), damit die im Admin-Panel gepflegte
+      // "max. Partnerkarten"-Zahl auch die Eingabe begrenzt:
+      //   - kein Tarif gewaehlt          -> Gruppen-Default (nicht vorzeitig begrenzen)
+      //   - Speedbox-Datenkarte          -> 0 (nimmt wie in der Zuweisung keine Partner auf)
+      //   - Tarif "nimmt keine Partner"  -> 0
+      //   - sonst                        -> hauptMaxPartner(tarif)
+      function hauptPartnerSlots(hauptTarif, gruppe) {
+        if (!hauptTarif) return (PARTNER_DEFAULTS[gruppe] || PARTNER_DEFAULTS.hauptkarte).max;
+        if (gruppe === "hauptdatenkarte" && hauptTarif.includes("Speedbox")) return 0;
+        if (!hauptNimmtPartner(hauptTarif)) return 0;
+        return hauptMaxPartner(hauptTarif);
+      }
       // Gesamtpruefung (ohne Kapazitaet): nimmt Partner? + Typ erlaubt? + Groesse passt?
       // partnerGruppe: "partnerkarte" (Business Card) oder "partnerdatenkarte" (CombiCard).
       function partnerPasstZuHaupt(partnerGruppe, partnerTarif, hauptTarif) {
@@ -10379,19 +10393,21 @@
 
         const pdk_changed = partnerdatenkarten !== lastCardCounts.pdk;
 
+        // Gesamtkontingent datengetrieben pro Tarif (siehe hauptPartnerSlots) statt
+        // hart 4 je Haupt-Datenkarte / 10 je Hauptkarte. So begrenzt die im Admin-Panel
+        // gepflegte "max. Partnerkarten"-Zahl auch die eingebbare Karten-Anzahl.
+
         let totalHdkSlots = 0;
 
         for (let i = 1; i <= hauptdatenkarten; i++) {
-          const tarif = currentSelections[`hdk_tarif_${i}`];
-
-          // Zähle HDK auch OHNE Tarif (wie bei HK), außer wenn explizit Speedbox Flex ausgewählt
-
-          if (!tarif || tarif !== "MagentaMobil Business Speedbox Flex") {
-            totalHdkSlots += 4;
-          }
+          totalHdkSlots += hauptPartnerSlots(currentSelections[`hdk_tarif_${i}`], "hauptdatenkarte");
         }
 
-        const totalHkSlots = hauptkarten * 10;
+        let totalHkSlots = 0;
+
+        for (let i = 1; i <= hauptkarten; i++) {
+          totalHkSlots += hauptPartnerSlots(currentSelections[`hk_tarif_${i}`], "hauptkarte");
+        }
 
         const totalSlots = totalHkSlots + totalHdkSlots;
 

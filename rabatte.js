@@ -1,14 +1,19 @@
 /*
  * rabatte.js  -  Mitarbeiter-/BGE-Rabatte fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 12.6.2026, 11:02:20
- * Einzige Rabattdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
+ *
+ * Diese Datei wird per <script src="rabatte.js"> eingebunden und funktioniert
+ * sowohl per Doppelklick (file://) als auch beim Hosten (GitHub Pages /
+ * eigener Webserver). Einzige Rabattdaten-Quelle - kein fetch noetig.
+ *
+ * Bearbeitung erfolgt ueber das Admin-Panel des Rechners. Beim Speichern
+ * wird rabatte.js direkt nach GitHub committed.
  */
 window.RABATTE_DATA = {
   "_meta": {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Mitarbeiter-/BGE-Rabatte fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-06-12",
+    "stand": "2026-05-29",
     "felder": {
       "rahmenvertragsRabatte": "Liste der waehlbaren festen Rahmenvertrags-Rabatte in Prozent (Zahlen, sortiert aufsteigend, 0 immer enthalten)",
       "bereitstellungsPreise": "Liste der waehlbaren Bereitstellungspreise (netto, in EUR) fuer die Bereitstellungs-Dropdowns",
@@ -30,8 +35,7 @@ window.RABATTE_DATA = {
     8.36,
     16.76,
     25.17,
-    33.57,
-    69.69
+    33.57
   ],
   "mitarbeiterRabatte": {
     "Business Mobil XS eco": 42.935,
