@@ -3007,6 +3007,9 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
       }
+      .ap-row4.ap-row-partnerpreise {
+        grid-template-columns: repeat(3, 1fr);
+      }
       .ap-row4 .ap-field label {
         font-size: 0.64em;
         letter-spacing: 0.2px;
@@ -15222,7 +15225,7 @@
 
         // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt
         // Bei Partnerkarten ist `preis` der rabattierbare Grundpreis; Geräteaufschlag kommt separat dazu.
-        html += '<div class="ap-row4">';
+        html += '<div class="ap-row4' + (istPartnerkarte ? " ap-row-partnerpreise" : "") + '">';
         html +=
           '<div class="ap-field"><label title="' +
           (istPartnerkarte ? "Rabattierbarer Grundpreis netto pro Monat" : "Preis netto pro Monat") +
