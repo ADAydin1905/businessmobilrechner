@@ -3942,6 +3942,61 @@
         color: var(--text-color);
         font-size: 0.86em;
       }
+      .ap-partner-scope-tree {
+        display: grid;
+        gap: 8px;
+      }
+      .ap-partner-scope-family {
+        border: 1px solid var(--ap-border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        overflow: hidden;
+      }
+      .ap-partner-scope-family > summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .ap-partner-scope-family > summary::-webkit-details-marker {
+        display: none;
+      }
+      .ap-partner-scope-chevron {
+        width: 18px;
+        color: var(--ap-muted);
+        font-size: 0.78em;
+      }
+      .ap-partner-scope-family[open] .ap-partner-scope-chevron {
+        transform: rotate(90deg);
+      }
+      .ap-partner-scope-family label,
+      .ap-partner-scope-variant {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--text-color);
+        font-size: 0.9em;
+      }
+      .ap-partner-scope-title {
+        font-weight: 700;
+      }
+      .ap-partner-scope-count {
+        margin-left: auto;
+        color: var(--ap-muted);
+        font-size: 0.78em;
+      }
+      .ap-partner-scope-variants {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 8px 12px;
+        padding: 0 10px 10px 38px;
+      }
+      .ap-partner-scope-variant {
+        min-height: 30px;
+      }
       .ap-rule-mini-btn {
         width: 30px;
         height: 30px;
@@ -10053,38 +10108,84 @@
           ? JSON.parse(JSON.stringify(window.RABATTE_DATA.bereitstellungsPreise))
           : [8.36, 16.76, 25.17, 33.57];
 
-      function partnerkartenRegelAlleFamilien() {
-        const set = new Set();
-        Object.keys(tarifDetails || {}).forEach((name) => {
-          const t = tarifDetails[name] || {};
+      function partnerkartenRegelTarifBaum(tarifQuelle) {
+        const quelle = tarifQuelle || tarifDetails || {};
+        const gruppen = {};
+        Object.keys(quelle).forEach((name) => {
+          const t = quelle[name] || {};
           const gruppe = t.gruppe || ermittleGruppe(name);
           const basis = tarifBasisName(name);
-          if (gruppe === "partnerkarte" && basis !== "Business Card Special") set.add(basis);
+          if (gruppe !== "partnerkarte" || basis === "Business Card Special") return;
+          if (!gruppen[basis]) gruppen[basis] = [];
+          let variante = name;
+          for (const suf of ENDGERAETE_SUFFIXE) {
+            if (name.endsWith(suf)) {
+              variante = suf.trim();
+              break;
+            }
+          }
+          gruppen[basis].push({
+            name,
+            label: variante === name ? "Basis" : variante,
+            aktiv: t.aktiv !== false,
+          });
         });
-        return Array.from(set).sort((a, b) => {
-          const ar = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(a));
-          const br = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(b));
-          return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br) || a.localeCompare(b);
-        });
+        return Object.keys(gruppen)
+          .sort((a, b) => {
+            const ar = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(a));
+            const br = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(b));
+            return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br) || a.localeCompare(b);
+          })
+          .map((familie) => {
+            const varianten = gruppen[familie].sort((a, b) => {
+              const ai = endgeraeteOptionenPartnerkarten.indexOf(a.label);
+              const bi = endgeraeteOptionenPartnerkarten.indexOf(b.label);
+              return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) || a.name.localeCompare(b.name);
+            });
+            return { familie, varianten };
+          });
+      }
+
+      function partnerkartenRegelAlleFamilien(tarifQuelle) {
+        return partnerkartenRegelTarifBaum(tarifQuelle).map((gruppe) => gruppe.familie);
+      }
+
+      function partnerkartenRegelAlleTarife(tarifQuelle) {
+        return partnerkartenRegelTarifBaum(tarifQuelle).flatMap((gruppe) => gruppe.varianten.map((v) => v.name));
       }
 
       function partnerkartenRegelAlleStufen() {
         return TARIF_STUFEN_REIHENFOLGE.slice();
       }
 
+      function partnerkartenFamilienAusStufen(stufen, tarifQuelle) {
+        if (!Array.isArray(stufen) || stufen.length === 0) return null;
+        const set = new Set(stufen);
+        return partnerkartenRegelAlleFamilien(tarifQuelle).filter((familie) => set.has(stufeAusName(familie)));
+      }
+
+      function partnerkartenTarifeAusStufen(stufen, tarifQuelle) {
+        if (!Array.isArray(stufen) || stufen.length === 0) return null;
+        const set = new Set(stufen);
+        const quelle = tarifQuelle || tarifDetails || {};
+        return partnerkartenRegelAlleTarife(tarifQuelle).filter((name) => {
+          const t = quelle[name] || {};
+          return set.has(t.stufe || stufeAusName(name));
+        });
+      }
+
       function defaultPartnerkartenRabattRegeln() {
         const familien = partnerkartenRegelAlleFamilien();
-        const stufen = partnerkartenRegelAlleStufen();
         return [
           {
             id: "business_cards_erste_partnerkarte",
             name: "Business Cards: 1. Partnerkarte",
-            scopeMode: "explicit",
+            scopeMode: "tarifbaum",
             aktiv: true,
             kartenArt: "Partnerkarte",
             tarifGruppen: ["partnerkarte"],
             familien: familien.slice(),
-            stufen: stufen.slice(),
+            tarife: [],
             position: { operator: "eq", value: 1 },
             gruppenAnzahl: { operator: "any" },
             aktion: { typ: "set", wert: 50 },
@@ -10092,12 +10193,12 @@
           {
             id: "business_cards_ab_zweiter_partnerkarte",
             name: "Business Cards: ab 2. Partnerkarte",
-            scopeMode: "explicit",
+            scopeMode: "tarifbaum",
             aktiv: true,
             kartenArt: "Partnerkarte",
             tarifGruppen: ["partnerkarte"],
             familien: familien.slice(),
-            stufen: stufen.slice(),
+            tarife: [],
             position: { operator: "gte", value: 2 },
             gruppenAnzahl: { operator: "any" },
             aktion: { typ: "set", wert: 70 },
@@ -10111,34 +10212,51 @@
             ? JSON.parse(JSON.stringify(regeln))
             : defaultPartnerkartenRabattRegeln();
         const alleFamilien = partnerkartenRegelAlleFamilien();
+        const alleTarife = partnerkartenRegelAlleTarife();
         const alleStufen = partnerkartenRegelAlleStufen();
         return quelle.map((regel, idx) => {
           const aktion = regel.aktion || {};
           const wert = parseFloat(aktion.wert != null ? aktion.wert : regel.wert);
-          const istExplizit = regel.scopeMode === "explicit";
+          const istExplizit = regel.scopeMode === "explicit" || regel.scopeMode === "tarifbaum";
           let familien = Array.isArray(regel.familien)
             ? regel.familien.slice()
             : Array.isArray(regel.tarifFamilien)
               ? regel.tarifFamilien.slice()
               : [];
-          let stufen = Array.isArray(regel.stufen) ? regel.stufen.slice() : [];
+          let tarife = Array.isArray(regel.tarife)
+            ? regel.tarife.slice()
+            : Array.isArray(regel.tarifNamen)
+              ? regel.tarifNamen.slice()
+              : [];
+          const stufen = Array.isArray(regel.stufen) ? regel.stufen.filter((s) => alleStufen.includes(s)) : [];
 
           // Migration von v2.0-Regeln: leere Auswahl bedeutete frueher "alle".
           // Nach der Migration gilt im Admin: kein Haken = keine Wirkung.
-          if (!istExplizit && familien.length === 0) familien = alleFamilien.slice();
-          if (!istExplizit && stufen.length === 0) stufen = alleStufen.slice();
+          if (!istExplizit && familien.length === 0 && tarife.length === 0) familien = alleFamilien.slice();
+
+          // Alte Stufen-Filter werden in die sichtbare Baum-Auswahl uebersetzt.
+          // Danach ist die Tarifstufe kein eigenes PK-Regel-Konzept mehr.
+          if (stufen.length > 0 && stufen.length < alleStufen.length) {
+            const familienAusStufen = partnerkartenFamilienAusStufen(stufen);
+            const tarifeAusStufen = partnerkartenTarifeAusStufen(stufen);
+            if (familienAusStufen) familien = familien.filter((f) => familienAusStufen.includes(f));
+            if (tarifeAusStufen) tarife = tarife.filter((t) => tarifeAusStufen.includes(t));
+          }
+
           familien = familien.filter((f) => alleFamilien.includes(f));
-          stufen = stufen.filter((s) => alleStufen.includes(s));
+          tarife = tarife
+            .filter((t) => alleTarife.includes(t))
+            .filter((t) => !familien.includes(tarifBasisName(t)));
 
           return {
             id: regel.id || "partner_rule_" + (idx + 1),
             name: regel.name || "Partnerkarten-Regel " + (idx + 1),
-            scopeMode: "explicit",
+            scopeMode: "tarifbaum",
             aktiv: regel.aktiv !== false,
             kartenArt: regel.kartenArt || "Partnerkarte",
             tarifGruppen: Array.isArray(regel.tarifGruppen) ? regel.tarifGruppen.slice() : ["partnerkarte"],
             familien,
-            stufen,
+            tarife,
             position: regel.position || { operator: "any" },
             gruppenAnzahl: regel.gruppenAnzahl || { operator: "any" },
             aktion: {
@@ -10176,8 +10294,9 @@
         if (regel.kartenArt && regel.kartenArt !== "alle" && regel.kartenArt !== context.kartenArt) return false;
         if (Array.isArray(regel.tarifGruppen) && regel.tarifGruppen.length && !regel.tarifGruppen.includes(context.gruppe))
           return false;
-        if (!Array.isArray(regel.familien) || !regel.familien.includes(context.familie)) return false;
-        if (!Array.isArray(regel.stufen) || !regel.stufen.includes(context.stufe)) return false;
+        const familien = Array.isArray(regel.familien) ? regel.familien : [];
+        const tarife = Array.isArray(regel.tarife) ? regel.tarife : [];
+        if (!familien.includes(context.familie) && !tarife.includes(context.tarifName)) return false;
         if (!partnerkartenRegelBedingungPasst(regel.position, context.positionInGruppe)) return false;
         if (!partnerkartenRegelBedingungPasst(regel.gruppenAnzahl, context.anzahlInGruppe)) return false;
         return true;
@@ -10190,7 +10309,6 @@
           kartenArt,
           gruppe: tarifInfo.gruppe || ermittleGruppe(tarifName),
           familie: tarifBasisName(tarifName),
-          stufe: getTarifStufeLabel(tarifName),
           positionInGruppe: positionInGruppe || 1,
           anzahlInGruppe: anzahlInGruppe || 1,
         };
@@ -14954,6 +15072,10 @@
         return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       }
 
+      function adminJsArg(s) {
+        return JSON.stringify(String(s)).replace(/"/g, "&quot;");
+      }
+
       function adminRenderFilterChips() {
         const el = document.getElementById("apFilterChips");
         let html =
@@ -16706,8 +16828,7 @@
         const el = document.getElementById("apPartnerRabattRegeln");
         if (!el) return;
         const regeln = adminState.partnerkartenRabattRegeln;
-        const familien = adminPartnerkartenRegelFamilien();
-        const stufen = adminState.stufen || TARIF_STUFEN_REIHENFOLGE;
+        const tarifBaum = adminPartnerkartenRegelTarifBaum();
         let html = "";
 
         regeln.forEach((regel, idx) => {
@@ -16745,50 +16866,82 @@
           html += adminPartnerkartenAktionHtml(idx, regel.aktion);
           html += "</div>";
 
-          html += '<div class="ap-partner-rule-checks">';
-          html +=
-            '<div class="ap-partner-rule-checks-title">Gilt für: <span style="font-weight:500;color:var(--ap-muted);">(Tarif-Familien, kein Haken = keine Wirkung)</span></div>';
-          html += '<div class="ap-partner-checkrow">';
-          familien.forEach((familie) => {
-            html +=
-              '<label><input type="checkbox" ' +
-              ((regel.familien || []).includes(familie) ? "checked" : "") +
-              ' onchange="adminTogglePartnerkartenRegelArray(' +
-              idx +
-              ", 'familien', '" +
-              adminEsc(familie) +
-              "', this.checked)\">" +
-              adminEsc(familie) +
-              "</label>";
-          });
-          html += "</div></div>";
-
-          html += '<div class="ap-partner-rule-checks">';
-          html +=
-            '<div class="ap-partner-rule-checks-title">Gilt zusätzlich für: Tarifstufen <span style="font-weight:500;color:var(--ap-muted);">(kein Haken = keine Wirkung)</span></div>';
-          html += '<div class="ap-partner-checkrow">';
-          stufen.forEach((stufe) => {
-            html +=
-              '<label><input type="checkbox" ' +
-              ((regel.stufen || []).includes(stufe) ? "checked" : "") +
-              ' onchange="adminTogglePartnerkartenRegelArray(' +
-              idx +
-              ", 'stufen', '" +
-              adminEsc(stufe) +
-              "', this.checked)\">" +
-              adminEsc(stufe) +
-              "</label>";
-          });
-          html += "</div></div>";
+          html += adminPartnerkartenScopeTreeHtml(idx, regel, tarifBaum);
           html += "</div>";
         });
 
         if (!html) html = '<div class="ap-empty">Noch keine Partnerkarten-Regeln angelegt.</div>';
         el.innerHTML = html;
+        adminSyncPartnerkartenScopeIndeterminate(el);
       }
 
-      function adminPartnerkartenRegelFamilien() {
-        return partnerkartenRegelAlleFamilien();
+      function adminPartnerkartenRegelTarifBaum() {
+        return partnerkartenRegelTarifBaum(adminState.tarife || tarifDetails);
+      }
+
+      function adminPartnerkartenScopeTreeHtml(idx, regel, tarifBaum) {
+        let html = '<div class="ap-partner-rule-checks">';
+        html +=
+          '<div class="ap-partner-rule-checks-title">Gilt für: <span style="font-weight:500;color:var(--ap-muted);">(keine Auswahl = keine Wirkung)</span></div>';
+        html += '<div class="ap-partner-scope-tree">';
+        const familien = new Set(Array.isArray(regel.familien) ? regel.familien : []);
+        const tarife = new Set(Array.isArray(regel.tarife) ? regel.tarife : []);
+        tarifBaum.forEach((gruppe) => {
+          const variantNames = gruppe.varianten.map((v) => v.name);
+          const familieAktiv = familien.has(gruppe.familie);
+          const einzelneAktiv = variantNames.filter((name) => tarife.has(name)).length;
+          const teilweise = !familieAktiv && einzelneAktiv > 0;
+          const alleAktiv = familieAktiv || (variantNames.length > 0 && einzelneAktiv === variantNames.length);
+          const open = teilweise ? " open" : "";
+          html += '<details class="ap-partner-scope-family"' + open + ">";
+          html += "<summary>";
+          html += '<span class="ap-partner-scope-chevron">▶</span>';
+          html += '<label onclick="event.stopPropagation()">';
+          html +=
+            '<input class="ap-partner-family-checkbox" type="checkbox" data-partial="' +
+            (teilweise ? "true" : "false") +
+            '" ' +
+            (alleAktiv ? "checked" : "") +
+            ' onchange="adminTogglePartnerkartenRegelFamilie(' +
+            idx +
+            ", " +
+            adminJsArg(gruppe.familie) +
+            ', this.checked)">';
+          html += '<span class="ap-partner-scope-title">' + adminEsc(gruppe.familie) + "</span>";
+          html += "</label>";
+          html +=
+            '<span class="ap-partner-scope-count">' +
+            (familieAktiv ? "alle Varianten" : einzelneAktiv ? einzelneAktiv + " von " + variantNames.length : variantNames.length + " Varianten") +
+            "</span>";
+          html += "</summary>";
+          html += '<div class="ap-partner-scope-variants">';
+          gruppe.varianten.forEach((variante) => {
+            const checked = familieAktiv || tarife.has(variante.name);
+            html += '<label class="ap-partner-scope-variant">';
+            html +=
+              '<input type="checkbox" ' +
+              (checked ? "checked" : "") +
+              ' onchange="adminTogglePartnerkartenRegelTarif(' +
+              idx +
+              ", " +
+              adminJsArg(gruppe.familie) +
+              ", " +
+              adminJsArg(variante.name) +
+              ', this.checked)">';
+            html += adminEsc(variante.label);
+            if (variante.aktiv === false) html += ' <span style="color:var(--ap-muted);font-size:.86em;">inaktiv</span>';
+            html += "</label>";
+          });
+          html += "</div></details>";
+        });
+        html += "</div></div>";
+        return html;
+      }
+
+      function adminSyncPartnerkartenScopeIndeterminate(root) {
+        root.querySelectorAll(".ap-partner-family-checkbox").forEach((cb) => {
+          cb.indeterminate = cb.dataset.partial === "true";
+        });
       }
 
       function adminPartnerkartenBedingungHtml(idx, feld, bedingung, label) {
@@ -16932,14 +17085,59 @@
         adminMarkPartnerkartenRegelnDirty();
       }
 
-      function adminTogglePartnerkartenRegelArray(idx, feld, value, checked) {
+      function adminPartnerkartenVariantenFuerFamilie(familie) {
+        const gruppe = adminPartnerkartenRegelTarifBaum().find((g) => g.familie === familie);
+        return gruppe ? gruppe.varianten.map((v) => v.name) : [];
+      }
+
+      function adminTogglePartnerkartenRegelFamilie(idx, familie, checked) {
         const regel = adminState.partnerkartenRabattRegeln[idx];
         if (!regel) return;
-        const set = new Set(Array.isArray(regel[feld]) ? regel[feld] : []);
-        if (checked) set.add(value);
-        else set.delete(value);
-        regel[feld] = Array.from(set);
+        const familien = new Set(Array.isArray(regel.familien) ? regel.familien : []);
+        const tarife = new Set(Array.isArray(regel.tarife) ? regel.tarife : []);
+        const varianten = adminPartnerkartenVariantenFuerFamilie(familie);
+        if (checked) {
+          familien.add(familie);
+          varianten.forEach((name) => tarife.delete(name));
+        } else {
+          familien.delete(familie);
+          varianten.forEach((name) => tarife.delete(name));
+        }
+        regel.scopeMode = "tarifbaum";
+        regel.familien = Array.from(familien);
+        regel.tarife = Array.from(tarife);
         adminMarkPartnerkartenRegelnDirty();
+        adminRenderPartnerkartenRabatte();
+      }
+
+      function adminTogglePartnerkartenRegelTarif(idx, familie, tarifName, checked) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        const familien = new Set(Array.isArray(regel.familien) ? regel.familien : []);
+        const tarife = new Set(Array.isArray(regel.tarife) ? regel.tarife : []);
+        const varianten = adminPartnerkartenVariantenFuerFamilie(familie);
+
+        if (familien.has(familie)) {
+          familien.delete(familie);
+          varianten.forEach((name) => {
+            if (name !== tarifName) tarife.add(name);
+          });
+        }
+
+        if (checked) tarife.add(tarifName);
+        else tarife.delete(tarifName);
+
+        const alleEinzelnAktiv = varianten.length > 0 && varianten.every((name) => tarife.has(name));
+        if (alleEinzelnAktiv) {
+          familien.add(familie);
+          varianten.forEach((name) => tarife.delete(name));
+        }
+
+        regel.scopeMode = "tarifbaum";
+        regel.familien = Array.from(familien);
+        regel.tarife = Array.from(tarife);
+        adminMarkPartnerkartenRegelnDirty();
+        adminRenderPartnerkartenRabatte();
       }
 
       function adminAddPartnerkartenRegel() {
@@ -16947,12 +17145,12 @@
         adminState.partnerkartenRabattRegeln.push({
           id: "partner_rule_" + Date.now(),
           name: "Neue Partnerkarten-Regel",
-          scopeMode: "explicit",
+          scopeMode: "tarifbaum",
           aktiv: false,
           kartenArt: "Partnerkarte",
           tarifGruppen: ["partnerkarte"],
           familien: [],
-          stufen: [],
+          tarife: [],
           position: { operator: "any" },
           gruppenAnzahl: { operator: "any" },
           aktion: { typ: "set", wert: 0 },
@@ -18049,8 +18247,9 @@
                 Regeln gelten pro Hauptkarten-Gruppe und laufen von oben nach unten. "Rabatt setzen" kann einen vorherigen
                 Wert überschreiben; "maximal" und "mindestens" verfeinern einen bereits gesetzten Rabatt. Aktuell werden
                 normale Business Cards geregelt; Partner-Datenkarten und Business Card Special bleiben wie bisher separat.<br />
-                <strong>Tarif-Familie</strong> meint die konkrete Linie, z. B. Business Card XS. <strong>Tarifstufe</strong>
-                meint die Größenklasse XS/S/M/L/XL und ist nur eine zusätzliche Eingrenzung. Keine Checkbox = Regel greift nicht.
+                <strong>Gilt für</strong> wählt die Business-Card-Familie und optional einzelne Endgeräte-Varianten. Ein Haken
+                auf Familienebene gilt auch für künftig neu angelegte Varianten dieser Familie; einzelne Haken darunter sind
+                präzise Ausnahmen. Keine Auswahl = Regel greift nicht.
               </p>
               <div class="ap-partner-rules" id="apPartnerRabattRegeln"></div>
               <div style="margin-top: 14px">
