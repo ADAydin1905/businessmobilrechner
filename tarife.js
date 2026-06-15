@@ -9,11 +9,12 @@ window.TARIFE_DATA = {
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
     "stand": "2026-05-28",
-    "felderProTarif": {
-      "preis": "Monatlicher Nettopreis in Euro (Zahl)",
-      "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
-      "leistungen": "Liste der Tarif-Leistungen (Strings), voll ausgeschrieben"
-    }
+      "felderProTarif": {
+        "preis": "Monatlicher Nettopreis in Euro (Zahl)",
+        "geraeteAufpreis": "Optionaler monatlicher Netto-Aufpreis fuer Endgeraete-Substufen; bei Partnerkarten nicht rabattierbar",
+        "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
+        "leistungen": "Liste der Tarif-Leistungen (Strings), voll ausgeschrieben"
+      }
   },
   "stufen": [
     "XS",
@@ -409,6 +410,7 @@ window.TARIFE_DATA = {
     },
     "Business Card Special eco": {
       "preis": 16.76,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "Datenvolumen ist abhängig von der gebuchten Hauptkarte( LTE/5G )",
@@ -418,7 +420,8 @@ window.TARIFE_DATA = {
       ]
     },
     "Business Card Special mit Handy": {
-      "preis": 25.17,
+      "preis": 16.76,
+      "geraeteAufpreis": 8.41,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "Datenvolumen ist abhängig von der gebuchten Hauptkarte( LTE/5G )",
@@ -428,7 +431,8 @@ window.TARIFE_DATA = {
       ]
     },
     "Business Card Special mit Top Handy": {
-      "preis": 33.57,
+      "preis": 16.76,
+      "geraeteAufpreis": 16.81,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "Datenvolumen ist abhängig von der gebuchten Hauptkarte( LTE/5G )",
@@ -439,6 +443,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XS eco": {
       "preis": 29.37,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -450,6 +455,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XS mit Handy": {
       "preis": 29.37,
+      "geraeteAufpreis": 8.4,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -461,6 +467,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XS mit Top Handy": {
       "preis": 29.37,
+      "geraeteAufpreis": 16.8,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -472,6 +479,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XS mit Premium-Handy": {
       "preis": 29.37,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -483,6 +491,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XS Premium": {
       "preis": 29.37,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "20 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -495,6 +504,7 @@ window.TARIFE_DATA = {
     },
     "Business Card S eco": {
       "preis": 37.77,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "30 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -506,6 +516,7 @@ window.TARIFE_DATA = {
     },
     "Business Card S mit Handy": {
       "preis": 37.77,
+      "geraeteAufpreis": 8.4,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "30 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -517,6 +528,7 @@ window.TARIFE_DATA = {
     },
     "Business Card S mit Top Handy": {
       "preis": 37.77,
+      "geraeteAufpreis": 16.8,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "30 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -528,6 +540,7 @@ window.TARIFE_DATA = {
     },
     "Business Card S mit Premium-Handy": {
       "preis": 37.77,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "30 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -539,6 +552,7 @@ window.TARIFE_DATA = {
     },
     "Business Card S Premium": {
       "preis": 37.77,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 0,
       "leistungen": [
         "30 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -551,6 +565,7 @@ window.TARIFE_DATA = {
     },
     "Business Card M eco": {
       "preis": 46.18,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 1,
       "leistungen": [
         "50 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -563,6 +578,7 @@ window.TARIFE_DATA = {
     },
     "Business Card M mit Handy": {
       "preis": 46.18,
+      "geraeteAufpreis": 8.4,
       "inclusiveMultiSim": 1,
       "leistungen": [
         "50 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -575,6 +591,7 @@ window.TARIFE_DATA = {
     },
     "Business Card M mit Top Handy": {
       "preis": 46.18,
+      "geraeteAufpreis": 16.8,
       "inclusiveMultiSim": 1,
       "leistungen": [
         "50 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -587,6 +604,7 @@ window.TARIFE_DATA = {
     },
     "Business Card M mit Premium-Handy": {
       "preis": 46.18,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 1,
       "leistungen": [
         "50 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -599,6 +617,7 @@ window.TARIFE_DATA = {
     },
     "Business Card M Premium": {
       "preis": 46.18,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 1,
       "leistungen": [
         "50 GB HighSpeed Datenvolumen ( LTE/5G )",
@@ -612,6 +631,7 @@ window.TARIFE_DATA = {
     },
     "Business Card L eco": {
       "preis": 58.78,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 2,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -624,6 +644,7 @@ window.TARIFE_DATA = {
     },
     "Business Card L mit Handy": {
       "preis": 58.78,
+      "geraeteAufpreis": 8.4,
       "inclusiveMultiSim": 2,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -636,6 +657,7 @@ window.TARIFE_DATA = {
     },
     "Business Card L mit Top Handy": {
       "preis": 58.78,
+      "geraeteAufpreis": 16.8,
       "inclusiveMultiSim": 2,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -648,6 +670,7 @@ window.TARIFE_DATA = {
     },
     "Business Card L mit Premium-Handy": {
       "preis": 58.78,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 2,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -660,6 +683,7 @@ window.TARIFE_DATA = {
     },
     "Business Card L Premium": {
       "preis": 58.78,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 2,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -673,6 +697,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XL eco": {
       "preis": 79.79,
+      "geraeteAufpreis": 0,
       "inclusiveMultiSim": 3,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -685,6 +710,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XL mit Handy": {
       "preis": 79.79,
+      "geraeteAufpreis": 8.4,
       "inclusiveMultiSim": 3,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -697,6 +723,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XL mit Top Handy": {
       "preis": 79.79,
+      "geraeteAufpreis": 16.8,
       "inclusiveMultiSim": 3,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -709,6 +736,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XL mit Premium-Handy": {
       "preis": 79.79,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 3,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",
@@ -721,6 +749,7 @@ window.TARIFE_DATA = {
     },
     "Business Card XL Premium": {
       "preis": 79.79,
+      "geraeteAufpreis": 25.2,
       "inclusiveMultiSim": 3,
       "leistungen": [
         "Unbegrenzt HighSpeed Datenvolumen ( LTE/5G )",

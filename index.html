@@ -9970,6 +9970,25 @@
         return n + " eco";
       }
 
+      function parsePreisWert(value, fallback) {
+        const n = parseFloat(String(value != null ? value : "").replace(",", "."));
+        return isFinite(n) ? n : fallback || 0;
+      }
+
+      function tarifGrundpreisNetto(tarifName, quelle) {
+        const t = (quelle || tarifDetails || {})[tarifName] || {};
+        return parsePreisWert(t.preis, 0);
+      }
+
+      function tarifGeraeteAufpreisNetto(tarifName, quelle) {
+        const t = (quelle || tarifDetails || {})[tarifName] || {};
+        return Math.max(0, parsePreisWert(t.geraeteAufpreis, 0));
+      }
+
+      function tarifEndpreisNetto(tarifName, quelle) {
+        return tarifGrundpreisNetto(tarifName, quelle) + tarifGeraeteAufpreisNetto(tarifName, quelle);
+      }
+
       // Ordnet einem Tarif automatisch eine Gruppe zu (für Migration).
       function ermittleGruppe(tarifName) {
         if (tarifName.startsWith("Business Card")) return "partnerkarte";
@@ -11545,43 +11564,6 @@
         }
       }
 
-      const getPartnerCardSurcharge = (tarifName, indexInGruppe) => {
-        // Default values
-
-        let handySurcharge = 8.4;
-
-        let topHandySurcharge = 16.8;
-
-        let premiumSurcharge = 25.2;
-
-        // Conditions for exception
-
-        const isL_first = tarifName.includes("Business Card L") && indexInGruppe === 0;
-
-        const isXS_later = tarifName.includes("Business Card XS") && indexInGruppe > 0;
-
-        if (isL_first || isXS_later) {
-          topHandySurcharge = 16.81;
-
-          premiumSurcharge = 25.21;
-        }
-
-        // Return surcharge based on device tier
-
-        if (
-          tarifName.includes("mit Premium-Handy") ||
-          tarifName.includes("mit Premium-Gerät") ||
-          tarifName.includes("Premium")
-        )
-          return premiumSurcharge;
-
-        if (tarifName.includes("mit Top Handy")) return topHandySurcharge;
-
-        if (tarifName.includes("mit Handy") || tarifName.includes("mit Gerät")) return handySurcharge;
-
-        return 0;
-      };
-
       function calculateCardPrice(cardData) {
         const {
           cardId,
@@ -11774,16 +11756,12 @@
         } else {
           // 2. Handle normale Partnerkarten (regelbasierte Rabattierung)
 
-          const originalTarifPreis = details.preis; // This is the base price for S, M, L, XL partner cards
+          const originalTarifPreis = tarifGrundpreisNetto(tarif); // rabattierbarer Grundpreis
 
           let basisPreisNetto = 0;
 
           if (tarif.startsWith("Business Card Special")) {
-            basisPreisNetto = tarif.includes("mit Top Handy")
-              ? 33.57
-              : tarif.includes("mit Handy") || tarif.includes("mit Gerät")
-                ? 25.17
-                : 16.76;
+            basisPreisNetto = tarifEndpreisNetto(tarif);
 
             if (options.aktionspreisBusinessCardSpecial) {
               basisPreisNetto = tarif.includes("mit Top Handy")
@@ -11806,7 +11784,7 @@
 
             const rabattierterBasisPreis = roundToTwoDecimals(originalTarifPreis * preisFaktor);
 
-            const geraeteAufpreis = getPartnerCardSurcharge(tarif, indexInGruppe);
+            const geraeteAufpreis = tarifGeraeteAufpreisNetto(tarif);
 
             basisPreisNetto = rabattierterBasisPreis + geraeteAufpreis;
 
@@ -15144,7 +15122,7 @@
             const active = k === adminState.aktiverTarif ? " active" : "";
             const inaktiv = t.aktiv === false ? " ap-item-inaktiv" : "";
             const entwurf = t.entwurf ? " ap-item-entwurf" : "";
-            const preis = typeof t.preis === "number" ? t.preis.toFixed(2) + " €" : "–";
+            const preis = typeof t.preis === "number" ? tarifEndpreisNetto(k, adminState.tarife).toFixed(2) + " €" : "–";
             html +=
               '<div class="ap-item' + active + inaktiv + entwurf + '" onclick="adminSelectTarif(this)" data-key="' + adminEsc(k) + '">';
             html +=
@@ -15209,6 +15187,7 @@
 
         // Gruppen-Auswahl (bestimmt, wo der Tarif im Rechner auftaucht)
         const aktuelleGruppe = t.gruppe || ermittleGruppe(key);
+        const istPartnerkarte = aktuelleGruppe === "partnerkarte";
         html += '<div class="ap-field">';
         html += "<label>Gruppe (bestimmt Platzierung im Rechner)</label>";
         html += '<select class="ap-select" data-field="gruppe" onchange="adminEditGruppe(this)">';
@@ -15241,13 +15220,30 @@
           "MultiSIM-Preis je Stück über der Inklusiv-Anzahl. Zentral im Optionen-Tab (Option „MultiSIM“) pflegbar" +
           (msLabel ? " – Stufe " + msLabel : "") + ".";
 
-        // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt in EINER Zeile
+        // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt
+        // Bei Partnerkarten ist `preis` der rabattierbare Grundpreis; Geräteaufschlag kommt separat dazu.
         html += '<div class="ap-row4">';
         html +=
-          '<div class="ap-field"><label title="Preis netto pro Monat">Preis netto/Mon.</label><div class="ap-input-affix">' +
+          '<div class="ap-field"><label title="' +
+          (istPartnerkarte ? "Rabattierbarer Grundpreis netto pro Monat" : "Preis netto pro Monat") +
+          '">' +
+          (istPartnerkarte ? "Grundpreis netto/Mon." : "Preis netto/Mon.") +
+          '</label><div class="ap-input-affix">' +
           '<input type="number" step="0.01" value="' +
           t.preis +
           '" data-field="preis" oninput="adminEditPreis(this)" /><span class="affix">€</span></div></div>';
+        if (istPartnerkarte) {
+          html +=
+            '<div class="ap-field"><label title="Nicht rabattierbarer Geräteaufschlag netto pro Monat">Geräteaufschlag</label><div class="ap-input-affix">' +
+            '<input type="number" step="0.01" min="0" value="' +
+            tarifGeraeteAufpreisNetto(key, adminState.tarife) +
+            '" data-field="geraeteAufpreis" oninput="adminEditGeraeteAufpreis(this)" /><span class="affix">€</span></div></div>';
+          html +=
+            '<div class="ap-field"><label title="Grundpreis plus Geräteaufschlag">Endpreis Vorschau</label><div class="ap-input-affix">' +
+            '<input type="text" id="apTarifEndpreisPreview" value="' +
+            formatCurrencyNumber(tarifEndpreisNetto(key, adminState.tarife)) +
+            '" readonly /><span class="affix">€</span></div></div>';
+        }
         html +=
           '<div class="ap-field"><label title="Im Tarif enthaltene MultiSIM-Karten">Inkl. MultiSIM</label><div class="ap-input-affix">' +
           '<input type="number" step="1" value="' +
@@ -15342,6 +15338,12 @@
         if (t && t.entwurf) delete t.entwurf;
       }
 
+      function adminUpdateTarifEndpreisPreview() {
+        const input = document.getElementById("apTarifEndpreisPreview");
+        if (!input || !adminState.aktiverTarif) return;
+        input.value = formatCurrencyNumber(tarifEndpreisNetto(adminState.aktiverTarif, adminState.tarife));
+      }
+
       function adminEditPreis(input) {
         const t = adminState.tarife[adminState.aktiverTarif];
         if (!t) return;
@@ -15351,6 +15353,19 @@
         adminClearEntwurf(t);
         adminMarkDirty();
         adminRenderList(); // Preis in Liste aktualisieren
+        adminUpdateTarifEndpreisPreview();
+      }
+
+      function adminEditGeraeteAufpreis(input) {
+        const t = adminState.tarife[adminState.aktiverTarif];
+        if (!t) return;
+        let p = parseFloat(String(input.value).replace(",", "."));
+        if (!isFinite(p) || p < 0) p = 0;
+        t.geraeteAufpreis = p;
+        adminClearEntwurf(t);
+        adminMarkDirty();
+        adminRenderList();
+        adminUpdateTarifEndpreisPreview();
       }
 
       // Tarif aktiv/inaktiv schalten. Inaktiv = im Rechner ausgeblendet (vorbereitbar).
@@ -15555,6 +15570,7 @@
             gruppe: gruppe,
             entwurf: true, // erbt den Quell-Preis -> als unvollständig markiert, bis geprüft
           };
+          if (gruppe === "partnerkarte") neuerTarif.geraeteAufpreis = 0;
           // Nur einen EXPLIZITEN Stufen-Override erben. Laeuft die Familie auf
           // "Auto" (kein Feld), bleibt die neue Variante ebenfalls auf Auto –
           // ihr Name liefert denselben Wert ueber den Namens-Fallback.
