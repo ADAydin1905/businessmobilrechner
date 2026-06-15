@@ -17,7 +17,8 @@ window.RABATTE_DATA = {
     "felder": {
       "rahmenvertragsRabatte": "Liste der waehlbaren festen Rahmenvertrags-Rabatte in Prozent (Zahlen, sortiert aufsteigend, 0 immer enthalten)",
       "bereitstellungsPreise": "Liste der waehlbaren Bereitstellungspreise (netto, in EUR) fuer die Bereitstellungs-Dropdowns",
-      "mitarbeiterRabatte": "Objekt: Tarifname -> Rabatt in Prozent (tarifspezifisch)"
+      "mitarbeiterRabatte": "Objekt: Tarifname -> Rabatt in Prozent (tarifspezifisch)",
+      "partnerkartenRabattRegeln": "Sortierte Regeln fuer automatische Partnerkarten-Rabatte pro Hauptkarten-Gruppe"
     }
   },
   "rahmenvertragsRabatte": [
@@ -71,5 +72,51 @@ window.RABATTE_DATA = {
     "CombiCard Business Mobil Data L eco": 20,
     "CombiCard Business Mobil Data L mit Gerät": 20,
     "CombiCard Business Mobil Data L mit Premium-Gerät": 20
-  }
+  },
+  "partnerkartenRabattRegeln": [
+    {
+      "id": "business_cards_erste_partnerkarte",
+      "name": "Business Cards: 1. Partnerkarte",
+      "aktiv": true,
+      "kartenArt": "Partnerkarte",
+      "tarifGruppen": [
+        "partnerkarte"
+      ],
+      "familien": [],
+      "stufen": [],
+      "position": {
+        "operator": "eq",
+        "value": 1
+      },
+      "gruppenAnzahl": {
+        "operator": "any"
+      },
+      "aktion": {
+        "typ": "set",
+        "wert": 50
+      }
+    },
+    {
+      "id": "business_cards_ab_zweiter_partnerkarte",
+      "name": "Business Cards: ab 2. Partnerkarte",
+      "aktiv": true,
+      "kartenArt": "Partnerkarte",
+      "tarifGruppen": [
+        "partnerkarte"
+      ],
+      "familien": [],
+      "stufen": [],
+      "position": {
+        "operator": "gte",
+        "value": 2
+      },
+      "gruppenAnzahl": {
+        "operator": "any"
+      },
+      "aktion": {
+        "typ": "set",
+        "wert": 70
+      }
+    }
+  ]
 };

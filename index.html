@@ -3872,6 +3872,94 @@
         font-size: 0.9em;
       }
 
+      .ap-partner-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .ap-partner-rule {
+        border: 1px solid var(--ap-border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        padding: 14px;
+      }
+      .ap-partner-rule-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .ap-partner-rule-head input[type="text"] {
+        flex: 1;
+        min-width: 180px;
+      }
+      .ap-partner-rule-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+        gap: 12px;
+      }
+      .ap-partner-rule-field label,
+      .ap-partner-rule-checks-title {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--ap-muted);
+        font-size: 0.78em;
+        font-weight: 700;
+      }
+      .ap-partner-rule-field select,
+      .ap-partner-rule-field input[type="number"],
+      .ap-partner-rule-head input[type="text"] {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--ap-border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        box-sizing: border-box;
+      }
+      .ap-partner-cond {
+        display: grid;
+        grid-template-columns: minmax(110px, 1fr) minmax(72px, 0.7fr);
+        gap: 8px;
+      }
+      .ap-partner-cond.range {
+        grid-template-columns: minmax(110px, 1fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr);
+      }
+      .ap-partner-rule-checks {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ap-border);
+      }
+      .ap-partner-checkrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+      }
+      .ap-partner-checkrow label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text-color);
+        font-size: 0.86em;
+      }
+      .ap-rule-mini-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--ap-border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        cursor: pointer;
+      }
+      .ap-rule-mini-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+      .ap-rule-mini-btn.danger:hover {
+        border-color: #dc2626;
+        color: #dc2626;
+      }
+
       @media (max-width: 820px) {
         .ap-body {
           grid-template-columns: 1fr;
@@ -9965,6 +10053,131 @@
           ? JSON.parse(JSON.stringify(window.RABATTE_DATA.bereitstellungsPreise))
           : [8.36, 16.76, 25.17, 33.57];
 
+      function defaultPartnerkartenRabattRegeln() {
+        return [
+          {
+            id: "business_cards_erste_partnerkarte",
+            name: "Business Cards: 1. Partnerkarte",
+            aktiv: true,
+            kartenArt: "Partnerkarte",
+            tarifGruppen: ["partnerkarte"],
+            familien: [],
+            stufen: [],
+            position: { operator: "eq", value: 1 },
+            gruppenAnzahl: { operator: "any" },
+            aktion: { typ: "set", wert: 50 },
+          },
+          {
+            id: "business_cards_ab_zweiter_partnerkarte",
+            name: "Business Cards: ab 2. Partnerkarte",
+            aktiv: true,
+            kartenArt: "Partnerkarte",
+            tarifGruppen: ["partnerkarte"],
+            familien: [],
+            stufen: [],
+            position: { operator: "gte", value: 2 },
+            gruppenAnzahl: { operator: "any" },
+            aktion: { typ: "set", wert: 70 },
+          },
+        ];
+      }
+
+      function normalisierePartnerkartenRabattRegeln(regeln) {
+        const quelle =
+          Array.isArray(regeln) && regeln.length
+            ? JSON.parse(JSON.stringify(regeln))
+            : defaultPartnerkartenRabattRegeln();
+        return quelle.map((regel, idx) => {
+          const aktion = regel.aktion || {};
+          const wert = parseFloat(aktion.wert != null ? aktion.wert : regel.wert);
+          return {
+            id: regel.id || "partner_rule_" + (idx + 1),
+            name: regel.name || "Partnerkarten-Regel " + (idx + 1),
+            aktiv: regel.aktiv !== false,
+            kartenArt: regel.kartenArt || "Partnerkarte",
+            tarifGruppen: Array.isArray(regel.tarifGruppen) ? regel.tarifGruppen.slice() : ["partnerkarte"],
+            familien: Array.isArray(regel.familien)
+              ? regel.familien.slice()
+              : Array.isArray(regel.tarifFamilien)
+                ? regel.tarifFamilien.slice()
+                : [],
+            stufen: Array.isArray(regel.stufen) ? regel.stufen.slice() : [],
+            position: regel.position || { operator: "any" },
+            gruppenAnzahl: regel.gruppenAnzahl || { operator: "any" },
+            aktion: {
+              typ: ["set", "max", "min"].includes(aktion.typ) ? aktion.typ : "set",
+              wert: isFinite(wert) ? Math.max(0, Math.min(100, wert)) : 0,
+            },
+          };
+        });
+      }
+
+      let partnerkartenRabattRegeln = normalisierePartnerkartenRabattRegeln(
+        window.RABATTE_DATA && window.RABATTE_DATA.partnerkartenRabattRegeln,
+      );
+
+      function partnerkartenRegelBedingungPasst(bedingung, wert) {
+        const b = bedingung || { operator: "any" };
+        const op = b.operator || "any";
+        const v = parseFloat(b.value);
+        const von = parseFloat(b.von != null ? b.von : b.from);
+        const bis = parseFloat(b.bis != null ? b.bis : b.to);
+        if (op === "any") return true;
+        if (op === "eq") return isFinite(v) && wert === v;
+        if (op === "gte") return isFinite(v) && wert >= v;
+        if (op === "lte") return isFinite(v) && wert <= v;
+        if (op === "range") {
+          const min = isFinite(von) ? von : -Infinity;
+          const max = isFinite(bis) ? bis : Infinity;
+          return wert >= min && wert <= max;
+        }
+        return false;
+      }
+
+      function partnerkartenRabattRegelPasst(regel, context) {
+        if (!regel || regel.aktiv === false) return false;
+        if (regel.kartenArt && regel.kartenArt !== "alle" && regel.kartenArt !== context.kartenArt) return false;
+        if (Array.isArray(regel.tarifGruppen) && regel.tarifGruppen.length && !regel.tarifGruppen.includes(context.gruppe))
+          return false;
+        if (Array.isArray(regel.familien) && regel.familien.length && !regel.familien.includes(context.familie))
+          return false;
+        if (Array.isArray(regel.stufen) && regel.stufen.length && !regel.stufen.includes(context.stufe)) return false;
+        if (!partnerkartenRegelBedingungPasst(regel.position, context.positionInGruppe)) return false;
+        if (!partnerkartenRegelBedingungPasst(regel.gruppenAnzahl, context.anzahlInGruppe)) return false;
+        return true;
+      }
+
+      function ermittlePartnerkartenRabatt({ tarifName, kartenArt, positionInGruppe, anzahlInGruppe }) {
+        const tarifInfo = tarifDetails[tarifName] || {};
+        const context = {
+          tarifName,
+          kartenArt,
+          gruppe: tarifInfo.gruppe || ermittleGruppe(tarifName),
+          familie: tarifBasisName(tarifName),
+          stufe: getTarifStufeLabel(tarifName),
+          positionInGruppe: positionInGruppe || 1,
+          anzahlInGruppe: anzahlInGruppe || 1,
+        };
+        let rabatt = 0;
+        let hatSetzendenWert = false;
+        partnerkartenRabattRegeln.forEach((regel) => {
+          if (!partnerkartenRabattRegelPasst(regel, context)) return;
+          const aktion = regel.aktion || {};
+          const wert = parseFloat(aktion.wert);
+          if (!isFinite(wert)) return;
+          if (aktion.typ === "max") {
+            if (hatSetzendenWert) rabatt = Math.min(rabatt, wert);
+          } else if (aktion.typ === "min") {
+            rabatt = hatSetzendenWert ? Math.max(rabatt, wert) : wert;
+            hatSetzendenWert = true;
+          } else {
+            rabatt = wert;
+            hatSetzendenWert = true;
+          }
+        });
+        return Math.max(0, Math.min(100, rabatt));
+      }
+
       // Erzeugt das <option>-HTML fuer einen Bereitstellungs-Dropdown (netto-Werte;
       // die Netto/Brutto-Anzeige uebernimmt updateBereitstellungsPreisOptionen()).
       function buildBereitstellungOptionsHTML(leerLabel) {
@@ -11228,6 +11441,7 @@
           mwst,
           zeigeBereitstellung,
           indexInGruppe,
+          anzahlInGruppe,
           isMitarbeiterRabatt,
         } = cardData;
 
@@ -11404,9 +11618,7 @@
 
           // Explizit keine Rabattanwendung für Partner Datenkarten
         } else {
-          // 2. Handle normale Partnerkarten (positionsbasierte Rabattierung)
-
-          // indexInGruppe bestimmt den Rabatt: Position 0 = 50%, Position >0 = 70%
+          // 2. Handle normale Partnerkarten (regelbasierte Rabattierung)
 
           const originalTarifPreis = details.preis; // This is the base price for S, M, L, XL partner cards
 
@@ -11429,7 +11641,12 @@
               vorteile.push({ name: "Aktionspreis Business Card Special", text: "Aktionspreis Business Card Special" });
             }
           } else {
-            tarifRabattProzent = indexInGruppe === 0 ? 50 : 70;
+            tarifRabattProzent = ermittlePartnerkartenRabatt({
+              tarifName: tarif,
+              kartenArt: type,
+              positionInGruppe: (indexInGruppe || 0) + 1,
+              anzahlInGruppe: anzahlInGruppe || 1,
+            });
 
             const preisFaktor = 1 - tarifRabattProzent / 100;
 
@@ -11743,6 +11960,7 @@
               mwst: mwst,
               zeigeBereitstellung: zeigeBereitstellung,
               indexInGruppe: actualPosition,
+              anzahlInGruppe: gruppen[hauptkartenId].length,
 
               isMitarbeiterRabatt: isMitarbeiterRabatt,
             });
@@ -11933,7 +12151,7 @@
               return 2;
             }
 
-            // 3. Partnerkarten mit 70% (zugewiesen zu normalen HK, nicht an Position 1)
+            // 3. Weitere Partnerkarten (zugewiesen zu normalen HK, nicht an Position 1)
 
             if (
               (cardType === "Partnerkarte" || cardType === "Partner Datenkarte") &&
@@ -12695,7 +12913,7 @@
               return 2;
             }
 
-            // 3. Partnerkarten mit 70% (zugewiesen zu normalen HK, nicht an Position 1)
+            // 3. Weitere Partnerkarten (zugewiesen zu normalen HK, nicht an Position 1)
 
             if (
               (cardType === "Partnerkarte" || cardType === "Partner Datenkarte") &&
@@ -13213,7 +13431,7 @@
                 return 2;
               }
 
-              // 3. Partnerkarten mit 70% (zugewiesen zu normalen HK, nicht an Position 1)
+              // 3. Weitere Partnerkarten (zugewiesen zu normalen HK, nicht an Position 1)
 
               if (
                 (cardType === "Partnerkarte" || cardType === "Partner Datenkarte") &&
@@ -14628,6 +14846,7 @@
         dirty: false, // ungespeicherte Änderungen Tarife?
         rabatteDirty: false, // ungespeicherte Änderungen Rabatte?
         rahmenvertragsRabatteDirty: false, // Änderungen an der Prozent-Liste?
+        partnerkartenRabattRegelnDirty: false, // Änderungen an Partnerkarten-Rabattregeln?
       };
 
       // Kategorien für Liste + Filter (gleiche Logik wie zuvor, nur zentral)
@@ -14668,6 +14887,7 @@
         adminState.rabatte = JSON.parse(JSON.stringify(mitarbeiterRabatte || {}));
         adminState.rahmenvertragsRabatte = JSON.parse(JSON.stringify(rahmenvertragsRabatte || []));
         adminState.bereitstellungsPreise = JSON.parse(JSON.stringify(bereitstellungsPreise || []));
+        adminState.partnerkartenRabattRegeln = normalisierePartnerkartenRabattRegeln(partnerkartenRabattRegeln);
         // Editierbare Stufen-Reihenfolge (Arbeitsstand)
         adminState.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
         // Arbeitsstand der Zubuchoptionen (aus der externen Datei)
@@ -14686,6 +14906,7 @@
         adminState.optionenDirty = false;
         adminState.rahmenvertragsRabatteDirty = false;
         adminState.bereitstellungDirty = false;
+        adminState.partnerkartenRabattRegelnDirty = false;
         adminRenderFilterChips();
         adminRenderList();
         adminRenderEditorEmpty();
@@ -15286,6 +15507,7 @@
         const panes = {
           tarife: "apTabTarife",
           rabatte: "apTabRabatte",
+          partnerRabatte: "apTabPartnerRabatte",
           stufen: "apTabStufen",
           optionen: "apTabOptionen",
           aktionen: "apTabAktionen",
@@ -15296,6 +15518,7 @@
         });
         // Beim Wechsel den jeweiligen Tab neu rendern
         if (tab === "rabatte") adminRenderRabatte();
+        if (tab === "partnerRabatte") adminRenderPartnerkartenRabatte();
         if (tab === "stufen") adminRenderStufen();
         if (tab === "optionen") adminRenderOptionen();
         if (tab === "aktionen") adminRenderAktionen();
@@ -16439,6 +16662,299 @@
         adminRenderOptionenUndAktionen();
       }
 
+      // ===== Partnerkarten-Rabattregeln =====
+      function adminRenderPartnerkartenRabatte() {
+        adminState.partnerkartenRabattRegeln = normalisierePartnerkartenRabattRegeln(
+          adminState.partnerkartenRabattRegeln,
+        );
+        const el = document.getElementById("apPartnerRabattRegeln");
+        if (!el) return;
+        const regeln = adminState.partnerkartenRabattRegeln;
+        const familien = adminPartnerkartenRegelFamilien();
+        const stufen = adminState.stufen || TARIF_STUFEN_REIHENFOLGE;
+        let html = "";
+
+        regeln.forEach((regel, idx) => {
+          html += '<div class="ap-partner-rule" data-index="' + idx + '">';
+          html += '<div class="ap-partner-rule-head">';
+          html +=
+            '<label title="Regel aktivieren/deaktivieren"><input type="checkbox" ' +
+            (regel.aktiv !== false ? "checked" : "") +
+            ' onchange="adminSetPartnerkartenRegelAktiv(' +
+            idx +
+            ', this.checked)"></label>';
+          html +=
+            '<input type="text" value="' +
+            adminEsc(regel.name) +
+            '" oninput="adminEditPartnerkartenRegelName(' +
+            idx +
+            ', this.value)" />';
+          html +=
+            '<button class="ap-rule-mini-btn" title="Nach oben" onclick="adminMovePartnerkartenRegel(' +
+            idx +
+            ', -1)">↑</button>';
+          html +=
+            '<button class="ap-rule-mini-btn" title="Nach unten" onclick="adminMovePartnerkartenRegel(' +
+            idx +
+            ', 1)">↓</button>';
+          html +=
+            '<button class="ap-rule-mini-btn danger" title="Löschen" onclick="adminDeletePartnerkartenRegel(' +
+            idx +
+            ')">✕</button>';
+          html += "</div>";
+
+          html += '<div class="ap-partner-rule-grid">';
+          html += adminPartnerkartenBedingungHtml(idx, "position", regel.position, "Position in Gruppe");
+          html += adminPartnerkartenBedingungHtml(idx, "gruppenAnzahl", regel.gruppenAnzahl, "Gruppengröße");
+          html += adminPartnerkartenAktionHtml(idx, regel.aktion);
+          html += "</div>";
+
+          html += '<div class="ap-partner-rule-checks">';
+          html += '<div class="ap-partner-rule-checks-title">Tarif-Familien (leer = alle Business Cards)</div>';
+          html += '<div class="ap-partner-checkrow">';
+          familien.forEach((familie) => {
+            html +=
+              '<label><input type="checkbox" ' +
+              ((regel.familien || []).includes(familie) ? "checked" : "") +
+              ' onchange="adminTogglePartnerkartenRegelArray(' +
+              idx +
+              ", 'familien', '" +
+              adminEsc(familie) +
+              "', this.checked)\">" +
+              adminEsc(familie.replace(/^Business Card\s*/, "")) +
+              "</label>";
+          });
+          html += "</div></div>";
+
+          html += '<div class="ap-partner-rule-checks">';
+          html += '<div class="ap-partner-rule-checks-title">Tarifstufen (leer = alle Stufen)</div>';
+          html += '<div class="ap-partner-checkrow">';
+          stufen.forEach((stufe) => {
+            html +=
+              '<label><input type="checkbox" ' +
+              ((regel.stufen || []).includes(stufe) ? "checked" : "") +
+              ' onchange="adminTogglePartnerkartenRegelArray(' +
+              idx +
+              ", 'stufen', '" +
+              adminEsc(stufe) +
+              "', this.checked)\">" +
+              adminEsc(stufe) +
+              "</label>";
+          });
+          html += "</div></div>";
+          html += "</div>";
+        });
+
+        if (!html) html = '<div class="ap-empty">Noch keine Partnerkarten-Regeln angelegt.</div>';
+        el.innerHTML = html;
+      }
+
+      function adminPartnerkartenRegelFamilien() {
+        const stufenListe = adminState.stufen || TARIF_STUFEN_REIHENFOLGE;
+        const set = new Set();
+        Object.keys(adminState.tarife || {}).forEach((name) => {
+          const t = adminState.tarife[name];
+          const gruppe = (t && t.gruppe) || ermittleGruppe(name);
+          const basis = tarifBasisName(name);
+          if (gruppe === "partnerkarte" && basis !== "Business Card Special") set.add(basis);
+        });
+        return Array.from(set).sort((a, b) => {
+          const ar = stufenListe.indexOf(stufeAusName(a, stufenListe));
+          const br = stufenListe.indexOf(stufeAusName(b, stufenListe));
+          return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br) || a.localeCompare(b);
+        });
+      }
+
+      function adminPartnerkartenBedingungHtml(idx, feld, bedingung, label) {
+        const b = bedingung || { operator: "any" };
+        const op = b.operator || "any";
+        let html = '<div class="ap-partner-rule-field">';
+        html += "<label>" + adminEsc(label) + "</label>";
+        html += '<div class="ap-partner-cond' + (op === "range" ? " range" : "") + '">';
+        html +=
+          '<select onchange="adminEditPartnerkartenRegelCondition(' +
+          idx +
+          ", '" +
+          feld +
+          "', 'operator', this.value)\">";
+        [
+          ["any", "egal"],
+          ["eq", "genau"],
+          ["gte", "mindestens"],
+          ["lte", "höchstens"],
+          ["range", "von bis"],
+        ].forEach(([value, text]) => {
+          html += '<option value="' + value + '"' + (op === value ? " selected" : "") + ">" + text + "</option>";
+        });
+        html += "</select>";
+        if (op === "range") {
+          html +=
+            '<input type="number" min="1" step="1" value="' +
+            adminEsc(b.von != null ? b.von : "") +
+            '" placeholder="von" oninput="adminEditPartnerkartenRegelCondition(' +
+            idx +
+            ", '" +
+            feld +
+            "', 'von', this.value)\">";
+          html +=
+            '<input type="number" min="1" step="1" value="' +
+            adminEsc(b.bis != null ? b.bis : "") +
+            '" placeholder="bis" oninput="adminEditPartnerkartenRegelCondition(' +
+            idx +
+            ", '" +
+            feld +
+            "', 'bis', this.value)\">";
+        } else if (op !== "any") {
+          html +=
+            '<input type="number" min="1" step="1" value="' +
+            adminEsc(b.value != null ? b.value : "") +
+            '" oninput="adminEditPartnerkartenRegelCondition(' +
+            idx +
+            ", '" +
+            feld +
+            "', 'value', this.value)\">";
+        }
+        html += "</div></div>";
+        return html;
+      }
+
+      function adminPartnerkartenAktionHtml(idx, aktion) {
+        const a = aktion || { typ: "set", wert: 0 };
+        let html = '<div class="ap-partner-rule-field">';
+        html += "<label>Aktion</label>";
+        html += '<div class="ap-partner-cond">';
+        html +=
+          '<select onchange="adminEditPartnerkartenRegelAction(' +
+          idx +
+          ', \'typ\', this.value)">';
+        [
+          ["set", "Rabatt setzen"],
+          ["max", "maximal"],
+          ["min", "mindestens"],
+        ].forEach(([value, text]) => {
+          html += '<option value="' + value + '"' + (a.typ === value ? " selected" : "") + ">" + text + "</option>";
+        });
+        html += "</select>";
+        html +=
+          '<input type="number" min="0" max="100" step="0.1" value="' +
+          adminEsc(a.wert != null ? a.wert : 0) +
+          '" oninput="adminEditPartnerkartenRegelAction(' +
+          idx +
+          ', \'wert\', this.value)">';
+        html += "</div></div>";
+        return html;
+      }
+
+      function adminMarkPartnerkartenRegelnDirty() {
+        adminState.partnerkartenRabattRegelnDirty = true;
+        adminMarkDirty();
+      }
+
+      function adminSetPartnerkartenRegelAktiv(idx, checked) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        regel.aktiv = checked;
+        adminMarkPartnerkartenRegelnDirty();
+      }
+
+      function adminEditPartnerkartenRegelName(idx, value) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        regel.name = value;
+        adminMarkPartnerkartenRegelnDirty();
+      }
+
+      function adminEditPartnerkartenRegelCondition(idx, feld, key, value) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        regel[feld] = regel[feld] || { operator: "any" };
+        if (key === "operator") {
+          regel[feld].operator = value;
+          if (value === "any") {
+            delete regel[feld].value;
+            delete regel[feld].von;
+            delete regel[feld].bis;
+          } else if (value === "range") {
+            delete regel[feld].value;
+            if (regel[feld].von == null) regel[feld].von = 1;
+            if (regel[feld].bis == null) regel[feld].bis = 1;
+          } else {
+            delete regel[feld].von;
+            delete regel[feld].bis;
+            if (regel[feld].value == null) regel[feld].value = 1;
+          }
+          adminMarkPartnerkartenRegelnDirty();
+          adminRenderPartnerkartenRabatte();
+          return;
+        }
+        const n = parseInt(value, 10);
+        if (isFinite(n) && n >= 1) regel[feld][key] = n;
+        else delete regel[feld][key];
+        adminMarkPartnerkartenRegelnDirty();
+      }
+
+      function adminEditPartnerkartenRegelAction(idx, key, value) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        regel.aktion = regel.aktion || { typ: "set", wert: 0 };
+        if (key === "typ") {
+          regel.aktion.typ = ["set", "max", "min"].includes(value) ? value : "set";
+        } else {
+          const n = parseFloat(String(value).replace(",", "."));
+          regel.aktion.wert = isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+        }
+        adminMarkPartnerkartenRegelnDirty();
+      }
+
+      function adminTogglePartnerkartenRegelArray(idx, feld, value, checked) {
+        const regel = adminState.partnerkartenRabattRegeln[idx];
+        if (!regel) return;
+        const set = new Set(Array.isArray(regel[feld]) ? regel[feld] : []);
+        if (checked) set.add(value);
+        else set.delete(value);
+        regel[feld] = Array.from(set);
+        adminMarkPartnerkartenRegelnDirty();
+      }
+
+      function adminAddPartnerkartenRegel() {
+        adminState.partnerkartenRabattRegeln = adminState.partnerkartenRabattRegeln || [];
+        adminState.partnerkartenRabattRegeln.push({
+          id: "partner_rule_" + Date.now(),
+          name: "Neue Partnerkarten-Regel",
+          aktiv: true,
+          kartenArt: "Partnerkarte",
+          tarifGruppen: ["partnerkarte"],
+          familien: [],
+          stufen: [],
+          position: { operator: "any" },
+          gruppenAnzahl: { operator: "any" },
+          aktion: { typ: "set", wert: 0 },
+        });
+        adminMarkPartnerkartenRegelnDirty();
+        adminRenderPartnerkartenRabatte();
+      }
+
+      function adminMovePartnerkartenRegel(idx, dir) {
+        const regeln = adminState.partnerkartenRabattRegeln || [];
+        const ziel = idx + dir;
+        if (ziel < 0 || ziel >= regeln.length) return;
+        const tmp = regeln[idx];
+        regeln[idx] = regeln[ziel];
+        regeln[ziel] = tmp;
+        adminMarkPartnerkartenRegelnDirty();
+        adminRenderPartnerkartenRabatte();
+      }
+
+      function adminDeletePartnerkartenRegel(idx) {
+        const regeln = adminState.partnerkartenRabattRegeln || [];
+        const regel = regeln[idx];
+        if (!regel) return;
+        if (!confirm('Regel "' + (regel.name || "ohne Namen") + '" löschen?')) return;
+        regeln.splice(idx, 1);
+        adminMarkPartnerkartenRegelnDirty();
+        adminRenderPartnerkartenRabatte();
+      }
+
       // ===== Rabatte-Tab =====
       function adminRenderRabatte() {
         adminRenderRabattChips();
@@ -16619,7 +17135,12 @@
         files.push({ name: "tarife.js", content: tarifeJsText, mime: "text/javascript" });
 
         // --- rabatte.* (nur, wenn veraendert) ---
-        if (adminState.rabatteDirty || adminState.rahmenvertragsRabatteDirty || adminState.bereitstellungDirty) {
+        if (
+          adminState.rabatteDirty ||
+          adminState.rahmenvertragsRabatteDirty ||
+          adminState.bereitstellungDirty ||
+          adminState.partnerkartenRabattRegelnDirty
+        ) {
           const rabatteMeta =
             window.RABATTE_DATA && window.RABATTE_DATA._meta
               ? JSON.parse(JSON.stringify(window.RABATTE_DATA._meta))
@@ -16630,6 +17151,7 @@
             rahmenvertragsRabatte: adminState.rahmenvertragsRabatte || [],
             bereitstellungsPreise: adminState.bereitstellungsPreise || [],
             mitarbeiterRabatte: adminState.rabatte,
+            partnerkartenRabattRegeln: normalisierePartnerkartenRabattRegeln(adminState.partnerkartenRabattRegeln),
           };
           const rabatteJson = JSON.stringify(rabatteOut, null, 2);
           const rabatteJsHeader =
@@ -16677,6 +17199,8 @@
         adminState.rabatteDirty = false;
         adminState.optionenDirty = false;
         adminState.rahmenvertragsRabatteDirty = false;
+        adminState.bereitstellungDirty = false;
+        adminState.partnerkartenRabattRegelnDirty = false;
         adminUpdateDirty();
         adminUebernehmeInRechner();
       }
@@ -17032,6 +17556,11 @@
             adminState.bereitstellungsPreise.forEach((p) => bereitstellungsPreise.push(p));
             window.RABATTE_DATA = window.RABATTE_DATA || {};
             window.RABATTE_DATA.bereitstellungsPreise = adminState.bereitstellungsPreise.slice();
+          }
+          if (Array.isArray(adminState.partnerkartenRabattRegeln)) {
+            partnerkartenRabattRegeln = normalisierePartnerkartenRabattRegeln(adminState.partnerkartenRabattRegeln);
+            window.RABATTE_DATA = window.RABATTE_DATA || {};
+            window.RABATTE_DATA.partnerkartenRabattRegeln = JSON.parse(JSON.stringify(partnerkartenRabattRegeln));
           }
           // Zubuchoptionen uebernehmen: Quelle aktualisieren + Laufzeit-Objekt neu bauen
           if (adminState.optionen) {
@@ -17400,6 +17929,7 @@
           <button class="ap-tab" data-tab="optionen" onclick="adminSwitchTab('optionen')">🧩 Optionen</button>
           <button class="ap-tab" data-tab="aktionen" onclick="adminSwitchTab('aktionen')">🎯 Aktionen</button>
           <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ Rabatte</button>
+          <button class="ap-tab" data-tab="partnerRabatte" onclick="adminSwitchTab('partnerRabatte')">💳 PK-Regeln</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
         </div>
 
@@ -17479,6 +18009,24 @@
                 direkt am jeweiligen Tarif eingestellt. Hier zur Übersicht.
               </p>
               <div class="ap-mitarbeiter-list" id="apMitarbeiterList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Partnerkarten-Regeln -->
+        <div id="apTabPartnerRabatte" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Partnerkarten-Rabattregeln</h3>
+              <p class="ap-rabatte-hint">
+                Regeln gelten pro Hauptkarten-Gruppe und laufen von oben nach unten. "Rabatt setzen" kann einen vorherigen
+                Wert überschreiben; "maximal" und "mindestens" verfeinern einen bereits gesetzten Rabatt. Aktuell werden
+                normale Business Cards geregelt; Partner-Datenkarten und Business Card Special bleiben wie bisher separat.
+              </p>
+              <div class="ap-partner-rules" id="apPartnerRabattRegeln"></div>
+              <div style="margin-top: 14px">
+                <button class="ap-add-tarif" onclick="adminAddPartnerkartenRegel()">+ Regel hinzufügen</button>
+              </div>
             </div>
           </div>
         </div>
