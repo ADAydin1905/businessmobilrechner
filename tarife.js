@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 10:15:43
+ * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 10:18:03
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
