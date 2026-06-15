@@ -1,6 +1,6 @@
 /*
  * rabatte.js  -  Mitarbeiter-/BGE-Rabatte fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 10:15:43
+ * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 10:18:03
  * Einzige Rabattdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.RABATTE_DATA = {
@@ -80,7 +80,7 @@ window.RABATTE_DATA = {
       "familien": [],
       "stufen": [],
       "position": {
-        "operator": "eq",
+        "operator": "gte",
         "value": 1
       },
       "gruppenAnzahl": {
