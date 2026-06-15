@@ -10053,16 +10053,38 @@
           ? JSON.parse(JSON.stringify(window.RABATTE_DATA.bereitstellungsPreise))
           : [8.36, 16.76, 25.17, 33.57];
 
+      function partnerkartenRegelAlleFamilien() {
+        const set = new Set();
+        Object.keys(tarifDetails || {}).forEach((name) => {
+          const t = tarifDetails[name] || {};
+          const gruppe = t.gruppe || ermittleGruppe(name);
+          const basis = tarifBasisName(name);
+          if (gruppe === "partnerkarte" && basis !== "Business Card Special") set.add(basis);
+        });
+        return Array.from(set).sort((a, b) => {
+          const ar = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(a));
+          const br = TARIF_STUFEN_REIHENFOLGE.indexOf(stufeAusName(b));
+          return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br) || a.localeCompare(b);
+        });
+      }
+
+      function partnerkartenRegelAlleStufen() {
+        return TARIF_STUFEN_REIHENFOLGE.slice();
+      }
+
       function defaultPartnerkartenRabattRegeln() {
+        const familien = partnerkartenRegelAlleFamilien();
+        const stufen = partnerkartenRegelAlleStufen();
         return [
           {
             id: "business_cards_erste_partnerkarte",
             name: "Business Cards: 1. Partnerkarte",
+            scopeMode: "explicit",
             aktiv: true,
             kartenArt: "Partnerkarte",
             tarifGruppen: ["partnerkarte"],
-            familien: [],
-            stufen: [],
+            familien: familien.slice(),
+            stufen: stufen.slice(),
             position: { operator: "eq", value: 1 },
             gruppenAnzahl: { operator: "any" },
             aktion: { typ: "set", wert: 50 },
@@ -10070,11 +10092,12 @@
           {
             id: "business_cards_ab_zweiter_partnerkarte",
             name: "Business Cards: ab 2. Partnerkarte",
+            scopeMode: "explicit",
             aktiv: true,
             kartenArt: "Partnerkarte",
             tarifGruppen: ["partnerkarte"],
-            familien: [],
-            stufen: [],
+            familien: familien.slice(),
+            stufen: stufen.slice(),
             position: { operator: "gte", value: 2 },
             gruppenAnzahl: { operator: "any" },
             aktion: { typ: "set", wert: 70 },
@@ -10087,21 +10110,35 @@
           Array.isArray(regeln) && regeln.length
             ? JSON.parse(JSON.stringify(regeln))
             : defaultPartnerkartenRabattRegeln();
+        const alleFamilien = partnerkartenRegelAlleFamilien();
+        const alleStufen = partnerkartenRegelAlleStufen();
         return quelle.map((regel, idx) => {
           const aktion = regel.aktion || {};
           const wert = parseFloat(aktion.wert != null ? aktion.wert : regel.wert);
+          const istExplizit = regel.scopeMode === "explicit";
+          let familien = Array.isArray(regel.familien)
+            ? regel.familien.slice()
+            : Array.isArray(regel.tarifFamilien)
+              ? regel.tarifFamilien.slice()
+              : [];
+          let stufen = Array.isArray(regel.stufen) ? regel.stufen.slice() : [];
+
+          // Migration von v2.0-Regeln: leere Auswahl bedeutete frueher "alle".
+          // Nach der Migration gilt im Admin: kein Haken = keine Wirkung.
+          if (!istExplizit && familien.length === 0) familien = alleFamilien.slice();
+          if (!istExplizit && stufen.length === 0) stufen = alleStufen.slice();
+          familien = familien.filter((f) => alleFamilien.includes(f));
+          stufen = stufen.filter((s) => alleStufen.includes(s));
+
           return {
             id: regel.id || "partner_rule_" + (idx + 1),
             name: regel.name || "Partnerkarten-Regel " + (idx + 1),
+            scopeMode: "explicit",
             aktiv: regel.aktiv !== false,
             kartenArt: regel.kartenArt || "Partnerkarte",
             tarifGruppen: Array.isArray(regel.tarifGruppen) ? regel.tarifGruppen.slice() : ["partnerkarte"],
-            familien: Array.isArray(regel.familien)
-              ? regel.familien.slice()
-              : Array.isArray(regel.tarifFamilien)
-                ? regel.tarifFamilien.slice()
-                : [],
-            stufen: Array.isArray(regel.stufen) ? regel.stufen.slice() : [],
+            familien,
+            stufen,
             position: regel.position || { operator: "any" },
             gruppenAnzahl: regel.gruppenAnzahl || { operator: "any" },
             aktion: {
@@ -10139,9 +10176,8 @@
         if (regel.kartenArt && regel.kartenArt !== "alle" && regel.kartenArt !== context.kartenArt) return false;
         if (Array.isArray(regel.tarifGruppen) && regel.tarifGruppen.length && !regel.tarifGruppen.includes(context.gruppe))
           return false;
-        if (Array.isArray(regel.familien) && regel.familien.length && !regel.familien.includes(context.familie))
-          return false;
-        if (Array.isArray(regel.stufen) && regel.stufen.length && !regel.stufen.includes(context.stufe)) return false;
+        if (!Array.isArray(regel.familien) || !regel.familien.includes(context.familie)) return false;
+        if (!Array.isArray(regel.stufen) || !regel.stufen.includes(context.stufe)) return false;
         if (!partnerkartenRegelBedingungPasst(regel.position, context.positionInGruppe)) return false;
         if (!partnerkartenRegelBedingungPasst(regel.gruppenAnzahl, context.anzahlInGruppe)) return false;
         return true;
@@ -16710,7 +16746,8 @@
           html += "</div>";
 
           html += '<div class="ap-partner-rule-checks">';
-          html += '<div class="ap-partner-rule-checks-title">Tarif-Familien (leer = alle Business Cards)</div>';
+          html +=
+            '<div class="ap-partner-rule-checks-title">Gilt für: <span style="font-weight:500;color:var(--ap-muted);">(Tarif-Familien, kein Haken = keine Wirkung)</span></div>';
           html += '<div class="ap-partner-checkrow">';
           familien.forEach((familie) => {
             html +=
@@ -16721,13 +16758,14 @@
               ", 'familien', '" +
               adminEsc(familie) +
               "', this.checked)\">" +
-              adminEsc(familie.replace(/^Business Card\s*/, "")) +
+              adminEsc(familie) +
               "</label>";
           });
           html += "</div></div>";
 
           html += '<div class="ap-partner-rule-checks">';
-          html += '<div class="ap-partner-rule-checks-title">Tarifstufen (leer = alle Stufen)</div>';
+          html +=
+            '<div class="ap-partner-rule-checks-title">Gilt zusätzlich für: Tarifstufen <span style="font-weight:500;color:var(--ap-muted);">(kein Haken = keine Wirkung)</span></div>';
           html += '<div class="ap-partner-checkrow">';
           stufen.forEach((stufe) => {
             html +=
@@ -16750,19 +16788,7 @@
       }
 
       function adminPartnerkartenRegelFamilien() {
-        const stufenListe = adminState.stufen || TARIF_STUFEN_REIHENFOLGE;
-        const set = new Set();
-        Object.keys(adminState.tarife || {}).forEach((name) => {
-          const t = adminState.tarife[name];
-          const gruppe = (t && t.gruppe) || ermittleGruppe(name);
-          const basis = tarifBasisName(name);
-          if (gruppe === "partnerkarte" && basis !== "Business Card Special") set.add(basis);
-        });
-        return Array.from(set).sort((a, b) => {
-          const ar = stufenListe.indexOf(stufeAusName(a, stufenListe));
-          const br = stufenListe.indexOf(stufeAusName(b, stufenListe));
-          return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br) || a.localeCompare(b);
-        });
+        return partnerkartenRegelAlleFamilien();
       }
 
       function adminPartnerkartenBedingungHtml(idx, feld, bedingung, label) {
@@ -16921,7 +16947,8 @@
         adminState.partnerkartenRabattRegeln.push({
           id: "partner_rule_" + Date.now(),
           name: "Neue Partnerkarten-Regel",
-          aktiv: true,
+          scopeMode: "explicit",
+          aktiv: false,
           kartenArt: "Partnerkarte",
           tarifGruppen: ["partnerkarte"],
           familien: [],
@@ -18021,7 +18048,9 @@
               <p class="ap-rabatte-hint">
                 Regeln gelten pro Hauptkarten-Gruppe und laufen von oben nach unten. "Rabatt setzen" kann einen vorherigen
                 Wert überschreiben; "maximal" und "mindestens" verfeinern einen bereits gesetzten Rabatt. Aktuell werden
-                normale Business Cards geregelt; Partner-Datenkarten und Business Card Special bleiben wie bisher separat.
+                normale Business Cards geregelt; Partner-Datenkarten und Business Card Special bleiben wie bisher separat.<br />
+                <strong>Tarif-Familie</strong> meint die konkrete Linie, z. B. Business Card XS. <strong>Tarifstufe</strong>
+                meint die Größenklasse XS/S/M/L/XL und ist nur eine zusätzliche Eingrenzung. Keine Checkbox = Regel greift nicht.
               </p>
               <div class="ap-partner-rules" id="apPartnerRabattRegeln"></div>
               <div style="margin-top: 14px">
