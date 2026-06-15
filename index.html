@@ -11607,7 +11607,12 @@
         // 1. Handle Hauptkarten
 
         if (type === "Hauptkarte") {
-          const originalTarifPreis = details.preis;
+          // Hauptkarten: Rahmenvertrags-/BGE-Rabatt wird auf den Endpreis
+          // (Grundpreis + Geraeteaufschlag) gerechnet. Anders als Partnerkarten,
+          // wo nur der Grundpreis rabattiert wird und der Aufschlag unrabattiert
+          // dazukommt. Ohne gesetzten Geraeteaufschlag = Endpreis = Grundpreis
+          // (rueckwaertskompatibel).
+          const originalTarifPreis = tarifEndpreisNetto(tarif);
 
           const vvlOptions = options.vvlAktion;
 
@@ -15191,6 +15196,11 @@
         // Gruppen-Auswahl (bestimmt, wo der Tarif im Rechner auftaucht)
         const aktuelleGruppe = t.gruppe || ermittleGruppe(key);
         const istPartnerkarte = aktuelleGruppe === "partnerkarte";
+        const istHauptkarte = aktuelleGruppe === "hauptkarte";
+        // Grundpreis/Geraeteaufschlag/Endpreis-Vorschau zeigen wir fuer Partner-
+        // UND Hauptkarten. Bei Partnerkarten ist der Aufschlag unrabattierbar,
+        // bei Hauptkarten Teil des rabattierbaren Endpreises (siehe calculateCardPrice).
+        const zeigeGeraeteaufschlag = istPartnerkarte || istHauptkarte;
         html += '<div class="ap-field">';
         html += "<label>Gruppe (bestimmt Platzierung im Rechner)</label>";
         html += '<select class="ap-select" data-field="gruppe" onchange="adminEditGruppe(this)">';
@@ -15225,24 +15235,40 @@
 
         // Preis · inkl. MultiSIM · MultiSIM-Preis (read-only) · Mitarbeiter-Rabatt
         // Bei Partnerkarten ist `preis` der rabattierbare Grundpreis; Geräteaufschlag kommt separat dazu.
-        html += '<div class="ap-row4' + (istPartnerkarte ? " ap-row-partnerpreise" : "") + '">';
+        html += '<div class="ap-row4' + (zeigeGeraeteaufschlag ? " ap-row-partnerpreise" : "") + '">';
+        const grundpreisLabel = zeigeGeraeteaufschlag ? "Grundpreis netto/Mon." : "Preis netto/Mon.";
+        const grundpreisTitle = istPartnerkarte
+          ? "Rabattierbarer Grundpreis netto pro Monat (Geräteaufschlag kommt unrabattiert dazu)"
+          : istHauptkarte
+            ? "Grundpreis netto pro Monat – Rahmenvertrags-/BGE-Rabatt wird auf den Endpreis (Grundpreis + Geräteaufschlag) gerechnet"
+            : "Preis netto pro Monat";
         html +=
           '<div class="ap-field"><label title="' +
-          (istPartnerkarte ? "Rabattierbarer Grundpreis netto pro Monat" : "Preis netto pro Monat") +
+          adminEsc(grundpreisTitle) +
           '">' +
-          (istPartnerkarte ? "Grundpreis netto/Mon." : "Preis netto/Mon.") +
+          grundpreisLabel +
           '</label><div class="ap-input-affix">' +
           '<input type="number" step="0.01" value="' +
           t.preis +
           '" data-field="preis" oninput="adminEditPreis(this)" /><span class="affix">€</span></div></div>';
-        if (istPartnerkarte) {
+        if (zeigeGeraeteaufschlag) {
+          const aufschlagTitle = istPartnerkarte
+            ? "Nicht rabattierbarer Geräteaufschlag netto pro Monat"
+            : "Geräteaufschlag netto pro Monat – wird beim Rahmenvertrags-/BGE-Rabatt mitrabattiert (Teil des Endpreises)";
+          const endpreisTitle = istPartnerkarte
+            ? "Grundpreis plus Geräteaufschlag (Aufschlag bleibt unrabattiert)"
+            : "Grundpreis plus Geräteaufschlag – Basis für den Rahmenvertrags-/BGE-Rabatt";
           html +=
-            '<div class="ap-field"><label title="Nicht rabattierbarer Geräteaufschlag netto pro Monat">Geräteaufschlag</label><div class="ap-input-affix">' +
+            '<div class="ap-field"><label title="' +
+            adminEsc(aufschlagTitle) +
+            '">Geräteaufschlag</label><div class="ap-input-affix">' +
             '<input type="number" step="0.01" min="0" value="' +
             tarifGeraeteAufpreisNetto(key, adminState.tarife) +
             '" data-field="geraeteAufpreis" oninput="adminEditGeraeteAufpreis(this)" /><span class="affix">€</span></div></div>';
           html +=
-            '<div class="ap-field"><label title="Grundpreis plus Geräteaufschlag">Endpreis Vorschau</label><div class="ap-input-affix">' +
+            '<div class="ap-field"><label title="' +
+            adminEsc(endpreisTitle) +
+            '">Endpreis Vorschau</label><div class="ap-input-affix">' +
             '<input type="text" id="apTarifEndpreisPreview" value="' +
             formatCurrencyNumber(tarifEndpreisNetto(key, adminState.tarife)) +
             '" readonly /><span class="affix">€</span></div></div>';

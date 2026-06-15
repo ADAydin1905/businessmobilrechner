@@ -11,7 +11,7 @@ window.TARIFE_DATA = {
     "stand": "2026-05-28",
       "felderProTarif": {
         "preis": "Monatlicher Nettopreis in Euro (Zahl)",
-        "geraeteAufpreis": "Optionaler monatlicher Netto-Aufpreis fuer Endgeraete-Substufen; bei Partnerkarten nicht rabattierbar",
+        "geraeteAufpreis": "Optionaler monatlicher Netto-Aufpreis fuer Endgeraete-Substufen. Bei Partnerkarten NICHT rabattierbar (kommt nach dem Partnerkarten-Rabatt dazu); bei Hauptkarten Teil des Endpreises und wird mit dem Rahmenvertrags-/BGE-Rabatt mitrabattiert",
         "inclusiveMultiSim": "Anzahl kostenfrei enthaltener MultiSIM-Karten (Ganzzahl)",
         "leistungen": "Liste der Tarif-Leistungen (Strings), voll ausgeschrieben"
       }
