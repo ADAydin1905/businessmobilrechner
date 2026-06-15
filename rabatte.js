@@ -1,6 +1,6 @@
 /*
  * rabatte.js  -  Mitarbeiter-/BGE-Rabatte fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 09:43:06
+ * Automatisch erzeugt vom Admin-Panel am 15.6.2026, 09:57:13
  * Einzige Rabattdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.RABATTE_DATA = {
@@ -111,6 +111,28 @@ window.RABATTE_DATA = {
       "aktion": {
         "typ": "set",
         "wert": 80
+      }
+    },
+    {
+      "id": "partner_rule_1781510199333",
+      "name": "Business Card: ab 9. Partnerkarte",
+      "aktiv": true,
+      "kartenArt": "Partnerkarte",
+      "tarifGruppen": [
+        "partnerkarte"
+      ],
+      "familien": [],
+      "stufen": [],
+      "position": {
+        "operator": "gte",
+        "value": 9
+      },
+      "gruppenAnzahl": {
+        "operator": "any"
+      },
+      "aktion": {
+        "typ": "set",
+        "wert": 100
       }
     }
   ]
