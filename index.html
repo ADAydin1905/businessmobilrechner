@@ -16375,7 +16375,30 @@
               "</label>";
           });
           html += "</div>";
-          // 2) Pro aktivierter Kartengruppe: Familienliste (+ optional Varianten)
+
+          // 2) Stufen: verfügbar für welche Tarifstufen (Whitelist, gespeichert als stufenIncl)
+          {
+            const stufenAlle = [...stufen, "Special"];
+            const incl = Array.isArray(r.stufenIncl) ? new Set(r.stufenIncl) : null;
+            const excl = Array.isArray(r.stufenExcl) ? new Set(r.stufenExcl) : null;
+            const stVerf = (s) => (incl ? incl.has(s) : excl ? !excl.has(s) : true);
+            html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Stufen:</span>';
+            stufenAlle.forEach((s) => {
+              html +=
+                '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
+                adminEsc(key) +
+                '" data-stufe="' +
+                adminEsc(s) +
+                '" ' +
+                (stVerf(s) ? "checked" : "") +
+                ' onchange="adminToggleOptionStufe(this)"> ' +
+                adminEsc(s) +
+                "</label>";
+            });
+            html += "</div>";
+          }
+
+          // 3) Pro aktivierter Kartengruppe: Familienliste (+ optional Varianten)
           kartenArtenDefs.forEach(([val, lbl, gruppe]) => {
             const aktiv = !r.kartenArten || r.kartenArten.includes(val);
             if (!aktiv) return;
@@ -16435,28 +16458,6 @@
             });
             html += "</div></details>";
           });
-
-          // 3) Stufen: verfügbar für welche Tarifstufen (Whitelist, gespeichert als stufenIncl)
-          {
-            const stufenAlle = [...stufen, "Special"];
-            const incl = Array.isArray(r.stufenIncl) ? new Set(r.stufenIncl) : null;
-            const excl = Array.isArray(r.stufenExcl) ? new Set(r.stufenExcl) : null;
-            const stVerf = (s) => (incl ? incl.has(s) : excl ? !excl.has(s) : true);
-            html += '<div class="ap-opt-verf-block"><span class="ap-opt-verf-lbl">Stufen:</span>';
-            stufenAlle.forEach((s) => {
-              html +=
-                '<label class="ap-opt-chk"><input type="checkbox" data-key="' +
-                adminEsc(key) +
-                '" data-stufe="' +
-                adminEsc(s) +
-                '" ' +
-                (stVerf(s) ? "checked" : "") +
-                ' onchange="adminToggleOptionStufe(this)"> ' +
-                adminEsc(s) +
-                "</label>";
-            });
-            html += "</div>";
-          }
 
           // 4) Weitere Regeln (Name-Muster + Abhängigkeit) – selten, aber 100% editierbar
           {
