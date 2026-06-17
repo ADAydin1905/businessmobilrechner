@@ -5021,6 +5021,29 @@
         };
       }
 
+      // Heutiges Datum als ISO "YYYY-MM-DD" in lokaler Zeit (fuer Datums-Vergleiche).
+      function heuteISODatum() {
+        const d = new Date();
+        return (
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0")
+        );
+      }
+
+      // Zeitliche Verfuegbarkeit: optionales gueltigVon/gueltigBis (ISO "YYYY-MM-DD",
+      // inklusive). Leeres Feld = offene Grenze. Wirkt wie ein zeitgesteuerter
+      // Aktiv-Schalter: vor dem Start bzw. nach dem Ende ist die Aktion ausgeblendet.
+      function optionImGueltigkeitszeitraum(o) {
+        if (!o) return true;
+        const heute = heuteISODatum();
+        if (o.gueltigVon && heute < o.gueltigVon) return false;
+        if (o.gueltigBis && heute > o.gueltigBis) return false;
+        return true;
+      }
+
       // Baut das Laufzeit-Detail-Objekt aus window.OPTIONEN_DATA.
       function baueOptionenDetails(data) {
         const quelle = data && data.optionen ? data.optionen : {};
@@ -5037,10 +5060,13 @@
           if (Array.isArray(o.rabattStufen)) detail.rabattStufen = o.rabattStufen.slice();
           detail.preisNetto = o.preisNetto != null ? o.preisNetto : 0;
           detail.getPreisNetto = (tarifName) => optionPreisNetto(o, tarifName);
-          // Aktiv-Schalter: o.aktiv === false -> Option ueberall ausgeblendet.
+          // Aktiv-Schalter (o.aktiv === false) UND Gueltigkeitszeitraum (gueltigVon/bis)
+          // blenden die Option/Aktion ueberall aus; sonst greifen die Verfuegbarkeits-Regeln.
           const regelPruefung = baueOptionVerfuegbar(o.regeln);
           detail.isAvailable = (tarifName, kartenArt, cardId) =>
-            o.aktiv === false ? false : regelPruefung(tarifName, kartenArt, cardId);
+            o.aktiv === false || !optionImGueltigkeitszeitraum(o)
+              ? false
+              : regelPruefung(tarifName, kartenArt, cardId);
           out[key] = detail;
         }
         return out;
@@ -15841,7 +15867,7 @@
                   g +
                   '" data-typ="partnerkarte" ' +
                   (typen.includes("partnerkarte") ? "checked" : "") +
-                  ' onchange="adminToggleFamiliePartnerTyp(this.dataset.basis, this.dataset.gruppe, this.dataset.typ, this.checked)"> normal</label>' +
+                  ' onchange="adminToggleFamiliePartnerTyp(this.dataset.basis, this.dataset.gruppe, this.dataset.typ, this.checked)"> Telefonie</label>' +
                   '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" data-basis="' +
                   adminEsc(basis) +
                   '" data-gruppe="' +
@@ -16341,6 +16367,11 @@
           }
           html += "</div>";
 
+          // Gültigkeitszeitraum – nur für Aktionen: zeitgesteuertes Auf-/Abschalten.
+          if (((adminGruppeVonOption(key) || {}).kategorie) === "aktion") {
+            html += adminAktionGueltigkeitHtml(key, o);
+          }
+
           // --- Verfügbarkeit (editierbar): Kartenarten + Familien/Varianten ---
           const r = o.regeln || {};
           const familienExcl = r.familienExcl || [];
@@ -16630,6 +16661,73 @@
         const n = parseFloat(String(val).replace(",", "."));
         o.betrag = isFinite(n) ? n : 0;
         adminMarkOptionenDirty();
+      }
+
+      // Gültigkeitszeitraum einer Aktion (gueltigVon/gueltigBis) – Datumsfelder + Status.
+      // Leere Felder = offene Grenze. Steuert über isAvailable das Auf-/Abschalten.
+      function adminAktionGueltigkeitHtml(key, o) {
+        const von = o.gueltigVon || "";
+        const bis = o.gueltigBis || "";
+        const heute = heuteISODatum();
+        let status, farbe;
+        if (von && bis && von > bis) {
+          status = "⚠ „von“ liegt nach „bis“ – Aktion nie aktiv";
+          farbe = "#b91c1c";
+        } else if (!von && !bis) {
+          status = "dauerhaft aktiv (kein Zeitraum gesetzt)";
+          farbe = "var(--ap-muted)";
+        } else if (von && heute < von) {
+          status = "⏳ startet am " + formatDateToDDMMYYYY(von);
+          farbe = "#b45309";
+        } else if (bis && heute > bis) {
+          status = "⛔ abgelaufen seit " + formatDateToDDMMYYYY(bis);
+          farbe = "#b91c1c";
+        } else {
+          status =
+            "✅ aktiv" +
+            (von ? " seit " + formatDateToDDMMYYYY(von) : "") +
+            (bis ? " bis " + formatDateToDDMMYYYY(bis) : "");
+          farbe = "#15803d";
+        }
+        let html =
+          '<div class="ap-opt-gueltig" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0 2px;font-size:0.82em;">';
+        html +=
+          '<span style="font-weight:600;" title="Aktion automatisch über einen Zeitraum auf-/abschalten (inklusive Grenzen; leer = offen).">Gültigkeit:</span>';
+        html +=
+          '<label style="display:flex;align-items:center;gap:4px;">von <input type="date" value="' +
+          adminEsc(von) +
+          '" data-key="' +
+          adminEsc(key) +
+          '" onchange="adminEditOptionGueltigVon(this.dataset.key, this.value)"></label>';
+        html +=
+          '<label style="display:flex;align-items:center;gap:4px;">bis <input type="date" value="' +
+          adminEsc(bis) +
+          '" data-key="' +
+          adminEsc(key) +
+          '" onchange="adminEditOptionGueltigBis(this.dataset.key, this.value)"></label>';
+        html += '<span style="font-style:italic;color:' + farbe + ';">' + adminEsc(status) + "</span>";
+        html += "</div>";
+        return html;
+      }
+
+      function adminEditOptionGueltigVon(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const v = (val || "").trim();
+        if (v) o.gueltigVon = v;
+        else delete o.gueltigVon;
+        adminMarkOptionenDirty();
+        adminRenderAktionen();
+      }
+
+      function adminEditOptionGueltigBis(key, val) {
+        const o = adminState.optionen[key];
+        if (!o) return;
+        const v = (val || "").trim();
+        if (v) o.gueltigBis = v;
+        else delete o.gueltigBis;
+        adminMarkOptionenDirty();
+        adminRenderAktionen();
       }
       // Stufen-Ausnahme setzen/loeschen (leer = Standardpreis verwenden).
       function adminEditOptionStufenpreis(key, stufe, val) {
