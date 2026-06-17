@@ -15710,6 +15710,7 @@
         const panes = {
           tarife: "apTabTarife",
           rabatte: "apTabRabatte",
+          einmalkosten: "apTabEinmalkosten",
           partnerRabatte: "apTabPartnerRabatte",
           stufen: "apTabStufen",
           optionen: "apTabOptionen",
@@ -15721,6 +15722,7 @@
         });
         // Beim Wechsel den jeweiligen Tab neu rendern
         if (tab === "rabatte") adminRenderRabatte();
+        if (tab === "einmalkosten") adminRenderBereitstellungChips();
         if (tab === "partnerRabatte") adminRenderPartnerkartenRabatte();
         if (tab === "stufen") adminRenderStufen();
         if (tab === "optionen") adminRenderOptionen();
@@ -17254,7 +17256,6 @@
       // ===== Rabatte-Tab =====
       function adminRenderRabatte() {
         adminRenderRabattChips();
-        adminRenderBereitstellungChips();
         adminRenderMitarbeiterUebersicht();
       }
 
@@ -18224,7 +18225,8 @@
           <button class="ap-tab active" data-tab="tarife" onclick="adminSwitchTab('tarife')">📱 Tarife</button>
           <button class="ap-tab" data-tab="optionen" onclick="adminSwitchTab('optionen')">🧩 Optionen</button>
           <button class="ap-tab" data-tab="aktionen" onclick="adminSwitchTab('aktionen')">🎯 Aktionen</button>
-          <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ Rabatte</button>
+          <button class="ap-tab" data-tab="rabatte" onclick="adminSwitchTab('rabatte')">🏷️ RV-Rabatte</button>
+          <button class="ap-tab" data-tab="einmalkosten" onclick="adminSwitchTab('einmalkosten')">💶 Einmalkosten</button>
           <button class="ap-tab" data-tab="partnerRabatte" onclick="adminSwitchTab('partnerRabatte')">💳 PK-Regeln</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
         </div>
@@ -18277,6 +18279,21 @@
             </div>
 
             <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Mitarbeiter-/BGE-Rabatte (tarifspezifisch)</h3>
+              <p class="ap-rabatte-hint">
+                Diese Rabatte sind pro Tarif unterschiedlich und werden im
+                <a href="#" onclick="adminSwitchTab('tarife');return false;" style="color: var(--primary-color)">Tarife-Tab</a>
+                direkt am jeweiligen Tarif eingestellt. Hier zur Übersicht.
+              </p>
+              <div class="ap-mitarbeiter-list" id="apMitarbeiterList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Einmalkosten -->
+        <div id="apTabEinmalkosten" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
               <h3 class="ap-rabatte-title">Bereitstellungspreise</h3>
               <p class="ap-rabatte-hint">
                 Diese Netto-Preise stehen in allen "Bereitstellungspreis"-Dropdowns (pro Karte und
@@ -18295,16 +18312,6 @@
                 <span class="affix-static">€</span>
                 <button class="ap-btn ap-btn-primary" onclick="adminAddBereitstellung()">+ Preis hinzufügen</button>
               </div>
-            </div>
-
-            <div class="ap-rabatte-section">
-              <h3 class="ap-rabatte-title">Mitarbeiter-/BGE-Rabatte (tarifspezifisch)</h3>
-              <p class="ap-rabatte-hint">
-                Diese Rabatte sind pro Tarif unterschiedlich und werden im
-                <a href="#" onclick="adminSwitchTab('tarife');return false;" style="color: var(--primary-color)">Tarife-Tab</a>
-                direkt am jeweiligen Tarif eingestellt. Hier zur Übersicht.
-              </p>
-              <div class="ap-mitarbeiter-list" id="apMitarbeiterList"></div>
             </div>
           </div>
         </div>
