@@ -275,6 +275,22 @@
         color: var(--text-color);
       }
 
+      /* GrK-Modus: 70%-statt-50%-Haken pro Partnerkarte */
+      .grk70-zeile {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        cursor: pointer;
+      }
+      .grk70-zeile input {
+        accent-color: var(--primary-color);
+        cursor: pointer;
+      }
+
       .controls,
       .results,
       .summary {
@@ -4347,6 +4363,24 @@
             </label>
           </div>
 
+          <div class="einstellungs-zeile">
+            <label
+              for="grkModus"
+              class="einstellungs-label"
+              title="GrK-Modus (umsatzorientiert): Alle Partnerkarten erhalten 50 %. Pro Partnerkarte kann gezielt 70 % gewählt werden – unabhängig von der Position in der Gruppe."
+              >GrK-Modus</label
+            >
+
+            <label
+              class="switch"
+              title="GrK-Modus (umsatzorientiert): Alle Partnerkarten erhalten 50 %. Pro Partnerkarte kann gezielt 70 % gewählt werden – unabhängig von der Position in der Gruppe."
+            >
+              <input type="checkbox" id="grkModus" onchange="renderTarifDropdowns()" />
+
+              <span class="slider round"></span>
+            </label>
+          </div>
+
           <div class="button-group">
             <button onclick="openModal('kundendatenModal')">Kundendaten</button>
 
@@ -5019,6 +5053,15 @@
 
     <script>
       let zubuchoptionen = {};
+
+      // GrK-Modus: pro Partnerkarte (cardId "pk_<i>") ein Flag, ob sie 70 % statt 50 %
+      // bekommt. Greift nur, wenn der GrK-Modus aktiv ist; im Standardmodus ignoriert.
+      let grk70 = {};
+      function setGrk70(cardId, checked) {
+        if (checked) grk70[cardId] = true;
+        else delete grk70[cardId];
+        berechneTarife();
+      }
 
       let lastCardCounts = { pk: 0, pdk: 0 };
 
@@ -10737,6 +10780,10 @@
 
           manuelleZuweisung: document.getElementById("manuelleZuweisung").checked,
 
+          grkModus: document.getElementById("grkModus")?.checked || false,
+
+          grk70: Object.keys(grk70).filter((k) => grk70[k]),
+
           priceType: document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType || "netto",
 
           cards: [],
@@ -10865,6 +10912,18 @@
             zubuchoptionen = decodedState.zubuchoptionen;
           }
 
+          // GrK-Modus + per-Karte-70%-Haken VOR dem Render wiederherstellen,
+          // damit die Häkchen direkt korrekt gerendert werden.
+          if (document.getElementById("grkModus")) {
+            document.getElementById("grkModus").checked = decodedState.grkModus || false;
+          }
+          grk70 = {};
+          if (Array.isArray(decodedState.grk70)) {
+            decodedState.grk70.forEach((k) => {
+              grk70[k] = true;
+            });
+          }
+
           renderTarifDropdowns();
 
           let hk_idx = 1;
@@ -10957,6 +11016,8 @@
         const zeigeBereitstellung = document.getElementById("zeigeBereitstellung")?.checked;
 
         const manuelleZuweisungAktiv = document.getElementById("manuelleZuweisung")?.checked;
+
+        const grkModusAktiv = document.getElementById("grkModus")?.checked;
 
         const zeigeRufnummernfeld = document.getElementById("bestandsRufnummer")?.checked;
 
@@ -11346,6 +11407,11 @@
               ? `<label for="${zuweisungID}" style="margin-top:0.5rem;">Zuweisen zu:</label><select id="${zuweisungID}" onchange="berechneTarife()"><option value="auto">Automatische Zuweisung</option>${hauptkartenOptionsHTML}</select>`
               : "";
 
+            // GrK-Modus: 70 %-statt-50 %-Haken pro Partnerkarte (nur sichtbar, wenn aktiv).
+            const grk70Feld = grkModusAktiv
+              ? `<label class="grk70-zeile" title="Diese Partnerkarte erhält 70 % statt 50 % – nur im GrK-Modus, unabhängig von der Position in der Gruppe."><input type="checkbox" ${grk70["pk_" + i] ? "checked" : ""} onchange="setGrk70('pk_${i}', this.checked)"> 70 % statt 50 % (GrK)</label>`
+              : "";
+
             const geraeteFelderHTML = `<div id="${geraeteFelderID}" class="geraete-felder"><div class="input-group"><label for="${geraeteNameID}">Gerät:</label><input type="text" id="${geraeteNameID}" value="Sonstiges Gerät" onchange="berechneTarife()"></div><div class="input-group"><label for="${geraetePreisID}">Gerätepreis (Netto):</label><input type="number" id="${geraetePreisID}" value="0" min="0" step="0.01" onchange="berechneTarife()"></div></div>`;
 
             // Verwendet jetzt endgeraeteOptionenPartnerkarten
@@ -11368,7 +11434,7 @@
                   })
                   .join("");
               })
-              .join("")}</select>${rufnummerFeld}${bereitstellungFeld}${zuweisungFeld}${geraeteFelderHTML}</div></div>`;
+              .join("")}</select>${rufnummerFeld}${bereitstellungFeld}${zuweisungFeld}${grk70Feld}${geraeteFelderHTML}</div></div>`;
           }
         }
 
@@ -11871,10 +11937,20 @@
               vorteile.push({ name: "Aktionspreis Business Card Special", text: "Aktionspreis Business Card Special" });
             }
           } else {
+            // GrK-Modus: die echte Gruppenposition wird durch den per-Karte-Haken ersetzt.
+            // Haken an  -> wie Position >=2  -> bestehende 70%-Regel greift.
+            // Haken aus -> wie Position 1    -> bestehende 50%-Regel greift.
+            // Standardmodus: echte Position wie bisher.
+            const effektivePosition = cardData.grkModus
+              ? cardData.grk70Karte
+                ? 2
+                : 1
+              : (indexInGruppe || 0) + 1;
+
             tarifRabattProzent = ermittlePartnerkartenRabatt({
               tarifName: tarif,
               kartenArt: type,
-              positionInGruppe: (indexInGruppe || 0) + 1,
+              positionInGruppe: effektivePosition,
               anzahlInGruppe: anzahlInGruppe || 1,
             });
 
@@ -12050,6 +12126,8 @@
 
         const rabattUebersteuern = document.getElementById("rabattUebersteuern")?.checked;
 
+        const grkModusAktiv = document.getElementById("grkModus")?.checked;
+
         // Bestimme ob Mitarbeiter/BGE-Rabatt aktiv ist
 
         const isMitarbeiterRabatt = rabatt === "mitarbeiter";
@@ -12193,6 +12271,9 @@
               anzahlInGruppe: gruppen[hauptkartenId].length,
 
               isMitarbeiterRabatt: isMitarbeiterRabatt,
+
+              grkModus: grkModusAktiv,
+              grk70Karte: grk70[cardId] === true,
             });
 
             if (cardResult) {
