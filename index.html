@@ -253,6 +253,14 @@
         box-sizing: border-box;
       }
 
+      .rufnummer-input:focus {
+        outline: none;
+
+        border-color: var(--primary-color);
+
+        box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
+      }
+
       body.dark-mode .rufnummer-input {
         background-color: #2b2b2b;
 
@@ -950,17 +958,33 @@
       .bestandstarif-item input {
         flex: 1;
 
-        padding: 8px 12px;
+        padding: 10px 12px;
 
         border: 1px solid #ccc;
 
-        border-radius: 4px;
+        border-radius: 8px;
 
         background-color: var(--background-color);
 
         color: var(--text-color);
 
         font-family: var(--font-family);
+
+        font-size: 0.9rem;
+
+        box-sizing: border-box;
+      }
+
+      .bestandstarif-item input:focus {
+        outline: none;
+
+        border-color: var(--primary-color);
+
+        box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
+      }
+
+      body.dark-mode .bestandstarif-item input {
+        border-color: #555;
       }
 
       .bestandstarif-item input[type="number"] {
@@ -3396,9 +3420,23 @@
         border-radius: 8px;
         background: var(--card-bg);
       }
-      .ap-stufen-name {
+      .ap-stufen-main {
         flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .ap-stufen-name {
         font-weight: 600;
+      }
+      .ap-stufen-partner {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 0.86em;
+        color: var(--ap-muted, #6b7280);
       }
       .ap-stufen-select {
         flex: 0 0 auto;
@@ -8712,15 +8750,15 @@
 
 
 
-              <input type="text" placeholder="Rufnummer" value="${tarif.rufnummer || ""}" onchange="updateBestandstarif(${index}, 'rufnummer', this.value)" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px; background-color: var(--background-color); color: var(--text-color); font-family: var(--font-family); font-size: 1rem; box-sizing: border-box;">
+              <input type="text" placeholder="Rufnummer" value="${tarif.rufnummer || ""}" onchange="updateBestandstarif(${index}, 'rufnummer', this.value)">
 
 
 
-              <input type="text" placeholder="Tarifbezeichnung" value="${tarif.tarifname || ""}" onchange="updateBestandstarif(${index}, 'tarifname', this.value)" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px; background-color: var(--background-color); color: var(--text-color); font-family: var(--font-family); font-size: 1rem; box-sizing: border-box;">
+              <input type="text" placeholder="Tarifbezeichnung" value="${tarif.tarifname || ""}" onchange="updateBestandstarif(${index}, 'tarifname', this.value)">
 
 
 
-              <input type="number" placeholder="0,00" step="0.01" min="0" value="${tarif.preis || ""}" onchange="updateBestandstarif(${index}, 'preis', this.value)" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px; background-color: var(--background-color); color: var(--text-color); font-family: var(--font-family); font-size: 1rem; box-sizing: border-box;">
+              <input type="number" placeholder="0,00" step="0.01" min="0" value="${tarif.preis || ""}" onchange="updateBestandstarif(${index}, 'preis', this.value)">
 
 
 
@@ -8740,11 +8778,11 @@
 
 
 
-              <input type="text" placeholder="Tarifbezeichnung" value="${tarif.tarifname || ""}" onchange="updateBestandstarif(${index}, 'tarifname', this.value)" style="flex: 2; padding: 12px; border: 1px solid #ccc; border-radius: 8px; background-color: var(--background-color); color: var(--text-color); font-family: var(--font-family); font-size: 1rem; box-sizing: border-box;">
+              <input type="text" placeholder="Tarifbezeichnung" value="${tarif.tarifname || ""}" onchange="updateBestandstarif(${index}, 'tarifname', this.value)" style="flex: 2;">
 
 
 
-              <input type="number" placeholder="0,00" step="0.01" min="0" value="${tarif.preis || ""}" onchange="updateBestandstarif(${index}, 'preis', this.value)" style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; background-color: var(--background-color); color: var(--text-color); font-family: var(--font-family); font-size: 1rem; box-sizing: border-box;">
+              <input type="number" placeholder="0,00" step="0.01" min="0" value="${tarif.preis || ""}" onchange="updateBestandstarif(${index}, 'preis', this.value)" style="flex: 1;">
 
 
 
@@ -15849,25 +15887,11 @@
             const override = gesetzte.size === 1 ? [...gesetzte][0] : "";
             const effektiv = override || autoLabel;
             html += '<div class="ap-stufen-row">';
+            html += '<div class="ap-stufen-main">';
             html += '<span class="ap-stufen-name">' + adminEsc(basis) + "</span>";
-            html +=
-              '<select class="ap-select ap-stufen-select" data-basis="' +
-              adminEsc(basis) +
-              '" onchange="adminSetStufenOverride(this.dataset.basis, this.value)">';
-            html += '<option value="">Auto – aus Name (' + autoLabel + ")</option>";
-            stufenLabels.forEach((s) => {
-              html += '<option value="' + adminEsc(s) + '"' + (s === override ? " selected" : "") + ">" + adminEsc(s) + "</option>";
-            });
-            html += "</select>";
-            html +=
-              '<span class="ap-stufen-eff">wirkt als <strong>' +
-              adminEsc(effektiv) +
-              "</strong>" +
-              (override ? ' <span class="ap-stufen-tag">manuell</span>' : "") +
-              "</span>";
-            html += "</div>";
 
-            // Partnerkarten-Aufnahme: nur fuer Haupt-Familien (Telefon- & Daten-Hauptkarten)
+            // Partnerkarten-Aufnahme: nur fuer Haupt-Familien (Telefon- & Daten-Hauptkarten).
+            // Reihe liegt jetzt IN der Kachel, unter dem Namen.
             if (g === "hauptkarte" || g === "hauptdatenkarte") {
               const v0 = adminState.tarife[varianten[0]] || {};
               const nimmt = typeof v0.nimmtPartner === "boolean" ? v0.nimmtPartner : true;
@@ -15876,8 +15900,7 @@
                 typeof v0.maxPartner === "number"
                   ? v0.maxPartner
                   : (PARTNER_DEFAULTS[g] || PARTNER_DEFAULTS.hauptkarte).max;
-              html +=
-                '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:-2px 0 12px 4px;font-size:0.86em;color:var(--ap-muted);">';
+              html += '<div class="ap-stufen-partner">';
               html +=
                 '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" data-basis="' +
                 adminEsc(basis) +
@@ -15911,6 +15934,24 @@
               }
               html += "</div>";
             }
+            html += "</div>"; // .ap-stufen-main
+
+            html +=
+              '<select class="ap-select ap-stufen-select" data-basis="' +
+              adminEsc(basis) +
+              '" onchange="adminSetStufenOverride(this.dataset.basis, this.value)">';
+            html += '<option value="">Auto – aus Name (' + autoLabel + ")</option>";
+            stufenLabels.forEach((s) => {
+              html += '<option value="' + adminEsc(s) + '"' + (s === override ? " selected" : "") + ">" + adminEsc(s) + "</option>";
+            });
+            html += "</select>";
+            html +=
+              '<span class="ap-stufen-eff">wirkt als <strong>' +
+              adminEsc(effektiv) +
+              "</strong>" +
+              (override ? ' <span class="ap-stufen-tag">manuell</span>' : "") +
+              "</span>";
+            html += "</div>"; // .ap-stufen-row
           });
         });
         el.innerHTML = html;
