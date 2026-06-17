@@ -1,19 +1,14 @@
 /*
  * rabatte.js  -  Mitarbeiter-/BGE-Rabatte fuer den Business Mobil Rechner (v2.0)
- *
- * Diese Datei wird per <script src="rabatte.js"> eingebunden und funktioniert
- * sowohl per Doppelklick (file://) als auch beim Hosten (GitHub Pages /
- * eigener Webserver). Einzige Rabattdaten-Quelle - kein fetch noetig.
- *
- * Bearbeitung erfolgt ueber das Admin-Panel des Rechners. Beim Speichern
- * wird rabatte.js direkt nach GitHub committed.
+ * Automatisch erzeugt vom Admin-Panel am 17.6.2026, 11:57:55
+ * Einzige Rabattdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.RABATTE_DATA = {
   "_meta": {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Mitarbeiter-/BGE-Rabatte fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-05-29",
+    "stand": "2026-06-17",
     "felder": {
       "rahmenvertragsRabatte": "Liste der waehlbaren festen Rahmenvertrags-Rabatte in Prozent (Zahlen, sortiert aufsteigend, 0 immer enthalten)",
       "bereitstellungsPreise": "Liste der waehlbaren Bereitstellungspreise (netto, in EUR) fuer die Bereitstellungs-Dropdowns",
@@ -92,8 +87,7 @@ window.RABATTE_DATA = {
       ],
       "tarife": [],
       "position": {
-        "operator": "eq",
-        "value": 1
+        "operator": "any"
       },
       "gruppenAnzahl": {
         "operator": "any"
@@ -113,16 +107,15 @@ window.RABATTE_DATA = {
         "partnerkarte"
       ],
       "familien": [
-        "Business Card XS",
-        "Business Card S",
         "Business Card M",
         "Business Card L",
         "Business Card XL"
       ],
       "tarife": [],
       "position": {
-        "operator": "gte",
-        "value": 2
+        "operator": "range",
+        "von": 2,
+        "bis": 10
       },
       "gruppenAnzahl": {
         "operator": "any"
