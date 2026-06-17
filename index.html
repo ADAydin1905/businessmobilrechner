@@ -16395,15 +16395,34 @@
                 adminEsc(s) +
                 "</label>";
             });
+            html +=
+              '<span class="ap-opt-hint2">grobe Vorauswahl nach Größe – abgewählte Größen deaktivieren die zugehörigen Familien unten</span>';
             html += "</div>";
           }
 
           // 3) Pro aktivierter Kartengruppe: Familienliste (+ optional Varianten)
+          //    Stufen-Spiegelung: ist die Stufe einer Familie über die Stufen-Whitelist
+          //    (Abschnitt 2) ausgeschlossen, wird die Familie hier deaktiviert/ausgegraut –
+          //    sonst widerspräche die Anzeige der tatsächlichen Verfügbarkeit.
+          const stInclF = Array.isArray(r.stufenIncl) ? new Set(r.stufenIncl) : null;
+          const stExclF = Array.isArray(r.stufenExcl) ? new Set(r.stufenExcl) : null;
+          const stufeErlaubt = (label) => (stInclF ? stInclF.has(label) : stExclF ? !stExclF.has(label) : true);
           kartenArtenDefs.forEach(([val, lbl, gruppe]) => {
             const aktiv = !r.kartenArten || r.kartenArten.includes(val);
             if (!aktiv) return;
             const fam = adminFamilienDerGruppe(gruppe);
-            const basisListe = Object.keys(fam).sort();
+            // Familien nach Stufen-Reihenfolge sortieren (XS..XXL, dann Special) – wie die
+            // Stufen-Zeile oben. Rang hängt nur am Stufen-Label, nicht am Sperr-Zustand:
+            // eine ausgegraute Familie behält dadurch ihre Position (z.B. L bleibt zw. M und XL).
+            const famRang = (basis) => {
+              const idx = TARIF_STUFEN_LABELS.indexOf(getTarifStufeLabel(fam[basis][0]));
+              return idx === -1 ? TARIF_STUFEN_LABELS.length : idx;
+            };
+            const basisListe = Object.keys(fam).sort((a, b) => {
+              const ra = famRang(a),
+                rb = famRang(b);
+              return ra !== rb ? ra - rb : a.localeCompare(b);
+            });
             if (!basisListe.length) return;
             const grpKey = key + "::grp::" + gruppe;
             html +=
@@ -16418,7 +16437,9 @@
             basisListe.forEach((basis) => {
               const famAus = familienExcl.includes(basis);
               const varianten = fam[basis];
-              html += '<div class="ap-opt-fam">';
+              const famStufe = getTarifStufeLabel(varianten[0]);
+              const stufeAus = !stufeErlaubt(famStufe); // über Stufen-Whitelist (Abschnitt 2) ausgeschlossen
+              html += '<div class="ap-opt-fam"' + (stufeAus ? ' style="opacity:.45"' : "") + ">";
               html +=
                 '<label class="ap-opt-chk ap-opt-fam-head"><input type="checkbox" data-key="' +
                 adminEsc(key) +
@@ -16426,10 +16447,14 @@
                 adminEsc(basis) +
                 '" ' +
                 (famAus ? "" : "checked") +
+                (stufeAus ? " disabled" : "") +
                 ' onchange="adminToggleOptionFamilie(this)"> ' +
                 adminEsc(basis) +
+                (stufeAus
+                  ? ' <span class="ap-opt-hint2">(über Stufe ' + adminEsc(famStufe || "?") + " ausgeschlossen)</span>"
+                  : "") +
                 "</label>";
-              if (!famAus && varianten.length > 1) {
+              if (!stufeAus && !famAus && varianten.length > 1) {
                 const subKey = key + "::sub::" + basis;
                 html +=
                   '<details class="ap-opt-sub" data-openkey="' +
