@@ -3150,6 +3150,31 @@
         border-color: var(--primary-color);
         box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
       }
+      /* Wiederverwendbarer moderner Input-Stil (Zahl/Datum/Text) – passt zum
+         Design von .ap-select / .ap-rabatte-add. */
+      .ap-input {
+        padding: 8px 11px;
+        border: 1px solid var(--ap-border);
+        border-radius: 8px;
+        font-size: 0.9em;
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-family: var(--font-family);
+        box-sizing: border-box;
+      }
+      .ap-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
+      }
+      /* Datumsfelder: Kalender-Icon in der Akzentfarbe einfärben */
+      .ap-input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.6;
+      }
+      .ap-input[type="date"]:hover::-webkit-calendar-picker-indicator {
+        opacity: 1;
+      }
 
       /* Substufen-Baustein */
       .ap-substufen {
@@ -15882,7 +15907,7 @@
                   maxP +
                   '" data-basis="' +
                   adminEsc(basis) +
-                  '" onchange="adminSetFamilieMaxPartner(this.dataset.basis, this.value)" style="width:64px;padding:6px 8px;"></label>';
+                  '" onchange="adminSetFamilieMaxPartner(this.dataset.basis, this.value)" class="ap-input" style="width:72px;"></label>';
               }
               html += "</div>";
             }
@@ -16539,7 +16564,7 @@
               feld +
               '" value="' +
               adminEsc((arr || []).join(", ")) +
-              '" placeholder="kommagetrennt · leer = keine" style="flex:1; padding:6px 8px;" onchange="adminSetOptionNameRule(this.dataset.key, this.dataset.feld, this.value)"></label>';
+              '" placeholder="kommagetrennt · leer = keine" class="ap-input" style="flex:1;" onchange="adminSetOptionNameRule(this.dataset.key, this.dataset.feld, this.value)"></label>';
             html += nameRow("nameInclStart", "Name beginnt mit", r.nameInclStart);
             html += nameRow("nameExcl", "Name enthält NICHT", r.nameExcl);
             html += nameRow("nameExclEnd", "Name endet NICHT auf", r.nameExclEnd);
@@ -16549,7 +16574,7 @@
               '<span style="flex:0 0 180px; color:var(--ap-muted);">Nur wenn Hauptkarte Option hat</span>' +
               '<select data-key="' +
               adminEsc(key) +
-              '" style="flex:1; padding:6px 8px;" onchange="adminSetOptionErfordert(this.dataset.key, this.value)"><option value="">— keine —</option>';
+              '" class="ap-input" style="flex:1; cursor:pointer;" onchange="adminSetOptionErfordert(this.dataset.key, this.value)"><option value="">— keine —</option>';
             Object.keys(adminState.optionen).forEach((ok) => {
               html +=
                 '<option value="' +
@@ -16695,13 +16720,13 @@
         html +=
           '<span style="font-weight:600;" title="Aktion automatisch über einen Zeitraum auf-/abschalten (inklusive Grenzen; leer = offen).">Gültigkeit:</span>';
         html +=
-          '<label style="display:flex;align-items:center;gap:4px;">von <input type="date" value="' +
+          '<label style="display:flex;align-items:center;gap:6px;">von <input type="date" class="ap-input" value="' +
           adminEsc(von) +
           '" data-key="' +
           adminEsc(key) +
           '" onchange="adminEditOptionGueltigVon(this.dataset.key, this.value)"></label>';
         html +=
-          '<label style="display:flex;align-items:center;gap:4px;">bis <input type="date" value="' +
+          '<label style="display:flex;align-items:center;gap:6px;">bis <input type="date" class="ap-input" value="' +
           adminEsc(bis) +
           '" data-key="' +
           adminEsc(key) +
