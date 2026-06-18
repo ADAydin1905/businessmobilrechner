@@ -5872,6 +5872,8 @@
 
           zubuchungen: { ...(zubuchoptionen[`${type}_${index}`] || {}) },
 
+          grk70: grk70[`${type}_${index}`] === true,
+
           rufnummer: showBestandsNr ? document.getElementById(`${type}_rufnummer_${index}`)?.value : "",
 
           bereitstellung: showBereitstellung
@@ -5906,6 +5908,8 @@
 
         const showManuelleZuweisung = true; // It's enabled by the modal
 
+        const showGrkModus = document.getElementById("grkModus")?.checked;
+
         const hauptkarten = parseInt(document.getElementById("hauptkarten").value) || 0;
 
         const hauptdatenkarten = parseInt(document.getElementById("hauptdatenkarten").value) || 0;
@@ -5924,10 +5928,18 @@
           }
         });
 
+        // grk70-Haken wandern mit der Karte mit (gleiche Remap-Logik wie zubuchoptionen),
+        // sonst säße der 70%-Haken nach dem Umsortieren auf der falschen Karte.
+        Object.keys(grk70).forEach((key) => {
+          if (key.startsWith(`${type}_`)) delete grk70[key];
+        });
+
         newStates.forEach((state, index) => {
           const newCardId = `${type}_${index + 1}`;
 
           zubuchoptionen[newCardId] = state.zubuchungen;
+
+          if (state.grk70) grk70[newCardId] = true;
         });
 
         // Re-render the UI
@@ -6010,7 +6022,12 @@
 
             const positionField = `<input type="hidden" id="${positionID}" value="${groupPosition}">`;
 
-            newHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Partnerkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Partnerkarte', ${i})" title="Zubuchoptionen für Partnerkarte ${i}">⚙️</button></div><select id="${id}" onchange="toggleGeraeteFelder(this, 'pk', ${i})">${tarifOptions}</select>${rufnummerFeld}${bereitstellungFeld}${zuweisungFeld}${geraeteFelderHTML}${positionField}</div></div>`;
+            // GrK-70%-Haken: groupPosition ist 0-basiert -> nur ab der 2. Karte (>=1) zeigen.
+            const grk70Feld = showGrkModus
+              ? `<label class="grk70-zeile" id="grk70_pk_${i}" style="display:${groupPosition >= 1 ? "flex" : "none"}" title="Diese Partnerkarte erhält 70 % statt 50 % – nur ab der 2. Partnerkarte einer Gruppe (die 1. bleibt immer bei 50 %)."><input type="checkbox" ${grk70["pk_" + i] ? "checked" : ""} onchange="setGrk70('pk_${i}', this.checked)"> 70 % statt 50 % (GrK)</label>`
+              : "";
+
+            newHTML += `<div class="tarifblock-wrapper"><div class="input-group"><div class="label-wrapper"><label for="${id}">Partnerkarte ${i}:</label><button class="zubuch-btn" onclick="openZubuchModal('Partnerkarte', ${i})" title="Zubuchoptionen für Partnerkarte ${i}">⚙️</button></div><select id="${id}" onchange="toggleGeraeteFelder(this, 'pk', ${i})">${tarifOptions}</select>${rufnummerFeld}${bereitstellungFeld}${zuweisungFeld}${grk70Feld}${geraeteFelderHTML}${positionField}</div></div>`;
           } else if (type === "pdk") {
             const id = `pdk_tarif_${i}`,
               bereitID = `pdk_bereitstellung_${i}`,
@@ -11407,9 +11424,11 @@
               ? `<label for="${zuweisungID}" style="margin-top:0.5rem;">Zuweisen zu:</label><select id="${zuweisungID}" onchange="berechneTarife()"><option value="auto">Automatische Zuweisung</option>${hauptkartenOptionsHTML}</select>`
               : "";
 
-            // GrK-Modus: 70 %-statt-50 %-Haken pro Partnerkarte (nur sichtbar, wenn aktiv).
+            // GrK-Modus: 70 %-statt-50 %-Haken pro Partnerkarte. Standardmäßig versteckt –
+            // berechneTarife() blendet ihn nur für die 2.+ Karte einer Gruppe ein (die 1.
+            // Partnerkarte jeder Gruppe bleibt fix bei 50 %, daher dort kein Haken).
             const grk70Feld = grkModusAktiv
-              ? `<label class="grk70-zeile" title="Diese Partnerkarte erhält 70 % statt 50 % – nur im GrK-Modus, unabhängig von der Position in der Gruppe."><input type="checkbox" ${grk70["pk_" + i] ? "checked" : ""} onchange="setGrk70('pk_${i}', this.checked)"> 70 % statt 50 % (GrK)</label>`
+              ? `<label class="grk70-zeile" id="grk70_pk_${i}" style="display:none" title="Diese Partnerkarte erhält 70 % statt 50 % – nur ab der 2. Partnerkarte einer Gruppe (die 1. bleibt immer bei 50 %)."><input type="checkbox" ${grk70["pk_" + i] ? "checked" : ""} onchange="setGrk70('pk_${i}', this.checked)"> 70 % statt 50 % (GrK)</label>`
               : "";
 
             const geraeteFelderHTML = `<div id="${geraeteFelderID}" class="geraete-felder"><div class="input-group"><label for="${geraeteNameID}">Gerät:</label><input type="text" id="${geraeteNameID}" value="Sonstiges Gerät" onchange="berechneTarife()"></div><div class="input-group"><label for="${geraetePreisID}">Gerätepreis (Netto):</label><input type="number" id="${geraetePreisID}" value="0" min="0" step="0.01" onchange="berechneTarife()"></div></div>`;
@@ -11937,15 +11956,15 @@
               vorteile.push({ name: "Aktionspreis Business Card Special", text: "Aktionspreis Business Card Special" });
             }
           } else {
-            // GrK-Modus: die echte Gruppenposition wird durch den per-Karte-Haken ersetzt.
-            // Haken an  -> wie Position >=2  -> bestehende 70%-Regel greift.
-            // Haken aus -> wie Position 1    -> bestehende 50%-Regel greift.
-            // Standardmodus: echte Position wie bisher.
+            // GrK-Modus: alle Partnerkarten 50 %; nur ab der 2. Karte einer Gruppe darf der
+            // per-Karte-Haken auf 70 % heben. Die 1. Partnerkarte JEDER Gruppe bleibt immer
+            // bei 50 % (Regelschutz – auch wenn der Haken aus Alt-Zustand noch gesetzt wäre).
+            const echtePosition = (indexInGruppe || 0) + 1;
             const effektivePosition = cardData.grkModus
-              ? cardData.grk70Karte
+              ? echtePosition >= 2 && cardData.grk70Karte
                 ? 2
                 : 1
-              : (indexInGruppe || 0) + 1;
+              : echtePosition;
 
             tarifRabattProzent = ermittlePartnerkartenRabatt({
               tarifName: tarif,
@@ -12255,6 +12274,11 @@
             const positionField = document.getElementById(`${pk.type.toLowerCase()}_position_${pk.id}`);
 
             const actualPosition = positionField ? parseInt(positionField.value) : indexInGruppe;
+
+            // GrK-70%-Haken nur ab der 2. Karte einer Gruppe zeigen (Position 0 = 1. Karte
+            // bleibt fix 50 %, kein Haken). actualPosition ist 0-basiert.
+            const grkZeile = document.getElementById(`grk70_${cardId}`);
+            if (grkZeile) grkZeile.style.display = actualPosition >= 1 ? "" : "none";
 
             const cardResult = calculateCardPrice({
               cardId: cardId,
