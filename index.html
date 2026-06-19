@@ -6574,6 +6574,10 @@
         return PARTNER_DEFAULTS[g] || PARTNER_DEFAULTS.hauptkarte;
       }
       function hauptNimmtPartner(hauptTarif) {
+        // Speedbox-Datenkarten nehmen grundsätzlich KEINE Partnerkarten auf – feste
+        // Geschäftsregel (nicht editierbar). Konsistent mit Gruppen-Init und der
+        // Eingabe-Klemmung (hauptPartnerSlots), die Speedbox ebenfalls per Name = 0 setzen.
+        if (hauptTarif && hauptTarif.includes("Speedbox")) return false;
         const t = tarifDetails[hauptTarif];
         if (t && typeof t.nimmtPartner === "boolean") return t.nimmtPartner;
         return true; // Default: nimmt Partnerkarten auf
@@ -9759,6 +9763,17 @@
 
           const limit = mainTarif ? hauptMaxPartner(mainTarif) : targetId.startsWith("hdk") ? 4 : 10;
 
+          if (!gruppen[targetId]) {
+            // Ziel nimmt keine Partnerkarten auf (z.B. Speedbox-Datenkarte) -> klare Meldung
+            // statt Crash auf undefined.length.
+            fehlerListe.push(
+              `❌ Partner Datenkarte ${pdk.id}: ${targetType === "HDK" ? "Haupt Datenkarte" : "Hauptkarte"} ${targetNummer} nimmt keine Partnerkarten auf.`,
+            );
+            if (pdkTarifSelect) pdkTarifSelect.style.border = "2px solid red";
+            automatischeZuweisungenPDK.push(pdk);
+            return;
+          }
+
           if (gruppen[targetId].length >= limit) {
             fehlerListe.push(
               `❌ Partner Datenkarte ${pdk.id}: Manuelle Zuweisung zu ${targetType === "HDK" ? "Haupt Datenkarte" : "Hauptkarte"} ${targetNummer} fehlgeschlagen. Gruppe ist bereits voll (max. ${limit}).`,
@@ -9809,6 +9824,7 @@
 
             if (
               partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, hdkTarif) &&
+              gruppen[hdkId] && // kein Group-Eintrag (z.B. Speedbox) -> überspringen statt crashen
               gruppen[hdkId].length < hauptMaxPartner(hdkTarif)
             ) {
               gruppen[hdkId].push(pdk);
@@ -15997,7 +16013,12 @@
 
             // Partnerkarten-Aufnahme: nur fuer Haupt-Familien (Telefon- & Daten-Hauptkarten).
             // Reihe liegt jetzt IN der Kachel, unter dem Namen.
-            if (g === "hauptkarte" || g === "hauptdatenkarte") {
+            if ((g === "hauptkarte" || g === "hauptdatenkarte") && basis.includes("Speedbox")) {
+              // Speedbox-Datenkarten nehmen grundsätzlich KEINE Partnerkarten auf (feste Regel,
+              // nicht editierbar) – daher hier nur ein Hinweis statt der Bedien-Elemente.
+              html +=
+                '<div class="ap-stufen-partner"><span style="font-style:italic;">Nimmt keine Partnerkarten auf (Speedbox – feste Regel)</span></div>';
+            } else if (g === "hauptkarte" || g === "hauptdatenkarte") {
               const v0 = adminState.tarife[varianten[0]] || {};
               const nimmt = typeof v0.nimmtPartner === "boolean" ? v0.nimmtPartner : true;
               const typen = adminFamilieTypen(basis, g);
