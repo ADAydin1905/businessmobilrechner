@@ -17679,9 +17679,35 @@
 
       // ---- Zurücksetzen ----
       function adminResetPrices() {
-        if (confirm("Alle Änderungen verwerfen und auf den geladenen Stand zurücksetzen?")) {
+        // Gibt es ueberhaupt ungespeicherte Aenderungen? Sonst keinen Schreck-Dialog zeigen.
+        const hatAenderungen =
+          adminState.dirty ||
+          adminState.rabatteDirty ||
+          adminState.optionenDirty ||
+          adminState.rahmenvertragsRabatteDirty ||
+          adminState.bereitstellungDirty ||
+          adminState.partnerkartenRabattRegelnDirty;
+        if (!hatAenderungen) {
+          showAdminStatus("Es gibt keine ungespeicherten Änderungen zum Verwerfen.", "success");
+          return;
+        }
+        // Anzahl der Aenderungen fuer eine klare Rueckfrage ermitteln.
+        let anzahl = 0;
+        try {
+          const { gruppen } = adminBuildChangeSummary();
+          anzahl = gruppen.reduce((s, g) => s + g.eintraege.length, 0);
+        } catch (e) {
+          /* Zusammenfassung optional – ohne Anzahl weiter */
+        }
+        const text =
+          "Deine ungespeicherten Änderungen" +
+          (anzahl ? " (" + anzahl + ")" : "") +
+          " werden verworfen und der Editor auf den zuletzt geladenen Stand zurückgesetzt.\n\n" +
+          "Das betrifft NUR deine Eingaben hier im Panel – live ist noch nichts passiert.\n" +
+          "Dieser Schritt kann nicht rückgängig gemacht werden. Fortfahren?";
+        if (confirm(text)) {
           adminInitPanel();
-          showAdminStatus("Änderungen verworfen. Stand neu geladen.", "success");
+          showAdminStatus("Deine Änderungen wurden verworfen. Stand neu geladen.", "success");
         }
       }
 
@@ -17813,6 +17839,253 @@
         }
       }
 
+      // =====================================================================
+      // KLARTEXT-VORSCHAU vor "Live speichern" (Usability fuer Nicht-Coder)
+      // ---------------------------------------------------------------------
+      // Vergleicht den Admin-Arbeitsstand (adminState) mit dem aktuell live
+      // geladenen Stand (tarifDetails / mitarbeiterRabatte / window.*_DATA)
+      // und erzeugt eine MENSCHENLESBARE Liste der Aenderungen + sanfte
+      // Plausibilitaets-Warnungen. Dient nur der Anzeige, aendert keine Daten.
+      // =====================================================================
+
+      // Euro-Anzeige (Komma-Dezimal), robust gegen Nicht-Zahlen.
+      function adminFmtEuro(n) {
+        const x = Number(n);
+        return (isFinite(x) ? x : 0).toFixed(2).replace(".", ",") + " €";
+      }
+
+      // Hilfsfunktion: Differenz zweier Zahlen-Listen -> { hinzu:[], weg:[] }.
+      function adminListDiff(altArr, neuArr) {
+        const alt = (altArr || []).map((x) => String(x));
+        const neu = (neuArr || []).map((x) => String(x));
+        return {
+          hinzu: neu.filter((x) => !alt.includes(x)),
+          weg: alt.filter((x) => !neu.includes(x)),
+        };
+      }
+
+      // Baut die Aenderungsuebersicht. Liefert { gruppen, warnungen }.
+      // gruppen: [{ titel, eintraege:[string] }]; warnungen: [string]
+      function adminBuildChangeSummary() {
+        const gruppen = [];
+        const warnungen = [];
+
+        // --- Tarife (Preis, Geraeteaufschlag, inkl. MultiSIM, aktiv, Gruppe,
+        //     Leistungen, neu/geloescht) ---
+        const liveT = typeof tarifDetails === "object" && tarifDetails ? tarifDetails : {};
+        const workT = adminState.tarife || {};
+        const tarifEintraege = [];
+        Object.keys(workT).forEach((name) => {
+          const w = workT[name];
+          const l = liveT[name];
+          if (!l) {
+            tarifEintraege.push("➕ NEU: „" + name + "“ (" + adminFmtEuro(w.preis) + ")");
+            if (!String(name).trim()) warnungen.push("Ein Tarif hat keinen Namen – bitte ausfüllen.");
+            return;
+          }
+          const aenderungen = [];
+          // Preis
+          if (Number(w.preis) !== Number(l.preis)) {
+            aenderungen.push("Preis " + adminFmtEuro(l.preis) + " → " + adminFmtEuro(w.preis));
+            const lp = Number(l.preis);
+            const wp = Number(w.preis);
+            if (lp > 0 && (wp > lp * 1.5 || wp < lp * 0.5)) {
+              warnungen.push(
+                "„" + name + "“: Preis ändert sich stark (" + adminFmtEuro(l.preis) + " → " + adminFmtEuro(w.preis) + ") – bitte prüfen.",
+              );
+            }
+            if (wp === 0 && lp > 0) {
+              warnungen.push("„" + name + "“: Preis ist jetzt 0 € – beabsichtigt?");
+            }
+          }
+          // Geraeteaufschlag (nur wo gepflegt)
+          try {
+            const lg = Number(tarifGeraeteAufpreisNetto(name, liveT));
+            const wg = Number(tarifGeraeteAufpreisNetto(name, workT));
+            if (lg !== wg) aenderungen.push("Geräteaufschlag " + adminFmtEuro(lg) + " → " + adminFmtEuro(wg));
+          } catch (e) {
+            /* Funktion evtl. nicht verfuegbar -> ignorieren */
+          }
+          // inkl. MultiSIM
+          if (Number(w.inclusiveMultiSim || 0) !== Number(l.inclusiveMultiSim || 0)) {
+            aenderungen.push("inkl. MultiSIM " + Number(l.inclusiveMultiSim || 0) + " → " + Number(w.inclusiveMultiSim || 0));
+          }
+          // aktiv/inaktiv
+          const lAktiv = l.aktiv !== false;
+          const wAktiv = w.aktiv !== false;
+          if (lAktiv !== wAktiv) aenderungen.push(wAktiv ? "wird AKTIV geschaltet" : "wird INAKTIV geschaltet");
+          // Gruppe
+          const lGrp = l.gruppe || (typeof ermittleGruppe === "function" ? ermittleGruppe(name) : null);
+          const wGrp = w.gruppe || (typeof ermittleGruppe === "function" ? ermittleGruppe(name) : null);
+          if (lGrp && wGrp && lGrp !== wGrp) aenderungen.push("Gruppe geändert");
+          // Leistungen
+          const lL = Array.isArray(l.leistungen) ? l.leistungen : [];
+          const wL = Array.isArray(w.leistungen) ? w.leistungen : [];
+          if (JSON.stringify(lL) !== JSON.stringify(wL)) {
+            aenderungen.push("Leistungen geändert (" + lL.length + " → " + wL.length + ")");
+          }
+          if (aenderungen.length) tarifEintraege.push("„" + name + "“: " + aenderungen.join(" · "));
+        });
+        Object.keys(liveT).forEach((name) => {
+          if (!workT[name]) tarifEintraege.push("🗑 GELÖSCHT: „" + name + "“");
+        });
+        if (tarifEintraege.length) gruppen.push({ titel: "📱 Tarife", eintraege: tarifEintraege });
+
+        // --- Mitarbeiter-/BGE-Rabatte (tarifspezifisch) ---
+        if (adminState.rabatteDirty) {
+          const liveR = typeof mitarbeiterRabatte === "object" && mitarbeiterRabatte ? mitarbeiterRabatte : {};
+          const workR = adminState.rabatte || {};
+          const rEintraege = [];
+          const alleKeys = new Set([...Object.keys(liveR), ...Object.keys(workR)]);
+          alleKeys.forEach((name) => {
+            const lv = Number(liveR[name] || 0);
+            const wv = Number(workR[name] || 0);
+            if (lv !== wv) rEintraege.push("„" + name + "“: " + lv + " % → " + wv + " %");
+          });
+          if (rEintraege.length) gruppen.push({ titel: "🏷️ Mitarbeiter-/BGE-Rabatte", eintraege: rEintraege });
+        }
+
+        // --- Feste RV-Rabatt-Werte (Liste) ---
+        if (adminState.rahmenvertragsRabatteDirty) {
+          const d = adminListDiff(typeof rahmenvertragsRabatte !== "undefined" ? rahmenvertragsRabatte : [], adminState.rahmenvertragsRabatte);
+          const e = [];
+          if (d.hinzu.length) e.push("hinzugefügt: " + d.hinzu.map((x) => x + " %").join(", "));
+          if (d.weg.length) e.push("entfernt: " + d.weg.map((x) => x + " %").join(", "));
+          if (e.length) gruppen.push({ titel: "📊 Rahmenvertrags-Rabatt-Werte", eintraege: e });
+        }
+
+        // --- Bereitstellungspreise (Liste) ---
+        if (adminState.bereitstellungDirty) {
+          const d = adminListDiff(typeof bereitstellungsPreise !== "undefined" ? bereitstellungsPreise : [], adminState.bereitstellungsPreise);
+          const e = [];
+          if (d.hinzu.length) e.push("hinzugefügt: " + d.hinzu.map((x) => adminFmtEuro(x)).join(", "));
+          if (d.weg.length) e.push("entfernt: " + d.weg.map((x) => adminFmtEuro(x)).join(", "));
+          if (e.length) gruppen.push({ titel: "💶 Bereitstellungspreise", eintraege: e });
+        }
+
+        // --- Zubuchoptionen / Aktionen (Name, Preis, aktiv, neu/geloescht) ---
+        if (adminState.optionenDirty) {
+          const liveO = (window.OPTIONEN_DATA && window.OPTIONEN_DATA.optionen) || {};
+          const workO = adminState.optionen || {};
+          const oEintraege = [];
+          Object.keys(workO).forEach((key) => {
+            const w = workO[key];
+            const l = liveO[key];
+            if (!l) {
+              oEintraege.push("➕ NEU: „" + (w.name || key) + "“");
+              return;
+            }
+            const ae = [];
+            if ((w.name || "") !== (l.name || "")) ae.push("Name „" + (l.name || key) + "“ → „" + (w.name || key) + "“");
+            if (Number(w.preisNetto || 0) !== Number(l.preisNetto || 0)) ae.push("Preis " + adminFmtEuro(l.preisNetto || 0) + " → " + adminFmtEuro(w.preisNetto || 0));
+            if ((w.prozent || null) !== (l.prozent || null)) ae.push("Rabatt " + (l.prozent || 0) + " % → " + (w.prozent || 0) + " %");
+            if ((w.dauerMonate || null) !== (l.dauerMonate || null)) ae.push("Dauer " + (l.dauerMonate || 0) + " → " + (w.dauerMonate || 0) + " Mon.");
+            const lAk = l.aktiv !== false;
+            const wAk = w.aktiv !== false;
+            if (lAk !== wAk) ae.push(wAk ? "wird AKTIV" : "wird INAKTIV");
+            if (ae.length) oEintraege.push("„" + (w.name || key) + "“: " + ae.join(" · "));
+          });
+          Object.keys(liveO).forEach((key) => {
+            if (!workO[key]) oEintraege.push("🗑 GELÖSCHT: „" + (liveO[key].name || key) + "“");
+          });
+          if (oEintraege.length) gruppen.push({ titel: "🧩 Optionen / Aktionen", eintraege: oEintraege });
+        }
+
+        // --- Tarifstufen-Reihenfolge ---
+        if (
+          Array.isArray(adminState.stufen) &&
+          typeof TARIF_STUFEN_REIHENFOLGE !== "undefined" &&
+          JSON.stringify(adminState.stufen) !== JSON.stringify(TARIF_STUFEN_REIHENFOLGE)
+        ) {
+          gruppen.push({
+            titel: "📊 Tarifstufen",
+            eintraege: ["Reihenfolge/Stufen: " + TARIF_STUFEN_REIHENFOLGE.join(" · ") + " → " + adminState.stufen.join(" · ")],
+          });
+        }
+
+        // --- Partnerkarten-Regeln (nur Hinweis) ---
+        if (adminState.partnerkartenRabattRegelnDirty) {
+          gruppen.push({ titel: "💳 Partnerkarten-Regeln", eintraege: ["Regeln wurden geändert."] });
+        }
+
+        return { gruppen, warnungen };
+      }
+
+      // Gestyltes Bestaetigungs-Modal mit Klartext-Vorschau. Liefert Promise<boolean>.
+      function adminConfirmLiveSave(files) {
+        const { gruppen, warnungen } = adminBuildChangeSummary();
+        const cfg = window.GITHUB_CONFIG || {};
+        const fileList = files.map((f) => f.name).join(", ");
+
+        let listeHtml = "";
+        if (gruppen.length) {
+          gruppen.forEach((g) => {
+            listeHtml +=
+              '<div style="margin-bottom:12px;"><div style="font-weight:700;color:var(--text-color);margin-bottom:4px;">' +
+              adminEsc(g.titel) +
+              "</div><ul style=\"margin:0;padding-left:18px;\">";
+            g.eintraege.forEach((e) => {
+              listeHtml += '<li style="margin:2px 0;font-size:0.9em;line-height:1.4;">' + adminEsc(e) + "</li>";
+            });
+            listeHtml += "</ul></div>";
+          });
+        } else {
+          listeHtml =
+            '<p style="margin:0;color:var(--ap-muted,#6b7280);font-size:0.9em;">Keine inhaltlichen Änderungen erkannt – es werden nur die Dateien neu geschrieben (' +
+            adminEsc(fileList) +
+            ").</p>";
+        }
+
+        let warnHtml = "";
+        if (warnungen.length) {
+          warnHtml =
+            '<div style="margin:14px 0 4px;padding:12px 14px;border-radius:8px;background:#fff8e1;border:1px solid #f0c000;color:#7a5c00;">' +
+            '<div style="font-weight:700;margin-bottom:6px;">⚠️ Bitte prüfen</div><ul style="margin:0;padding-left:18px;">';
+          warnungen.forEach((w) => {
+            warnHtml += '<li style="margin:2px 0;font-size:0.9em;line-height:1.4;">' + adminEsc(w) + "</li>";
+          });
+          warnHtml += "</ul></div>";
+        }
+
+        return new Promise((resolve) => {
+          const overlay = document.createElement("div");
+          overlay.style.cssText =
+            "position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100000;display:flex;align-items:center;justify-content:center;";
+          overlay.innerHTML =
+            '<div style="background:var(--card-bg);color:var(--text-color);padding:28px 30px;border-radius:12px;max-width:560px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.5);font-family:var(--font-family);max-height:86vh;display:flex;flex-direction:column;">' +
+            '<h3 style="margin:0 0 4px;color:var(--primary-color);">🚀 Live speichern – Änderungen prüfen</h3>' +
+            '<p style="margin:0 0 14px;font-size:0.88em;color:var(--ap-muted,#6b7280);line-height:1.45;">Diese Änderungen gehen <strong>direkt live</strong> (kein Review). Bitte kurz prüfen:</p>' +
+            '<div style="overflow:auto;flex:1;min-height:0;padding-right:4px;">' +
+            listeHtml +
+            warnHtml +
+            "</div>" +
+            '<p style="margin:14px 0 16px;font-size:0.8em;color:var(--ap-muted,#6b7280);line-height:1.4;">Ziel: <strong>' +
+            adminEsc(cfg.owner || "?") +
+            "/" +
+            adminEsc(cfg.repo || "?") +
+            "</strong> (Branch " +
+            adminEsc(cfg.branch || "?") +
+            "). GitHub Pages baut danach neu (~1 Min). Dateien: " +
+            adminEsc(fileList) +
+            "</p>" +
+            '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+            '<button id="__liveSaveCancel" style="padding:10px 18px;border:1px solid var(--ap-border,#ddd);background:var(--card-bg);color:var(--text-color);border-radius:8px;cursor:pointer;font-weight:600;">Abbrechen</button>' +
+            '<button id="__liveSaveOk" style="padding:10px 18px;border:none;background:var(--primary-color);color:#fff;border-radius:8px;cursor:pointer;font-weight:700;">🚀 Jetzt live speichern</button>' +
+            "</div></div>";
+          document.body.appendChild(overlay);
+          const done = (val) => {
+            overlay.remove();
+            resolve(val);
+          };
+          overlay.querySelector("#__liveSaveOk").onclick = () => done(true);
+          overlay.querySelector("#__liveSaveCancel").onclick = () => done(false);
+          overlay.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") done(false);
+          });
+          overlay.querySelector("#__liveSaveCancel").focus();
+        });
+      }
+
       // ---- Live speichern: direkt commit nach GitHub ----
       async function adminSaveToGitHub() {
         // Config pruefen
@@ -17829,25 +18102,11 @@
           showAdminStatus("❌ Fehler beim Erzeugen der Dateien: " + err.message, "error");
           return;
         }
-        // Sicherheitsabfrage
+        // Sicherheitsabfrage mit Klartext-Vorschau der Änderungen (Usability)
         const fileList = files.map((f) => f.name).join(", ");
         const cfg = window.GITHUB_CONFIG;
-        const confirmMsg =
-          "⚠️ ACHTUNG: Die Daten gehen DIREKT LIVE.\n\n" +
-          "Folgende Dateien werden committed:\n" +
-          "  " +
-          fileList +
-          "\n\n" +
-          "Ziel: " +
-          cfg.owner +
-          "/" +
-          cfg.repo +
-          " (Branch: " +
-          cfg.branch +
-          ")\n\n" +
-          "GitHub Pages baut danach automatisch neu (~1 Min).\n" +
-          "Es findet KEIN Review statt. Fortfahren?";
-        if (!confirm(confirmMsg)) return;
+        const bestaetigt = await adminConfirmLiveSave(files);
+        if (!bestaetigt) return;
 
         // Commit-Message bauen
         const ts = new Date().toLocaleString("de-DE");
@@ -18692,7 +18951,7 @@
         <div class="ap-foot">
           <span class="ap-dirty" id="apDirtyHint"></span>
           <div class="spacer"></div>
-          <button class="ap-btn ap-btn-ghost" onclick="adminResetPrices()">↩️ Alles zurücksetzen</button>
+          <button class="ap-btn ap-btn-ghost" onclick="adminResetPrices()" title="Verwirft nur deine ungespeicherten Eingaben hier im Panel – live ändert sich nichts.">↩️ Meine Änderungen verwerfen</button>
           <button class="ap-btn ap-btn-ghost" onclick="adminExportFile()" title="Dateien lokal herunterladen (Fallback)">
             ⬇️ Download
           </button>
