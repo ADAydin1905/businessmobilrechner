@@ -1891,6 +1891,54 @@ body.dark-mode .price-toggle {
   margin-top: 1.5rem;
 }
 
+/* H1/H2/H3 aus dem WYSIWYG-Editor, damit sie im Info-Dialog konsistent wirken. */
+#infoModal #infoModalContent h1,
+#infoModal #infoModalContent h2,
+#infoModal #infoModalContent h3 {
+  color: var(--primary-color);
+  margin-top: 1.3rem;
+  margin-bottom: 0.4rem;
+}
+#infoModal #infoModalContent h1 {
+  font-size: 1.5rem;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 5px;
+}
+#infoModal #infoModalContent h2 {
+  font-size: 1.25rem;
+}
+#infoModal #infoModalContent h3 {
+  font-size: 1.1rem;
+}
+
+/* WYSIWYG-Editor im Admin-Tab "Verwaltung" (Info-Text) */
+#apAppInfoEditor h1,
+#apAppInfoEditor h2,
+#apAppInfoEditor h3,
+#apAppInfoEditor h4 {
+  color: var(--primary-color);
+  margin: 0.7em 0 0.3em;
+}
+#apAppInfoEditor h1 {
+  font-size: 1.4rem;
+}
+#apAppInfoEditor h2 {
+  font-size: 1.2rem;
+}
+#apAppInfoEditor h3 {
+  font-size: 1.05rem;
+}
+#apAppInfoEditor ul {
+  padding-left: 1.4em;
+}
+#apAppInfoEditor p {
+  margin: 0.5em 0;
+}
+#apAppInfoEditor:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
 #infoModal p,
 #infoModal li {
   color: var(--text-color);

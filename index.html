@@ -2602,6 +2602,12 @@
         if (versionEl && typeof e.version === "string" && e.version.trim()) {
           versionEl.textContent = "v" + e.version.trim();
         }
+        // Info-Text (Inhalt des ℹ️-Dialogs). Fehlt der Wert, bleibt der statische
+        // HTML-Inhalt (Fallback im Markup) stehen.
+        const infoEl = document.getElementById("infoModalContent");
+        if (infoEl && typeof e.infoText === "string" && e.infoText.trim()) {
+          infoEl.innerHTML = e.infoText;
+        }
       }
 
       // ---- GrK-Modus (versteckt) ----
@@ -11212,11 +11218,13 @@
         // App-Einstellungen (Titel/Version/Info-Text). Fallback: aktuelle Header-Werte.
         const standardTitel = (document.getElementById("appTitel")?.textContent || "Business Mobil Rechner").trim();
         const standardVersion = (document.getElementById("appVersion")?.textContent || "").trim().replace(/^v/i, "").trim();
+        const standardInfo = (document.getElementById("infoModalContent")?.innerHTML || "").trim();
         adminState.appEinstellungen = window.APP_EINSTELLUNGEN
           ? JSON.parse(JSON.stringify(window.APP_EINSTELLUNGEN))
-          : { titel: standardTitel, version: standardVersion };
+          : { titel: standardTitel, version: standardVersion, infoText: standardInfo };
         if (!adminState.appEinstellungen.titel) adminState.appEinstellungen.titel = standardTitel;
         if (!adminState.appEinstellungen.version) adminState.appEinstellungen.version = standardVersion;
+        if (!adminState.appEinstellungen.infoText) adminState.appEinstellungen.infoText = standardInfo;
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
@@ -11946,11 +11954,37 @@
         html +=
           '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 6px; margin-bottom: 18px;">Titel und Version erscheinen oben in der Kopfzeile (das „v“ steht fest davor). Mit <strong>Live speichern</strong> wird beides übernommen.</div>';
 
-        // Info-Text (Platzhalter, folgt) – bekommt jetzt mehr Platz
+        // Info-Text: WYSIWYG-Editor (Toolbar + contenteditable). Inhalt wird nach dem Render gesetzt.
+        const tbBtn = (label, cmd, val, title) =>
+          '<button type="button" class="ap-btn ap-btn-ghost" style="padding: 5px 11px; font-size: 0.85em;" title="' +
+          adminEsc(title) +
+          '" onmousedown="event.preventDefault()" onclick="adminInfoFormat(\'' +
+          cmd +
+          "'" +
+          (val ? ", '" + val + "'" : "") +
+          ')">' +
+          label +
+          "</button>";
+        html += '<div class="ap-field" style="margin-bottom: 0;">';
+        html += "<label>Info-Text (Inhalt des ℹ️-Buttons)</label>";
+        html += '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">';
+        html += tbBtn("H1", "formatBlock", "h1", "Große Überschrift");
+        html += tbBtn("H2", "formatBlock", "h2", "Mittlere Überschrift");
+        html += tbBtn("H3", "formatBlock", "h3", "Kleine Überschrift");
+        html += tbBtn("Text", "formatBlock", "p", "Normaler Absatz");
+        html += tbBtn("• Liste", "insertUnorderedList", null, "Aufzählung");
+        html += tbBtn("<strong>F</strong>", "bold", null, "Fett");
+        html += "</div>";
         html +=
-          '<div style="margin-top: 4px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>Info-Text (ℹ️-Button)</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Editor mit H1/H2/H3 und Aufzählungen, vorbelegt mit dem aktuellen Text. — folgt</div></div>';
+          '<div id="apAppInfoEditor" contenteditable="true" oninput="adminEditAppInfoText()" style="border: 1px solid var(--ap-border, #ddd); border-radius: 8px; padding: 12px 14px; min-height: 200px; max-height: 360px; overflow-y: auto; background: var(--card-bg); color: var(--text-color); line-height: 1.5;"></div>';
+        html +=
+          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 5px;">Text markieren und oben H1/H2/H3, Aufzählung oder Fett wählen. Mit <strong>Live speichern</strong> wird der Info-Dialog aktualisiert.</div>';
+        html += "</div>";
 
         el.innerHTML = html;
+        // Editor-Inhalt nachtraeglich setzen (HTML nicht ins Template-String einbetten)
+        const infoEd = document.getElementById("apAppInfoEditor");
+        if (infoEd) infoEd.innerHTML = adminState.appEinstellungen.infoText || "";
       }
 
       function adminEditAppTitel(input) {
@@ -11966,6 +12000,29 @@
         adminState.appEinstellungen.version = input.value.replace(/^\s*v/i, "");
         adminState.appEinstellungenDirty = true;
         adminUpdateDirty();
+      }
+
+      // Uebernimmt den aktuellen Editor-Inhalt (HTML) in den Arbeitsstand.
+      function adminEditAppInfoText() {
+        const ed = document.getElementById("apAppInfoEditor");
+        if (!ed) return;
+        adminState.appEinstellungen = adminState.appEinstellungen || {};
+        adminState.appEinstellungen.infoText = ed.innerHTML;
+        adminState.appEinstellungenDirty = true;
+        adminUpdateDirty();
+      }
+
+      // Toolbar-Aktion (H1/H2/H3, Aufzaehlung, Fett) auf die Auswahl im Editor anwenden.
+      function adminInfoFormat(cmd, val) {
+        const ed = document.getElementById("apAppInfoEditor");
+        if (!ed) return;
+        ed.focus();
+        try {
+          document.execCommand(cmd, false, val || null);
+        } catch (e) {
+          /* execCommand nicht verfuegbar -> ignorieren */
+        }
+        adminEditAppInfoText();
       }
 
       // ===== Tarifstufen-Tab =====
@@ -14067,9 +14124,12 @@
           const workTitel = (adminState.appEinstellungen && adminState.appEinstellungen.titel) || "";
           const liveVersion = (window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN.version) || "";
           const workVersion = (adminState.appEinstellungen && adminState.appEinstellungen.version) || "";
+          const liveInfo = (window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN.infoText) || "";
+          const workInfo = (adminState.appEinstellungen && adminState.appEinstellungen.infoText) || "";
           const eintraege = [];
           if (liveTitel !== workTitel) eintraege.push("Titel „" + liveTitel + "“ → „" + workTitel + "“");
           if (liveVersion !== workVersion) eintraege.push("Version „v" + liveVersion + "“ → „v" + workVersion + "“");
+          if (liveInfo !== workInfo) eintraege.push("Info-Text (ℹ️-Dialog) geändert");
           if (eintraege.length) gruppen.push({ titel: "⚙️ Verwaltung", eintraege });
         }
 
