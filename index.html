@@ -89,7 +89,13 @@
       </h1>
 
       <div class="header-controls-right">
-        <button id="infoButton" style="background: none; border: none; cursor: pointer; color: white; font-size: 24px">
+        <span
+          id="grkModusBadge"
+          title="GrK-Modus aktiv – umschalten mit Strg+Shift+5"
+          style="display: none; margin-right: 12px; padding: 3px 10px; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 12px; background: rgba(255, 255, 255, 0.18); color: white; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; vertical-align: middle; white-space: nowrap"
+          >GrK&nbsp;Modus</span
+        >
+        <button id="infoButton" style="background: none; border: none; cursor: pointer; color: white; font-size: 24px; vertical-align: middle">
           &#9432;
         </button>
       </div>
@@ -275,23 +281,12 @@
             </label>
           </div>
 
-          <div class="einstellungs-zeile">
-            <label
-              for="grkModus"
-              class="einstellungs-label"
-              title="GrK-Modus (umsatzorientiert): Alle Partnerkarten erhalten 50 %. Pro Partnerkarte kann gezielt 70 % gewählt werden – unabhängig von der Position in der Gruppe."
-              >GrK-Modus</label
-            >
-
-            <label
-              class="switch"
-              title="GrK-Modus (umsatzorientiert): Alle Partnerkarten erhalten 50 %. Pro Partnerkarte kann gezielt 70 % gewählt werden – unabhängig von der Position in der Gruppe."
-            >
-              <input type="checkbox" id="grkModus" onchange="renderTarifDropdowns()" />
-
-              <span class="slider round"></span>
-            </label>
-          </div>
+          <!-- GrK-Modus: KEIN sichtbarer Schalter mehr (nur fuer die GrK-Abteilung,
+               damit der grosse Rest nicht versehentlich falsche Angebote schreibt).
+               Umschalten ausschliesslich per Tastenkombination Strg+Shift+5. Dieser
+               versteckte Haken haelt weiterhin den Zustand, den die uebrige Logik
+               ueber #grkModus liest (Rendern, URL-Hash, Berechnung). -->
+          <input type="checkbox" id="grkModus" hidden aria-hidden="true" tabindex="-1" />
 
           <div class="button-group">
             <button onclick="openModal('kundendatenModal')">Kundendaten</button>
@@ -2587,6 +2582,34 @@
 
         window.location.href = window.location.pathname;
       }
+
+      // ---- GrK-Modus (versteckt) ----
+      // Kein sichtbarer Schalter mehr: nur per Strg+Shift+5 fuer die GrK-Abteilung
+      // umschaltbar. Der Zustand liegt weiterhin im versteckten Haken #grkModus,
+      // den die uebrige Logik liest. Das Header-Badge #grkModusBadge zeigt an, ob
+      // der Modus gerade aktiv ist.
+      function updateGrkBadge() {
+        const aktiv = document.getElementById("grkModus")?.checked;
+        const badge = document.getElementById("grkModusBadge");
+        if (badge) badge.style.display = aktiv ? "inline-block" : "none";
+      }
+
+      function toggleGrkModus() {
+        const cb = document.getElementById("grkModus");
+        if (!cb) return;
+        cb.checked = !cb.checked;
+        updateGrkBadge();
+        if (typeof renderTarifDropdowns === "function") renderTarifDropdowns();
+      }
+
+      // Strg+Shift+5 schaltet den GrK-Modus um. e.code (Digit5/Numpad5) ist
+      // layout-unabhaengig – bei gedruecktem Shift waere e.key sonst "%".
+      document.addEventListener("keydown", function (e) {
+        if (e.ctrlKey && e.shiftKey && (e.code === "Digit5" || e.code === "Numpad5")) {
+          e.preventDefault();
+          toggleGrkModus();
+        }
+      });
 
       function openModal(modalId) {
         document.body.classList.add("modal-open");
@@ -6963,6 +6986,9 @@
         const manuelleZuweisungAktiv = document.getElementById("manuelleZuweisung")?.checked;
 
         const grkModusAktiv = document.getElementById("grkModus")?.checked;
+        // Header-Badge an den aktuellen GrK-Zustand angleichen (greift bei Load,
+        // URL-Restore und nach dem Umschalten per Strg+Shift+5).
+        updateGrkBadge();
 
         const zeigeRufnummernfeld = document.getElementById("bestandsRufnummer")?.checked;
 

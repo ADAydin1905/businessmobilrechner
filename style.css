@@ -1482,6 +1482,17 @@ header h1 {
   justify-self: end;
 
   padding-right: 20px;
+
+  /* Flex + an Inhalt angepasste Breite: GrK-Badge und Info-Button bleiben auf
+     einer Linie (kein Umbruch in der schmalen 1fr-Spalte) und vertikal zentriert.
+     Der Info-Button bleibt rechts fixiert; das Badge erscheint links daneben. */
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: nowrap;
+
+  width: max-content;
 }
 
 .dark-mode-toggle-container {
