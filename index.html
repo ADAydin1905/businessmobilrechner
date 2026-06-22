@@ -42,12 +42,15 @@
     <!-- ===================================================================== -->
     <script src="github-config.js"></script>
 
+    <!-- App-weite Einstellungen (Titel/Version/Info-Text), Admin-Tab "Verwaltung". -->
+    <script src="app-einstellungen.js"></script>
+
     <title>Business Mobil Rechner</title>
 
     <link rel="stylesheet" href="style.css" />
   </head>
 
-  <body onload="befuelleRabattDropdown(); renderTarifDropdowns()">
+  <body onload="applyAppEinstellungen(); befuelleRabattDropdown(); renderTarifDropdowns()">
     <header>
       <div class="header-controls-left">
         <button
@@ -85,7 +88,7 @@
       </div>
 
       <h1 style="margin: 0; color: white">
-        Business Mobil 5.2 Rechner <span style="font-size: 0.45em; font-weight: normal; opacity: 0.8">v2.0 (Beta)</span>
+<span id="appTitel">Business Mobil 5.2 Rechner</span> <span id="appVersion" style="font-size: 0.45em; font-weight: normal; opacity: 0.8">v2.0 (Beta)</span>
       </h1>
 
       <div class="header-controls-right">
@@ -2581,6 +2584,19 @@
         localStorage.removeItem("bestandstarife");
 
         window.location.href = window.location.pathname;
+      }
+
+      // ---- App-Einstellungen (Titel/Version/Info-Text) anwenden ----
+      // Liest window.APP_EINSTELLUNGEN (aus app-einstellungen.js) und schreibt die
+      // Werte in die Oberflaeche. Fehlt die Datei oder ein Wert, bleibt der fest im
+      // HTML hinterlegte Standard stehen (Fallback). Wird beim Laden und nach dem
+      // Live-Uebernehmen aus dem Admin-Panel aufgerufen.
+      function applyAppEinstellungen() {
+        const e = window.APP_EINSTELLUNGEN || {};
+        const titelEl = document.getElementById("appTitel");
+        if (titelEl && typeof e.titel === "string" && e.titel.trim()) {
+          titelEl.textContent = e.titel.trim();
+        }
       }
 
       // ---- GrK-Modus (versteckt) ----
@@ -11188,6 +11204,12 @@
           window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
           adminState.optionen,
         );
+        // App-Einstellungen (Titel/Version/Info-Text). Fallback: aktueller Header-Titel.
+        const standardTitel = (document.getElementById("appTitel")?.textContent || "Business Mobil Rechner").trim();
+        adminState.appEinstellungen = window.APP_EINSTELLUNGEN
+          ? JSON.parse(JSON.stringify(window.APP_EINSTELLUNGEN))
+          : { titel: standardTitel };
+        if (!adminState.appEinstellungen.titel) adminState.appEinstellungen.titel = standardTitel;
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
@@ -11196,9 +11218,11 @@
         adminState.rahmenvertragsRabatteDirty = false;
         adminState.bereitstellungDirty = false;
         adminState.partnerkartenRabattRegelnDirty = false;
+        adminState.appEinstellungenDirty = false;
         adminRenderFilterChips();
         adminRenderList();
         adminRenderEditorEmpty();
+        adminRenderVerwaltung(); // Verwaltung-Pane mit aktuellem Stand fuellen (auch nach Verwerfen)
         adminUpdateDirty();
       }
 
@@ -11507,7 +11531,8 @@
       }
       function adminUpdateDirty() {
         const el = document.getElementById("apDirtyHint");
-        if (el) el.textContent = adminState.dirty ? "● Ungespeicherte Änderungen" : "";
+        const dirty = adminState.dirty || adminState.appEinstellungenDirty;
+        if (el) el.textContent = dirty ? "● Ungespeicherte Änderungen" : "";
       }
 
       // Entfernt die Entwurf-Markierung, sobald der Tarif inhaltlich bearbeitet
@@ -11864,6 +11889,7 @@
           stufen: "apTabStufen",
           optionen: "apTabOptionen",
           aktionen: "apTabAktionen",
+          verwaltung: "apTabVerwaltung",
         };
         Object.entries(panes).forEach(([id, elementId]) => {
           const el = document.getElementById(elementId);
@@ -11876,6 +11902,45 @@
         if (tab === "stufen") adminRenderStufen();
         if (tab === "optionen") adminRenderOptionen();
         if (tab === "aktionen") adminRenderAktionen();
+        if (tab === "verwaltung") adminRenderVerwaltung();
+      }
+
+      // ===== Verwaltung-Tab (App-Einstellungen) =====
+      // Schritt 2: Titel-Feld (funktionsfaehig). Version + Info-Text folgen.
+      function adminRenderVerwaltung() {
+        const el = document.getElementById("apVerwaltungContent");
+        if (!el) return;
+        adminState.appEinstellungen = adminState.appEinstellungen || { titel: "" };
+        const titel = adminState.appEinstellungen.titel || "";
+        let html = "";
+
+        // 1) Titel (funktionsfaehig)
+        html += '<div class="ap-field" style="margin-bottom: 18px;">';
+        html += "<label>Titel in der Kopfzeile</label>";
+        html +=
+          '<input type="text" id="apAppTitel" value="' +
+          adminEsc(titel) +
+          '" placeholder="z. B. Business Mobil 6 Rechner" oninput="adminEditAppTitel(this)" />';
+        html +=
+          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 5px;">Erscheint oben in der Kopfzeile des Rechners. Mit <strong>Live speichern</strong> wird er übernommen.</div>';
+        html += "</div>";
+
+        // 2) Versionsnummer (Platzhalter, folgt)
+        html +=
+          '<div style="margin-top: 12px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>2) Versionsnummer</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Festes „v“ + Eingabefeld (z. B. <code>2.0.1</code>). — folgt</div></div>';
+
+        // 3) Info-Text (Platzhalter, folgt)
+        html +=
+          '<div style="margin-top: 12px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>3) Info-Text (ℹ️-Button)</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Editor mit H1/H2/H3 und Aufzählungen, vorbelegt mit dem aktuellen Text. — folgt</div></div>';
+
+        el.innerHTML = html;
+      }
+
+      function adminEditAppTitel(input) {
+        adminState.appEinstellungen = adminState.appEinstellungen || {};
+        adminState.appEinstellungen.titel = input.value;
+        adminState.appEinstellungenDirty = true;
+        adminUpdateDirty();
       }
 
       // ===== Tarifstufen-Tab =====
@@ -13624,7 +13689,8 @@
           adminState.optionenDirty ||
           adminState.rahmenvertragsRabatteDirty ||
           adminState.bereitstellungDirty ||
-          adminState.partnerkartenRabattRegelnDirty;
+          adminState.partnerkartenRabattRegelnDirty ||
+          adminState.appEinstellungenDirty;
         if (!hatAenderungen) {
           showAdminStatus("Es gibt keine ungespeicherten Änderungen zum Verwerfen.", "success");
           return;
@@ -13742,6 +13808,29 @@
           const optionenJsText = optionenJsHeader + "window.OPTIONEN_DATA = " + optionenJson + ";\n";
           files.push({ name: "optionen.js", content: optionenJsText, mime: "text/javascript" });
         }
+
+        // --- app-einstellungen.* (nur, wenn veraendert) ---
+        if (adminState.appEinstellungenDirty) {
+          // Alle Felder uebernehmen (Titel jetzt, Version/Info-Text spaeter), nur _meta auffrischen.
+          const appOut = JSON.parse(JSON.stringify(adminState.appEinstellungen || {}));
+          const appMeta =
+            window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN._meta
+              ? JSON.parse(JSON.stringify(window.APP_EINSTELLUNGEN._meta))
+              : { schemaVersion: "1.0", appVersion: "2.0" };
+          appMeta.stand = new Date().toISOString().slice(0, 10);
+          appOut._meta = appMeta;
+          const appJson = JSON.stringify(appOut, null, 2);
+          const appJsHeader =
+            "/*\n" +
+            " * app-einstellungen.js  -  App-weite Einstellungen fuer den Business Mobil Rechner\n" +
+            " * Automatisch erzeugt vom Admin-Panel am " +
+            new Date().toLocaleString("de-DE") +
+            "\n" +
+            " * Einzige Quelle fuer Titel/Version/Info-Text (per <script> geladen).\n" +
+            " */\n";
+          const appJsText = appJsHeader + "window.APP_EINSTELLUNGEN = " + appJson + ";\n";
+          files.push({ name: "app-einstellungen.js", content: appJsText, mime: "text/javascript" });
+        }
         return files;
       }
 
@@ -13753,6 +13842,7 @@
         adminState.rahmenvertragsRabatteDirty = false;
         adminState.bereitstellungDirty = false;
         adminState.partnerkartenRabattRegelnDirty = false;
+        adminState.appEinstellungenDirty = false;
         adminUpdateDirty();
         adminUebernehmeInRechner();
       }
@@ -13944,6 +14034,15 @@
         // --- Partnerkarten-Regeln (nur Hinweis) ---
         if (adminState.partnerkartenRabattRegelnDirty) {
           gruppen.push({ titel: "💳 Partnerkarten-Regeln", eintraege: ["Regeln wurden geändert."] });
+        }
+
+        // --- App-Verwaltung (Titel etc.) ---
+        if (adminState.appEinstellungenDirty) {
+          const liveTitel = (window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN.titel) || "";
+          const workTitel = (adminState.appEinstellungen && adminState.appEinstellungen.titel) || "";
+          const eintraege = [];
+          if (liveTitel !== workTitel) eintraege.push("Titel „" + liveTitel + "“ → „" + workTitel + "“");
+          if (eintraege.length) gruppen.push({ titel: "⚙️ Verwaltung", eintraege });
         }
 
         return { gruppen, warnungen };
@@ -14362,6 +14461,11 @@
             window.TARIFE_DATA = window.TARIFE_DATA || {};
             window.TARIFE_DATA.stufen = TARIF_STUFEN_REIHENFOLGE.slice();
           }
+          // App-Einstellungen uebernehmen (Titel etc.) + sofort in der Oberflaeche anwenden
+          if (adminState.appEinstellungen) {
+            window.APP_EINSTELLUNGEN = JSON.parse(JSON.stringify(adminState.appEinstellungen));
+            if (typeof applyAppEinstellungen === "function") applyAppEinstellungen();
+          }
           // (MultiSIM-Preis kommt jetzt aus der Option "multiSim" und wird oben mit den
           //  uebrigen Optionen in window.OPTIONEN_DATA uebernommen.)
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen (jetzt nach Stufe sortiert)
@@ -14717,6 +14821,7 @@
           <button class="ap-tab" data-tab="einmalkosten" onclick="adminSwitchTab('einmalkosten')">💶 Einmalkosten</button>
           <button class="ap-tab" data-tab="partnerRabatte" onclick="adminSwitchTab('partnerRabatte')">💳 PK-Regeln</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
+          <button class="ap-tab" data-tab="verwaltung" onclick="adminSwitchTab('verwaltung')">⚙️ Verwaltung</button>
         </div>
 
         <!-- Tab-Inhalt: Tarife -->
@@ -14881,6 +14986,25 @@
                 <button class="ap-add-tarif" onclick="adminAddFestbetragAktion()">+ Aktion (Festbetrag €)</button>
                 <button class="ap-add-tarif" onclick="adminAddGruppe('aktion')">+ Gruppe hinzufügen</button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Verwaltung (App-Einstellungen: Titel, Version, Info-Text) -->
+        <div id="apTabVerwaltung" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">App-Verwaltung</h3>
+              <p class="ap-rabatte-hint">
+                Allgemeine App-Einstellungen, die nichts mit Tarifen zu tun haben: der
+                <strong>Titel</strong> in der Kopfzeile, die <strong>Versionsnummer</strong> und der
+                <strong>Info-Text</strong> (Inhalt des ℹ️-Buttons). Diese Felder bauen wir Schritt für
+                Schritt auf und lagern sie später in eine eigene Datei aus.
+              </p>
+
+              <!-- Inhalt wird von adminRenderVerwaltung() gefuellt: Titel ist real,
+                   Version + Info-Text folgen in den naechsten Schritten. -->
+              <div id="apVerwaltungContent"></div>
             </div>
           </div>
         </div>
