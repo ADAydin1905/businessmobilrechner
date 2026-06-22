@@ -2597,6 +2597,11 @@
         if (titelEl && typeof e.titel === "string" && e.titel.trim()) {
           titelEl.textContent = e.titel.trim();
         }
+        // Version: festes "v" davor. Fehlt der Wert, bleibt der HTML-Standard stehen.
+        const versionEl = document.getElementById("appVersion");
+        if (versionEl && typeof e.version === "string" && e.version.trim()) {
+          versionEl.textContent = "v" + e.version.trim();
+        }
       }
 
       // ---- GrK-Modus (versteckt) ----
@@ -11204,12 +11209,14 @@
           window.OPTIONEN_DATA && window.OPTIONEN_DATA.gruppen,
           adminState.optionen,
         );
-        // App-Einstellungen (Titel/Version/Info-Text). Fallback: aktueller Header-Titel.
+        // App-Einstellungen (Titel/Version/Info-Text). Fallback: aktuelle Header-Werte.
         const standardTitel = (document.getElementById("appTitel")?.textContent || "Business Mobil Rechner").trim();
+        const standardVersion = (document.getElementById("appVersion")?.textContent || "").trim().replace(/^v/i, "").trim();
         adminState.appEinstellungen = window.APP_EINSTELLUNGEN
           ? JSON.parse(JSON.stringify(window.APP_EINSTELLUNGEN))
-          : { titel: standardTitel };
+          : { titel: standardTitel, version: standardVersion };
         if (!adminState.appEinstellungen.titel) adminState.appEinstellungen.titel = standardTitel;
+        if (!adminState.appEinstellungen.version) adminState.appEinstellungen.version = standardVersion;
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
@@ -11910,28 +11917,38 @@
       function adminRenderVerwaltung() {
         const el = document.getElementById("apVerwaltungContent");
         if (!el) return;
-        adminState.appEinstellungen = adminState.appEinstellungen || { titel: "" };
+        adminState.appEinstellungen = adminState.appEinstellungen || { titel: "", version: "" };
         const titel = adminState.appEinstellungen.titel || "";
+        const version = adminState.appEinstellungen.version || "";
         let html = "";
 
-        // 1) Titel (funktionsfaehig)
-        html += '<div class="ap-field" style="margin-bottom: 18px;">';
+        // Zeile 1: Titel (breit) + Version (schmal, rechts daneben). Spart Platz fuer den Info-Text.
+        html += '<div style="display: flex; gap: 14px; align-items: flex-end;">';
+        html += '<div class="ap-field" style="flex: 1; min-width: 0; margin-bottom: 0;">';
         html += "<label>Titel in der Kopfzeile</label>";
         html +=
           '<input type="text" id="apAppTitel" value="' +
           adminEsc(titel) +
           '" placeholder="z. B. Business Mobil 6 Rechner" oninput="adminEditAppTitel(this)" />';
-        html +=
-          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 5px;">Erscheint oben in der Kopfzeile des Rechners. Mit <strong>Live speichern</strong> wird er übernommen.</div>';
         html += "</div>";
-
-        // 2) Versionsnummer (Platzhalter, folgt)
+        html += '<div class="ap-field" style="flex: 0 0 150px; margin-bottom: 0;">';
+        html += "<label>Version</label>";
+        html += '<div class="ap-input-affix">';
+        // "v" als fester Praefix (das Suffix-Affix nach links umgebogen).
+        html += '<span class="affix" style="left: 12px; right: auto; font-weight: 700; color: var(--text-color);">v</span>';
         html +=
-          '<div style="margin-top: 12px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>2) Versionsnummer</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Festes „v“ + Eingabefeld (z. B. <code>2.0.1</code>). — folgt</div></div>';
-
-        // 3) Info-Text (Platzhalter, folgt)
+          '<input type="text" id="apAppVersion" value="' +
+          adminEsc(version) +
+          '" placeholder="2.0.1" oninput="adminEditAppVersion(this)" style="padding-left: 24px;" />';
+        html += "</div>";
+        html += "</div>";
+        html += "</div>";
         html +=
-          '<div style="margin-top: 12px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>3) Info-Text (ℹ️-Button)</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Editor mit H1/H2/H3 und Aufzählungen, vorbelegt mit dem aktuellen Text. — folgt</div></div>';
+          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 6px; margin-bottom: 18px;">Titel und Version erscheinen oben in der Kopfzeile (das „v“ steht fest davor). Mit <strong>Live speichern</strong> wird beides übernommen.</div>';
+
+        // Info-Text (Platzhalter, folgt) – bekommt jetzt mehr Platz
+        html +=
+          '<div style="margin-top: 4px; padding: 16px; border: 1px dashed var(--ap-border, #ccd); border-radius: 10px; opacity: 0.7;"><strong>Info-Text (ℹ️-Button)</strong><div style="font-size: 0.86em; color: var(--ap-muted, #6b7280); margin-top: 3px;">Editor mit H1/H2/H3 und Aufzählungen, vorbelegt mit dem aktuellen Text. — folgt</div></div>';
 
         el.innerHTML = html;
       }
@@ -11939,6 +11956,14 @@
       function adminEditAppTitel(input) {
         adminState.appEinstellungen = adminState.appEinstellungen || {};
         adminState.appEinstellungen.titel = input.value;
+        adminState.appEinstellungenDirty = true;
+        adminUpdateDirty();
+      }
+
+      function adminEditAppVersion(input) {
+        adminState.appEinstellungen = adminState.appEinstellungen || {};
+        // Fuehrendes "v" wegnehmen, falls es jemand mit eintippt (steht schon fest davor).
+        adminState.appEinstellungen.version = input.value.replace(/^\s*v/i, "");
         adminState.appEinstellungenDirty = true;
         adminUpdateDirty();
       }
@@ -14040,8 +14065,11 @@
         if (adminState.appEinstellungenDirty) {
           const liveTitel = (window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN.titel) || "";
           const workTitel = (adminState.appEinstellungen && adminState.appEinstellungen.titel) || "";
+          const liveVersion = (window.APP_EINSTELLUNGEN && window.APP_EINSTELLUNGEN.version) || "";
+          const workVersion = (adminState.appEinstellungen && adminState.appEinstellungen.version) || "";
           const eintraege = [];
           if (liveTitel !== workTitel) eintraege.push("Titel „" + liveTitel + "“ → „" + workTitel + "“");
+          if (liveVersion !== workVersion) eintraege.push("Version „v" + liveVersion + "“ → „v" + workVersion + "“");
           if (eintraege.length) gruppen.push({ titel: "⚙️ Verwaltung", eintraege });
         }
 
