@@ -1046,42 +1046,110 @@ body.dark-mode .bestandstarif-item {
 
 #soloEgModal {
   max-width: 760px;
-  width: 90%;
+  width: min(92vw, 760px);
+  max-height: 85vh;
+  overflow: hidden;
+  padding: 0;
+}
+
+.solo-eg-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--ap-border, #e0e0e0);
+}
+
+.solo-eg-modal-head h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.solo-eg-modal-head p {
+  margin: 4px 0 0;
+  color: var(--ap-muted, #666);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.solo-eg-close-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px;
+  background: transparent !important;
+  color: var(--primary-color) !important;
+  font-size: 1.5rem !important;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.solo-eg-close-btn:hover {
+  border-color: var(--ap-border, #e0e0e0) !important;
+  background: rgba(226, 0, 116, 0.06) !important;
+}
+
+.solo-eg-modal-body {
+  padding: 20px 28px 18px;
+  max-height: calc(85vh - 168px);
+  overflow-y: auto;
+}
+
+.solo-eg-list-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) 38px;
+  gap: 10px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  color: var(--ap-muted, #666);
+  font-size: 0.72em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 #soloEgList {
   max-height: 360px;
   overflow-y: auto;
-  margin-bottom: 1rem;
-  padding-right: 5px;
+  margin-bottom: 10px;
+  padding-right: 4px;
 }
 
 .solo-eg-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px auto 40px;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) 38px;
   gap: 10px;
   align-items: center;
-  background-color: var(--light-background);
-  padding: 14px;
+  background-color: var(--ap-soft, var(--light-background));
+  padding: 10px;
   border-radius: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #e0e0e0;
+  margin-bottom: 8px;
+  border: 1px solid var(--ap-border, #e0e0e0);
 }
 
 .solo-eg-item input {
+  width: 100%;
   min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
+  padding: 9px 11px;
+  border: 1px solid var(--ap-border, #ccc);
   border-radius: 8px;
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
   color: var(--text-color);
   font-family: var(--font-family);
-  font-size: 0.9rem;
+  font-size: 0.9em;
   box-sizing: border-box;
+}
+
+.solo-eg-price-wrap {
+  position: relative;
+  min-width: 0;
 }
 
 .solo-eg-price-input {
   text-align: right;
+  padding-right: 68px !important;
 }
 
 .solo-eg-item input:focus {
@@ -1091,27 +1159,36 @@ body.dark-mode .bestandstarif-item {
 }
 
 .solo-eg-currency {
-  color: var(--text-color);
-  font-size: 0.85rem;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ap-muted, #666);
+  font-size: 0.82em;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .solo-eg-item .delete-btn {
-  background-color: #dc3545;
-  color: white;
-  border: none;
+  background: none;
+  color: #e74c3c;
+  border: 1px solid var(--ap-border, #e0e0e0);
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  padding: 0;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 }
 
 .solo-eg-item .delete-btn:hover {
-  background-color: #c82333;
+  background: #fdeaea;
+  border-color: #e74c3c;
 }
 
 .solo-eg-item .delete-btn::before {
@@ -1120,15 +1197,34 @@ body.dark-mode .bestandstarif-item {
   font-size: 1.15rem;
 }
 
+.solo-eg-add-button {
+  background: none !important;
+  border: 1px dashed var(--ap-border, #ccc) !important;
+  color: var(--primary-color) !important;
+  border-radius: 8px;
+  padding: 10px !important;
+  width: 100%;
+  cursor: pointer;
+  font-size: 0.9em !important;
+  font-weight: 600;
+  margin: 4px 0 16px;
+}
+
+.solo-eg-add-button:hover {
+  border-color: var(--primary-color) !important;
+  background: rgba(226, 0, 116, 0.05) !important;
+}
+
 .solo-eg-modal-total {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  background-color: var(--light-background);
+  background-color: var(--ap-soft, var(--light-background));
+  border: 1px solid var(--ap-border, #e0e0e0);
   padding: 15px;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin: 0;
 }
 
 .solo-eg-modal-total strong:last-child {
@@ -1137,11 +1233,23 @@ body.dark-mode .bestandstarif-item {
   text-align: right;
 }
 
+.solo-eg-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 28px 22px;
+  border-top: 1px solid var(--ap-border, #e0e0e0);
+  background: var(--ap-soft, var(--light-background));
+}
+
 .solo-eg-empty {
   text-align: center;
-  color: #666;
-  padding: 20px;
+  color: var(--ap-muted, #666);
+  padding: 18px;
   font-style: italic;
+  border: 1px dashed var(--ap-border, #e0e0e0);
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
 
 body.dark-mode .solo-eg-item {
@@ -1153,13 +1261,24 @@ body.dark-mode .solo-eg-item input {
   border-color: #555;
 }
 
+body.dark-mode .solo-eg-item .delete-btn:hover {
+  background: rgba(231, 76, 60, 0.16);
+}
+
 @media (max-width: 640px) {
-  .solo-eg-item {
-    grid-template-columns: 1fr;
+  .solo-eg-modal-head,
+  .solo-eg-modal-body,
+  .solo-eg-modal-actions {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 
-  .solo-eg-currency {
-    justify-self: end;
+  .solo-eg-list-head {
+    display: none;
+  }
+
+  .solo-eg-item {
+    grid-template-columns: 1fr;
   }
 
   .solo-eg-item .delete-btn {

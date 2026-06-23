@@ -673,37 +673,36 @@
     </div>
 
     <div id="soloEgModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0">Solo EG</h3>
+      <div class="solo-eg-modal-head">
+        <div>
+          <h3>Solo EG</h3>
+          <p>Geräte ohne Vertrag als einmalige Nettopreise erfassen.</p>
+        </div>
 
-        <button
-          onclick="closeModal('soloEgModal')"
-          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
-          aria-label="Schließen"
-        >
-          ❌
-        </button>
+        <button class="solo-eg-close-btn" onclick="closeModal('soloEgModal')" aria-label="Schließen">×</button>
       </div>
 
-      <button
-        class="primary"
-        onclick="addSoloEgGeraet()"
-        style="width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 14px"
-      >
-        + Gerät hinzufügen
-      </button>
+      <div class="solo-eg-modal-body">
+        <div class="solo-eg-list-head" aria-hidden="true">
+          <span>Gerätename</span>
+          <span>Nettopreis</span>
+          <span></span>
+        </div>
 
-      <div id="soloEgList"></div>
+        <div id="soloEgList"></div>
 
-      <div class="solo-eg-modal-total">
-        <strong>Gesamtsumme Solo EG:</strong>
-        <strong id="soloEgGesamtsumme">0,00 €</strong>
+        <button class="solo-eg-add-button" onclick="addSoloEgGeraet()">+ Gerät hinzufügen</button>
+
+        <div class="solo-eg-modal-total">
+          <strong>Gesamtsumme Geräte:</strong>
+          <strong id="soloEgGesamtsumme">0,00 €</strong>
+        </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 1rem">
-        <button class="primary" onclick="soloEgSpeichern()">Speichern</button>
-
+      <div class="solo-eg-modal-actions">
         <button class="secondary" onclick="closeModal('soloEgModal')">Abbrechen</button>
+
+        <button class="primary" onclick="soloEgSpeichern()">Speichern</button>
       </div>
     </div>
 
@@ -2662,6 +2661,11 @@
       function formatSoloEgPreis(preisNetto, istBrutto) {
         const mwst = 1.19;
         return formatCurrencyNumber(parseEuroInput(preisNetto) * (istBrutto ? mwst : 1)) + " €";
+      }
+
+      function formatSoloEgInputPreis(preisNetto) {
+        const preis = parseEuroInput(preisNetto);
+        return preis > 0 ? formatCurrencyNumber(preis) : "";
       }
 
       function soloEgLabel(geraet) {
@@ -4886,7 +4890,7 @@
 
         if (!tempSoloEgGeraete.length) {
           list.innerHTML =
-            '<div class="solo-eg-empty">Noch keine Solo-EG hinzugefügt</div>';
+            '<div class="solo-eg-empty">Noch keine Geräte hinzugefügt</div>';
         } else {
           tempSoloEgGeraete.forEach((geraet, index) => {
             const row = document.createElement("div");
@@ -4897,12 +4901,12 @@
               '" onchange="updateSoloEgGeraet(' +
               index +
               ', \'name\', this.value)" />' +
-              '<input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
-              escapeHtml(geraet.preis || "") +
+              '<div class="solo-eg-price-wrap"><input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
+              escapeHtml(formatSoloEgInputPreis(geraet.preis)) +
               '" oninput="updateSoloEgGeraet(' +
               index +
               ', \'preis\', this.value)" />' +
-              '<span class="solo-eg-currency">€ netto</span>' +
+              '<span class="solo-eg-currency">€ netto</span></div>' +
               '<button class="delete-btn" onclick="deleteSoloEgGeraet(' +
               index +
               ')" title="Löschen"></button>';
