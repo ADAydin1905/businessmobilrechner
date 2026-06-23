@@ -237,13 +237,13 @@
             <label
               for="zeigeBereitstellung"
               class="einstellungs-label"
-              title="Durch das aktivieren können zu allen oder einzelnen Karten Bereitstellungspreise angezeigt werden"
-              >Bereitstellungspreise</label
+              title="Aktiviert pro Karte einmalige Preise – wahlweise Bereitstellungspreis (Dropdown) oder Tarifwechselgebühr (Netto-Eingabe)"
+              >Einmalige Preise</label
             >
 
             <label
               class="switch"
-              title="Durch das aktivieren können zu allen oder einzelnen Karten Bereitstellungspreise angezeigt werden"
+              title="Aktiviert pro Karte einmalige Preise – wahlweise Bereitstellungspreis (Dropdown) oder Tarifwechselgebühr (Netto-Eingabe)"
             >
               <input type="checkbox" id="zeigeBereitstellung" onchange="renderTarifDropdowns()" />
 
@@ -364,7 +364,11 @@
             <li><strong>Durchschnittlicher Preis pro Vertrag:</strong>&nbsp;<span id="s_durchschnitt">–</span></li>
 
             <li id="s_bereitstellung_zeile">
-              <strong>Einmalige Bereitstellungskosten:</strong>&nbsp;<span id="s_bereitstellung">-</span>
+              <strong>Bereitstellungspreise:</strong>&nbsp;<span id="s_bereitstellung">-</span>
+            </li>
+
+            <li id="s_tarifwechsel_zeile">
+              <strong>Tarifwechselgebühren:</strong>&nbsp;<span id="s_tarifwechsel">-</span>
             </li>
 
             <li id="s_geraetekosten_zeile"><strong>Gerätekosten:</strong>&nbsp;<span id="s_geraete">-</span></li>
@@ -400,7 +404,11 @@
             <li><strong>Ø pro Vertrag:</strong>&nbsp;<span id="w_durchschnitt">–</span></li>
 
             <li id="w_bereitstellung_zeile">
-              <strong>Bereitstellung:</strong>&nbsp;<span id="w_bereitstellung">-</span>
+              <strong>Bereitstellungspreise:</strong>&nbsp;<span id="w_bereitstellung">-</span>
+            </li>
+
+            <li id="w_tarifwechsel_zeile">
+              <strong>Tarifwechselgebühren:</strong>&nbsp;<span id="w_tarifwechsel">-</span>
             </li>
 
             <li id="w_geraetekosten_zeile"><strong>Geräte:</strong>&nbsp;<span id="w_geraete">-</span></li>
@@ -6823,6 +6831,43 @@
         return html;
       }
 
+      // Einmalige Preise pro Karte: links ein Pillen-Menue
+      // (Bereitstellungspreis | Tarifwechselgebuehr), rechts je nach Modus das
+      // bestehende Dropdown ODER ein Netto-Eingabefeld. bereitID ist die Select-ID
+      // ("bereitstellung_<cardId>"); daraus leiten wir cardId ab.
+      function buildEinmalpreisFeld(bereitID) {
+        const cardId = bereitID.replace(/^bereitstellung_/, "");
+        return (
+          `<div class="einmal-wrap" id="einmalRow_${cardId}" data-modus="bereitstellung">` +
+          `<div class="einmal-pill">` +
+          `<button type="button" class="einmal-opt active" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')">Bereitstellungspreis</button>` +
+          `<button type="button" class="einmal-opt" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')">Tarifwechselgebühr</button>` +
+          `</div>` +
+          `<select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>` +
+          `<input type="number" id="tarifwechsel_${cardId}" class="einmal-tw-input" placeholder="Tarifwechselgebühr (Netto)" min="0" step="0.01" oninput="berechneTarife()" style="display: none;">` +
+          `</div>`
+        );
+      }
+
+      // Liest den aktuellen Modus einer Karte ("bereitstellung" | "tarifwechsel").
+      function getEinmalModus(cardId) {
+        const row = document.getElementById(`einmalRow_${cardId}`);
+        return (row && row.dataset.modus) || "bereitstellung";
+      }
+
+      // Schaltet eine Karte zwischen Bereitstellungspreis und Tarifwechselgebuehr um.
+      function setEinmalModus(cardId, modus) {
+        const row = document.getElementById(`einmalRow_${cardId}`);
+        if (!row) return;
+        row.dataset.modus = modus;
+        row.querySelectorAll(".einmal-opt").forEach((b) => b.classList.toggle("active", b.dataset.modus === modus));
+        const sel = document.getElementById(`bereitstellung_${cardId}`);
+        const tw = document.getElementById(`tarifwechsel_${cardId}`);
+        if (sel) sel.style.display = modus === "tarifwechsel" ? "none" : "";
+        if (tw) tw.style.display = modus === "tarifwechsel" ? "" : "none";
+        if (typeof berechneTarife === "function") berechneTarife();
+      }
+
       // Helfer: erzeugt das <option>-HTML fuer einen Rabatt-Dropdown.
       // mitMitarbeiter=true haengt zusaetzlich den "Mitarbeiter/BGE"-Eintrag an.
       function buildRabattOptionsHTML(mitMitarbeiter) {
@@ -7696,7 +7741,7 @@
             : "";
 
           const bereitstellungFeld = zeigeBereitstellung
-            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
+            ? buildEinmalpreisFeld(bereitID)
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
@@ -7739,7 +7784,7 @@
               : "";
 
             const bereitstellungFeld = zeigeBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
+              ? buildEinmalpreisFeld(bereitID)
               : "";
 
             let zuweisungFeld = manuelleZuweisungAktiv
@@ -7904,7 +7949,7 @@
             : "";
 
           const bereitstellungFeld = zeigeBereitstellung
-            ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
+            ? buildEinmalpreisFeld(bereitID)
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
@@ -8001,7 +8046,7 @@
               : "";
 
             const bereitstellungFeld = zeigeBereitstellung
-              ? `<label for="${bereitID}" style="margin-top:0.5rem;">Bereitstellungspreis:</label><select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>`
+              ? buildEinmalpreisFeld(bereitID)
               : "";
 
             const geraeteFelderID = `pdk_geraete_felder_${i}`,
@@ -8383,13 +8428,28 @@
 
         const preisNettoPeriode2 = basisPreisNettoPeriode2 + zubuchungenFixPreisNetto;
 
+        // Einmalige Preise: je nach Karten-Modus Bereitstellungspreis (Dropdown) ODER
+        // Tarifwechselgebuehr (Netto-Eingabe). Getrennte Betraege, damit Summen getrennt ausweisbar.
         let bereitstellungspreisNetto = 0;
+        let tarifwechselNetto = 0;
+        let einmalTyp = "bereitstellung";
 
-        const bereitstellungInput = document.getElementById(`bereitstellung_${cardId}`);
-
-        if (bereitstellungInput && bereitstellungInput.value) {
-          bereitstellungspreisNetto = parseFloat(bereitstellungInput.value);
+        if (zeigeBereitstellung) {
+          einmalTyp = getEinmalModus(cardId);
+          if (einmalTyp === "tarifwechsel") {
+            const twInput = document.getElementById(`tarifwechsel_${cardId}`);
+            if (twInput && twInput.value) {
+              tarifwechselNetto = parseFloat(String(twInput.value).replace(",", ".")) || 0;
+            }
+          } else {
+            const bereitstellungInput = document.getElementById(`bereitstellung_${cardId}`);
+            if (bereitstellungInput && bereitstellungInput.value) {
+              bereitstellungspreisNetto = parseFloat(bereitstellungInput.value) || 0;
+            }
+          }
         }
+        // Aktiver Einmal-Betrag (fuer die Pro-Karte-Anzeige, unabhaengig vom Typ).
+        const einmalNetto = einmalTyp === "tarifwechsel" ? tarifwechselNetto : bereitstellungspreisNetto;
 
         let geraetepreisNetto = 0,
           geraeteName = "";
@@ -8430,7 +8490,9 @@
 
           vorteile: vorteile,
 
-          displayBereitstellungValue: formatCurrencyNumber(bereitstellungspreisNetto * (istBrutto ? mwst : 1)),
+          tarifwechselNetto: zeigeBereitstellung ? tarifwechselNetto : 0,
+          einmalTyp: einmalTyp,
+          displayBereitstellungValue: formatCurrencyNumber(einmalNetto * (istBrutto ? mwst : 1)),
 
           geraeteName: geraeteName,
 
@@ -8493,6 +8555,7 @@
         let gesamt24MonatsPreisNetto = 0;
 
         let gesamtBereitstellungspreisNetto = 0,
+          gesamtTarifwechselNetto = 0,
           gesamtGeraetepreisNetto = 0,
           gesamtKarten = 0;
 
@@ -8642,6 +8705,7 @@
           gesamtpreisNettoPeriode2 += cardResult.preisNettoPeriode2;
 
           gesamtBereitstellungspreisNetto += cardResult.bereitstellungspreisNetto;
+          gesamtTarifwechselNetto += cardResult.tarifwechselNetto || 0;
 
           gesamtGeraetepreisNetto += cardResult.geraetepreisNetto;
 
@@ -9172,6 +9236,9 @@
           document.getElementById(`${prefix}_bereitstellung`).textContent =
             `${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
 
+          document.getElementById(`${prefix}_tarifwechsel`).textContent =
+            `${formatCurrencyNumber(gesamtTarifwechselNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
+
           document.getElementById(`${prefix}_geraete`).textContent =
             `${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
 
@@ -9506,6 +9573,12 @@
 
         document.getElementById("w_bereitstellung_zeile").style.display =
           gesamtBereitstellungspreisNetto > 0 ? "flex" : "none";
+
+        document.getElementById("s_tarifwechsel_zeile").style.display =
+          gesamtTarifwechselNetto > 0 ? "flex" : "none";
+
+        document.getElementById("w_tarifwechsel_zeile").style.display =
+          gesamtTarifwechselNetto > 0 ? "flex" : "none";
 
         document.getElementById("s_geraetekosten_zeile").style.display =
           gesamtGeraetepreisNetto > 0 || hatGeraeteOption ? "flex" : "none";
@@ -9852,6 +9925,7 @@
           gesamt24MonatsPreisNetto = 0;
 
         let gesamtBereitstellungspreisNetto = 0,
+          gesamtTarifwechselNetto = 0,
           gesamtGeraetepreisNetto = 0,
           gesamtKarten = 0;
 
@@ -9861,6 +9935,7 @@
           gesamtpreisNettoPeriode2 += cardResult.preisNettoPeriode2;
 
           gesamtBereitstellungspreisNetto += cardResult.bereitstellungspreisNetto;
+          gesamtTarifwechselNetto += cardResult.tarifwechselNetto || 0;
 
           gesamtGeraetepreisNetto += cardResult.geraetepreisNetto;
 
@@ -9930,7 +10005,11 @@
         }
 
         if (gesamtBereitstellungspreisNetto > 0) {
-          offerText += `Einmalige Bereitstellungskosten: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+          offerText += `Bereitstellungspreise gesamt: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+        }
+
+        if (gesamtTarifwechselNetto > 0) {
+          offerText += `Tarifwechselgebühren gesamt: ${formatCurrencyNumber(gesamtTarifwechselNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
         }
 
         if (gesamtGeraetepreisNetto > 0) {
@@ -10691,6 +10770,7 @@
           let gesamt24MonatsPreisNetto = 0;
 
           let gesamtBereitstellungspreisNetto = 0;
+          let gesamtTarifwechselNetto = 0;
 
           let gesamtGeraetepreisNetto = 0;
 
@@ -10703,6 +10783,7 @@
               gesamtpreisNettoPeriode2 += cardResult.preisNettoPeriode2;
 
               gesamtBereitstellungspreisNetto += cardResult.bereitstellungspreisNetto;
+              gesamtTarifwechselNetto += cardResult.tarifwechselNetto || 0;
 
               gesamtGeraetepreisNetto += cardResult.geraetepreisNetto;
 
@@ -10795,7 +10876,13 @@
 
           if (gesamtBereitstellungspreisNetto > 0) {
             summaryItems.push(
-              `Einmalige Bereitstellungskosten: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`,
+              `Bereitstellungspreise gesamt: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`,
+            );
+          }
+
+          if (gesamtTarifwechselNetto > 0) {
+            summaryItems.push(
+              `Tarifwechselgebühren gesamt: ${formatCurrencyNumber(gesamtTarifwechselNetto * (istBrutto ? mwst : 1))}${preisSuffix}`,
             );
           }
 

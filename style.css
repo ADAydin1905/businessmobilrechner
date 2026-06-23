@@ -2099,6 +2099,54 @@ select.mailstyle:focus {
   border: 1px solid #ddd;
 }
 
+/* Pillen-Menue "Einmalige Preise" pro Karte: Bereitstellungspreis | Tarifwechselgebuehr */
+.einmal-wrap {
+  margin-top: 0.5rem;
+}
+.einmal-pill {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.einmal-pill .einmal-opt {
+  flex: 1 1 0;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 5px 4px;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  cursor: pointer;
+  color: var(--primary-color);
+  font-weight: 600;
+  text-align: center;
+}
+.einmal-pill .einmal-opt + .einmal-opt {
+  border-left: 1px solid var(--primary-color);
+}
+.einmal-pill .einmal-opt.active {
+  background: var(--primary-color);
+  color: #fff;
+}
+.einmal-tw-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+}
+body.dark-mode .einmal-tw-input {
+  background-color: #2a2a2a;
+  color: #eee;
+  border-color: #555;
+}
+
 body.dark-mode .price-toggle {
   background-color: #2b2b2b;
 
