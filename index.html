@@ -11240,6 +11240,11 @@
         if (!adminState.appEinstellungen.titel) adminState.appEinstellungen.titel = standardTitel;
         if (!adminState.appEinstellungen.version) adminState.appEinstellungen.version = standardVersion;
         if (!adminState.appEinstellungen.infoText) adminState.appEinstellungen.infoText = standardInfo;
+        // Cheat-Sheet-Bild (Data-URI). Fallback: aktuell geladenes Bild.
+        adminState.cheatSheet =
+          typeof window.CHEAT_SHEET === "string" && window.CHEAT_SHEET
+            ? window.CHEAT_SHEET
+            : document.getElementById("cheatSheetImg")?.src || "";
         adminState.aktiverTarif = null;
         adminState.filter = "alle";
         adminState.dirty = false;
@@ -11249,10 +11254,12 @@
         adminState.bereitstellungDirty = false;
         adminState.partnerkartenRabattRegelnDirty = false;
         adminState.appEinstellungenDirty = false;
+        adminState.cheatSheetDirty = false;
         adminRenderFilterChips();
         adminRenderList();
         adminRenderEditorEmpty();
         adminRenderVerwaltung(); // Verwaltung-Pane mit aktuellem Stand fuellen (auch nach Verwerfen)
+        adminRenderCheatsheet(); // Cheat-Sheet-Pane ebenso
         adminUpdateDirty();
       }
 
@@ -11561,7 +11568,7 @@
       }
       function adminUpdateDirty() {
         const el = document.getElementById("apDirtyHint");
-        const dirty = adminState.dirty || adminState.appEinstellungenDirty;
+        const dirty = adminState.dirty || adminState.appEinstellungenDirty || adminState.cheatSheetDirty;
         if (el) el.textContent = dirty ? "● Ungespeicherte Änderungen" : "";
       }
 
@@ -11920,6 +11927,7 @@
           optionen: "apTabOptionen",
           aktionen: "apTabAktionen",
           verwaltung: "apTabVerwaltung",
+          cheatsheet: "apTabCheatsheet",
         };
         Object.entries(panes).forEach(([id, elementId]) => {
           const el = document.getElementById(elementId);
@@ -11933,6 +11941,7 @@
         if (tab === "optionen") adminRenderOptionen();
         if (tab === "aktionen") adminRenderAktionen();
         if (tab === "verwaltung") adminRenderVerwaltung();
+        if (tab === "cheatsheet") adminRenderCheatsheet();
       }
 
       // ===== Verwaltung-Tab (App-Einstellungen) =====
@@ -12038,6 +12047,47 @@
           /* execCommand nicht verfuegbar -> ignorieren */
         }
         adminEditAppInfoText();
+      }
+
+      // ===== Cheat-Sheet-Tab (Bild ersetzen) =====
+      function adminRenderCheatsheet() {
+        const el = document.getElementById("apCheatsheetContent");
+        if (!el) return;
+        const bild = adminState.cheatSheet || "";
+        let html = "";
+        html += '<div class="ap-field" style="margin-bottom: 14px;">';
+        html += "<label>Neues Bild auswählen</label>";
+        html += '<input type="file" accept="image/*" onchange="adminCheatSheetUpload(this)" style="display: block;" />';
+        html +=
+          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280); margin-top: 5px;">Wird als Bild in <code>cheatsheet.js</code> gespeichert. Mit <strong>Live speichern</strong> übernommen.</div>';
+        html += "</div>";
+        html +=
+          '<div style="font-weight: 600; margin-bottom: 6px;">Vorschau' +
+          (adminState.cheatSheetDirty ? " (neu, noch nicht gespeichert)" : " (aktuell)") +
+          "</div>";
+        if (bild) {
+          html +=
+            '<img id="apCheatsheetPreview" alt="Cheat-Sheet Vorschau" style="max-width: 100%; height: auto; border: 1px solid var(--ap-border, #ddd); border-radius: 8px;" />';
+        } else {
+          html += '<div style="color: var(--ap-muted, #6b7280);">Kein Bild vorhanden.</div>';
+        }
+        el.innerHTML = html;
+        // grosse Data-URI nicht ins Template einbetten, sondern per Property setzen
+        const prev = document.getElementById("apCheatsheetPreview");
+        if (prev && bild) prev.src = bild;
+      }
+
+      function adminCheatSheetUpload(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          adminState.cheatSheet = String(reader.result || "");
+          adminState.cheatSheetDirty = true;
+          adminUpdateDirty();
+          adminRenderCheatsheet(); // Vorschau aktualisieren
+        };
+        reader.readAsDataURL(file);
       }
 
       // ===== Tarifstufen-Tab =====
@@ -13787,7 +13837,8 @@
           adminState.rahmenvertragsRabatteDirty ||
           adminState.bereitstellungDirty ||
           adminState.partnerkartenRabattRegelnDirty ||
-          adminState.appEinstellungenDirty;
+          adminState.appEinstellungenDirty ||
+          adminState.cheatSheetDirty;
         if (!hatAenderungen) {
           showAdminStatus("Es gibt keine ungespeicherten Änderungen zum Verwerfen.", "success");
           return;
@@ -13928,6 +13979,20 @@
           const appJsText = appJsHeader + "window.APP_EINSTELLUNGEN = " + appJson + ";\n";
           files.push({ name: "app-einstellungen.js", content: appJsText, mime: "text/javascript" });
         }
+
+        // --- cheatsheet.* (nur, wenn veraendert) ---
+        if (adminState.cheatSheetDirty) {
+          const csJsHeader =
+            "/*\n" +
+            " * cheatsheet.js  -  Cheat-Sheet-Bild fuer den Business Mobil Rechner\n" +
+            " * Automatisch erzeugt vom Admin-Panel am " +
+            new Date().toLocaleString("de-DE") +
+            "\n" +
+            " * Bild als base64-Data-URI (window.CHEAT_SHEET), per <script> geladen.\n" +
+            " */\n";
+          const csJsText = csJsHeader + "window.CHEAT_SHEET = " + JSON.stringify(adminState.cheatSheet || "") + ";\n";
+          files.push({ name: "cheatsheet.js", content: csJsText, mime: "text/javascript" });
+        }
         return files;
       }
 
@@ -13940,6 +14005,7 @@
         adminState.bereitstellungDirty = false;
         adminState.partnerkartenRabattRegelnDirty = false;
         adminState.appEinstellungenDirty = false;
+        adminState.cheatSheetDirty = false;
         adminUpdateDirty();
         adminUebernehmeInRechner();
       }
@@ -14146,6 +14212,11 @@
           if (liveVersion !== workVersion) eintraege.push("Version „v" + liveVersion + "“ → „v" + workVersion + "“");
           if (liveInfo !== workInfo) eintraege.push("Info-Text (ℹ️-Dialog) geändert");
           if (eintraege.length) gruppen.push({ titel: "⚙️ Verwaltung", eintraege });
+        }
+
+        // --- Cheat-Sheet-Bild ---
+        if (adminState.cheatSheetDirty) {
+          gruppen.push({ titel: "🖼️ Cheat-Sheet", eintraege: ["Cheat-Sheet-Bild geändert"] });
         }
 
         return { gruppen, warnungen };
@@ -14569,6 +14640,11 @@
             window.APP_EINSTELLUNGEN = JSON.parse(JSON.stringify(adminState.appEinstellungen));
             if (typeof applyAppEinstellungen === "function") applyAppEinstellungen();
           }
+          // Cheat-Sheet-Bild uebernehmen + sofort im Dialog anwenden
+          if (typeof adminState.cheatSheet === "string" && adminState.cheatSheet) {
+            window.CHEAT_SHEET = adminState.cheatSheet;
+            if (typeof applyCheatSheet === "function") applyCheatSheet();
+          }
           // (MultiSIM-Preis kommt jetzt aus der Option "multiSim" und wird oben mit den
           //  uebrigen Optionen in window.OPTIONEN_DATA uebernommen.)
           // Basis-Listen neu ableiten und Dropdowns neu aufbauen (jetzt nach Stufe sortiert)
@@ -14925,6 +15001,7 @@
           <button class="ap-tab" data-tab="partnerRabatte" onclick="adminSwitchTab('partnerRabatte')">💳 PK-Regeln</button>
           <button class="ap-tab" data-tab="stufen" onclick="adminSwitchTab('stufen')">📊 Tarifstufen</button>
           <button class="ap-tab" data-tab="verwaltung" onclick="adminSwitchTab('verwaltung')">⚙️ Verwaltung</button>
+          <button class="ap-tab" data-tab="cheatsheet" onclick="adminSwitchTab('cheatsheet')">🖼️ Cheat-Sheet</button>
         </div>
 
         <!-- Tab-Inhalt: Tarife -->
@@ -15108,6 +15185,20 @@
               <!-- Inhalt wird von adminRenderVerwaltung() gefuellt: Titel ist real,
                    Version + Info-Text folgen in den naechsten Schritten. -->
               <div id="apVerwaltungContent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Inhalt: Cheat-Sheet (Bild ersetzen) -->
+        <div id="apTabCheatsheet" class="ap-tabpane" style="display: none">
+          <div class="ap-rabatte-pane">
+            <div class="ap-rabatte-section">
+              <h3 class="ap-rabatte-title">Cheat-Sheet-Bild</h3>
+              <p class="ap-rabatte-hint">
+                Das Bild hinter dem 📄-Symbol oben links. Ein neues Bild auswählen, kurz prüfen und mit
+                <strong>Live speichern</strong> übernehmen. Es wird in <code>cheatsheet.js</code> abgelegt.
+              </p>
+              <div id="apCheatsheetContent"></div>
             </div>
           </div>
         </div>
