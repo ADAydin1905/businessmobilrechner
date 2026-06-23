@@ -1891,13 +1891,20 @@ body.dark-mode .price-toggle {
   margin-top: 1.5rem;
 }
 
-/* H1/H2/H3 aus dem WYSIWYG-Editor, damit sie im Info-Dialog konsistent wirken. */
+/* H1/H2/H3 aus dem WYSIWYG-Editor, damit sie im Info-Dialog konsistent wirken.
+   Wichtig: den globalen h2-Kasten (magenta Hintergrund/zentriert/Padding/Shadow)
+   neutralisieren, sonst saehe ein H2 hier aus wie ein App-Abschnitts-Header. */
 #infoModal #infoModalContent h1,
 #infoModal #infoModalContent h2,
 #infoModal #infoModalContent h3 {
   color: var(--primary-color);
   margin-top: 1.3rem;
   margin-bottom: 0.4rem;
+  background: none;
+  text-align: left;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
 }
 #infoModal #infoModalContent h1 {
   font-size: 1.5rem;
@@ -1911,13 +1918,19 @@ body.dark-mode .price-toggle {
   font-size: 1.1rem;
 }
 
-/* WYSIWYG-Editor im Admin-Tab "Verwaltung" (Info-Text) */
+/* WYSIWYG-Editor im Admin-Tab "Verwaltung" (Info-Text). Auch hier den globalen
+   h2-Kasten neutralisieren, damit H2 im Editor wie eine Ueberschrift aussieht. */
 #apAppInfoEditor h1,
 #apAppInfoEditor h2,
 #apAppInfoEditor h3,
 #apAppInfoEditor h4 {
   color: var(--primary-color);
   margin: 0.7em 0 0.3em;
+  background: none;
+  text-align: left;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
 }
 #apAppInfoEditor h1 {
   font-size: 1.4rem;
