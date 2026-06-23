@@ -6831,41 +6831,58 @@
         return html;
       }
 
-      // Einmalige Preise pro Karte: links ein Pillen-Menue
-      // (Bereitstellungspreis | Tarifwechselgebuehr), rechts je nach Modus das
-      // bestehende Dropdown ODER ein Netto-Eingabefeld. bereitID ist die Select-ID
-      // ("bereitstellung_<cardId>"); daraus leiten wir cardId ab.
+      // Persistenter Zustand der "Einmaligen Preise" pro Karte (ueberlebt ein
+      // Neu-Rendern, analog zu grk70): Modus + getippte Tarifwechselgebuehr.
+      let einmalModi = {};
+      let einmalTwWerte = {};
+
+      // Einmalige Preise pro Karte: ein Pillen-Menue (Bereitstellungspreis |
+      // Tarifwechselgebuehr), darunter je nach Modus das bestehende Dropdown ODER
+      // ein Netto-Eingabefeld. bereitID ist die Select-ID ("bereitstellung_<cardId>");
+      // Modus + Wert kommen aus den Globals, damit ein Re-Render nichts verliert.
       function buildEinmalpreisFeld(bereitID) {
         const cardId = bereitID.replace(/^bereitstellung_/, "");
+        const istTW = einmalModi[cardId] === "tarifwechsel";
+        const modus = istTW ? "tarifwechsel" : "bereitstellung";
+        const twWert = einmalTwWerte[cardId] != null ? einmalTwWerte[cardId] : "";
         return (
-          `<div class="einmal-wrap" id="einmalRow_${cardId}" data-modus="bereitstellung">` +
+          `<div class="einmal-wrap" id="einmalRow_${cardId}" data-modus="${modus}">` +
           `<div class="einmal-pill">` +
-          `<button type="button" class="einmal-opt active" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')">Bereitstellungspreis</button>` +
-          `<button type="button" class="einmal-opt" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')">Tarifwechselgebühr</button>` +
+          `<button type="button" class="einmal-opt${istTW ? "" : " active"}" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')">Bereitstellungspreis</button>` +
+          `<button type="button" class="einmal-opt${istTW ? " active" : ""}" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')">Tarifwechselgebühr</button>` +
           `</div>` +
-          `<select id="${bereitID}" onchange="berechneTarife()">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>` +
-          `<input type="number" id="tarifwechsel_${cardId}" class="einmal-tw-input" placeholder="Tarifwechselgebühr (Netto)" min="0" step="0.01" oninput="berechneTarife()" style="display: none;">` +
+          `<select id="${bereitID}" onchange="berechneTarife()" style="display: ${istTW ? "none" : ""};">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>` +
+          `<input type="number" id="tarifwechsel_${cardId}" class="einmal-tw-input" placeholder="Tarifwechselgebühr (Netto)" min="0" step="0.01" value="${twWert}" oninput="setTarifwechselWert('${cardId}', this.value)" style="display: ${istTW ? "" : "none"};">` +
           `</div>`
         );
       }
 
       // Liest den aktuellen Modus einer Karte ("bereitstellung" | "tarifwechsel").
       function getEinmalModus(cardId) {
-        const row = document.getElementById(`einmalRow_${cardId}`);
-        return (row && row.dataset.modus) || "bereitstellung";
+        return einmalModi[cardId] === "tarifwechsel" ? "tarifwechsel" : "bereitstellung";
+      }
+
+      // Merkt die getippte Tarifwechselgebuehr (ueberlebt Re-Render) + rechnet neu.
+      function setTarifwechselWert(cardId, val) {
+        einmalTwWerte[cardId] = val;
+        if (typeof berechneTarife === "function") berechneTarife();
       }
 
       // Schaltet eine Karte zwischen Bereitstellungspreis und Tarifwechselgebuehr um.
-      function setEinmalModus(cardId, modus) {
+      // skipRecalc=true unterdrueckt das Neuberechnen (z.B. beim Wiederherstellen aus der URL).
+      function setEinmalModus(cardId, modus, skipRecalc) {
+        einmalModi[cardId] = modus === "tarifwechsel" ? "tarifwechsel" : "bereitstellung";
+        const istTW = einmalModi[cardId] === "tarifwechsel";
         const row = document.getElementById(`einmalRow_${cardId}`);
-        if (!row) return;
-        row.dataset.modus = modus;
-        row.querySelectorAll(".einmal-opt").forEach((b) => b.classList.toggle("active", b.dataset.modus === modus));
-        const sel = document.getElementById(`bereitstellung_${cardId}`);
-        const tw = document.getElementById(`tarifwechsel_${cardId}`);
-        if (sel) sel.style.display = modus === "tarifwechsel" ? "none" : "";
-        if (tw) tw.style.display = modus === "tarifwechsel" ? "" : "none";
-        if (typeof berechneTarife === "function") berechneTarife();
+        if (row) {
+          row.dataset.modus = einmalModi[cardId];
+          row.querySelectorAll(".einmal-opt").forEach((b) => b.classList.toggle("active", b.dataset.modus === einmalModi[cardId]));
+          const sel = document.getElementById(`bereitstellung_${cardId}`);
+          const tw = document.getElementById(`tarifwechsel_${cardId}`);
+          if (sel) sel.style.display = istTW ? "none" : "";
+          if (tw) tw.style.display = istTW ? "" : "none";
+        }
+        if (!skipRecalc && typeof berechneTarife === "function") berechneTarife();
       }
 
       // Helfer: erzeugt das <option>-HTML fuer einen Rabatt-Dropdown.
@@ -7172,6 +7189,10 @@
 
             bereitstellung: document.getElementById(`bereitstellung_hk_${i}`)?.value || "",
 
+            einmalModus: getEinmalModus(`hk_${i}`),
+
+            tarifwechsel: document.getElementById(`tarifwechsel_hk_${i}`)?.value || "",
+
             rabatt: document.getElementById(`hk_rabatt_${i}`)?.value || "",
 
             geraetName: document.getElementById(`hk_geraet_name_${i}`)?.value || "",
@@ -7189,6 +7210,10 @@
             tarif: document.getElementById(`pk_tarif_${i}`)?.value || "",
 
             bereitstellung: document.getElementById(`bereitstellung_pk_${i}`)?.value || "",
+
+            einmalModus: getEinmalModus(`pk_${i}`),
+
+            tarifwechsel: document.getElementById(`tarifwechsel_pk_${i}`)?.value || "",
 
             zuweisung: document.getElementById(`zuweisung_pk_${i}`)?.value || "",
 
@@ -7334,6 +7359,11 @@
                 if (document.getElementById(`bereitstellung_hk_${i}`))
                   document.getElementById(`bereitstellung_hk_${i}`).value = card.bereitstellung;
 
+                einmalTwWerte[`hk_${i}`] = card.tarifwechsel || "";
+                const twHk = document.getElementById(`tarifwechsel_hk_${i}`);
+                if (twHk) twHk.value = card.tarifwechsel || "";
+                if (card.einmalModus) setEinmalModus(`hk_${i}`, card.einmalModus, true);
+
                 if (document.getElementById(`hk_rabatt_${i}`))
                   document.getElementById(`hk_rabatt_${i}`).value = card.rabatt;
 
@@ -7358,6 +7388,11 @@
 
                 if (document.getElementById(`bereitstellung_pk_${i}`))
                   document.getElementById(`bereitstellung_pk_${i}`).value = card.bereitstellung;
+
+                einmalTwWerte[`pk_${i}`] = card.tarifwechsel || "";
+                const twPk = document.getElementById(`tarifwechsel_pk_${i}`);
+                if (twPk) twPk.value = card.tarifwechsel || "";
+                if (card.einmalModus) setEinmalModus(`pk_${i}`, card.einmalModus, true);
 
                 if (document.getElementById(`zuweisung_pk_${i}`))
                   document.getElementById(`zuweisung_pk_${i}`).value = card.zuweisung;
