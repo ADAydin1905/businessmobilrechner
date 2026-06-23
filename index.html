@@ -684,6 +684,7 @@
 
       <div class="solo-eg-modal-body">
         <div class="solo-eg-list-head" aria-hidden="true">
+          <span></span>
           <span>Gerätename</span>
           <span>Nettopreis</span>
           <span></span>
@@ -4895,10 +4896,12 @@
           tempSoloEgGeraete.forEach((geraet, index) => {
             const row = document.createElement("div");
             row.className = "solo-eg-item";
+            row.setAttribute("data-idx", index);
             row.innerHTML =
+              '<span class="solo-eg-drag" title="Gerät verschieben">⋮⋮</span>' +
               '<input type="text" placeholder="Gerätename" value="' +
               escapeHtml(geraet.name || "") +
-              '" onchange="updateSoloEgGeraet(' +
+              '" oninput="updateSoloEgGeraet(' +
               index +
               ', \'name\', this.value)" />' +
               '<div class="solo-eg-price-wrap"><input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
@@ -4914,14 +4917,43 @@
           });
         }
 
+        initSoloEgSortable();
         updateTempSoloEgGesamtsumme();
+      }
+
+      function initSoloEgSortable() {
+        const list = document.getElementById("soloEgList");
+        if (!list || typeof Sortable === "undefined") return;
+
+        new Sortable(list, {
+          handle: ".solo-eg-drag",
+          draggable: ".solo-eg-item",
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          chosenClass: "sortable-chosen",
+          onEnd: () => applySoloEgOrderFromDom(list),
+        });
+      }
+
+      function applySoloEgOrderFromDom(list) {
+        if (!list) return false;
+
+        const order = Array.from(list.querySelectorAll(".solo-eg-item"))
+          .map((row) => parseInt(row.getAttribute("data-idx"), 10))
+          .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < tempSoloEgGeraete.length);
+
+        if (order.length !== tempSoloEgGeraete.length) return false;
+
+        tempSoloEgGeraete = order.map((idx) => tempSoloEgGeraete[idx]);
+        loadSoloEgGeraete();
+        return true;
       }
 
       function addSoloEgGeraet() {
         tempSoloEgGeraete.push({ name: "", preis: 0 });
         loadSoloEgGeraete();
         setTimeout(() => {
-          const inputs = document.querySelectorAll("#soloEgList .solo-eg-item input[type='text']");
+          const inputs = document.querySelectorAll("#soloEgList .solo-eg-item > input[type='text']");
           const last = inputs[inputs.length - 1];
           if (last) last.focus();
         }, 0);
@@ -11985,9 +12017,10 @@
           '<div class="ap-leistungen-head"><label style="margin:0;">Leistungen (' +
           t.leistungen.length +
           ")</label></div>";
+        html += '<div id="apLeistungenList" class="ap-leistungen-list">';
         t.leistungen.forEach((l, idx) => {
-          html += '<div class="ap-leistung">';
-          html += '<span class="drag" title="Sortieren folgt später">⋮⋮</span>';
+          html += '<div class="ap-leistung" data-idx="' + idx + '">';
+          html += '<span class="drag" title="Leistung verschieben">⋮⋮</span>';
           html +=
             '<input type="text" value="' +
             adminEsc(l) +
@@ -11997,6 +12030,7 @@
           html += '<button class="del" title="Leistung entfernen" onclick="adminDelLeistung(' + idx + ')">✕</button>';
           html += "</div>";
         });
+        html += "</div>";
         html += '<button class="ap-add-leistung" onclick="adminAddLeistung()">+ Leistung hinzufügen</button>';
         html += "</div>";
 
@@ -12035,6 +12069,7 @@
         html += "</div>";
 
         ed.innerHTML = html;
+        adminInitLeistungenSortable();
       }
 
       // ---- Bearbeitungs-Handler (schreiben in adminState) ----
@@ -12128,6 +12163,37 @@
         t.leistungen[idx] = input.value;
         adminClearEntwurf(t);
         adminMarkDirty();
+      }
+
+      function adminInitLeistungenSortable() {
+        const list = document.getElementById("apLeistungenList");
+        if (!list || typeof Sortable === "undefined") return;
+
+        new Sortable(list, {
+          handle: ".drag",
+          draggable: ".ap-leistung",
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          chosenClass: "sortable-chosen",
+          onEnd: () => adminApplyLeistungenOrderFromDom(list),
+        });
+      }
+
+      function adminApplyLeistungenOrderFromDom(list) {
+        const t = adminState.tarife[adminState.aktiverTarif];
+        if (!list || !t || !Array.isArray(t.leistungen)) return false;
+
+        const order = Array.from(list.querySelectorAll(".ap-leistung"))
+          .map((row) => parseInt(row.getAttribute("data-idx"), 10))
+          .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < t.leistungen.length);
+
+        if (order.length !== t.leistungen.length) return false;
+
+        t.leistungen = order.map((idx) => t.leistungen[idx]);
+        adminClearEntwurf(t);
+        adminMarkDirty();
+        adminRenderEditor(adminState.aktiverTarif);
+        return true;
       }
 
       function adminAddLeistung() {

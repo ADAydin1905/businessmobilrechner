@@ -1099,7 +1099,7 @@ body.dark-mode .bestandstarif-item {
 
 .solo-eg-list-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) 38px;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(160px, 220px) 38px;
   gap: 10px;
   padding: 0 10px;
   margin-bottom: 8px;
@@ -1119,7 +1119,7 @@ body.dark-mode .bestandstarif-item {
 
 .solo-eg-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) 38px;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(160px, 220px) 38px;
   gap: 10px;
   align-items: center;
   background-color: var(--ap-soft, var(--light-background));
@@ -1127,6 +1127,19 @@ body.dark-mode .bestandstarif-item {
   border-radius: 8px;
   margin-bottom: 8px;
   border: 1px solid var(--ap-border, #e0e0e0);
+}
+
+.solo-eg-drag {
+  cursor: grab;
+  color: var(--ap-muted, #666);
+  font-size: 1.1em;
+  line-height: 1;
+  user-select: none;
+  justify-self: center;
+}
+
+.solo-eg-drag:active {
+  cursor: grabbing;
 }
 
 .solo-eg-item input {
@@ -1278,10 +1291,16 @@ body.dark-mode .solo-eg-item .delete-btn:hover {
   }
 
   .solo-eg-item {
-    grid-template-columns: 1fr;
+    grid-template-columns: 22px 1fr;
+  }
+
+  .solo-eg-item input,
+  .solo-eg-price-wrap {
+    grid-column: 2;
   }
 
   .solo-eg-item .delete-btn {
+    grid-column: 2;
     justify-self: end;
   }
 
