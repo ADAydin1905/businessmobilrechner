@@ -12071,10 +12071,68 @@
         } else {
           html += '<div style="color: var(--ap-muted, #6b7280);">Kein Bild vorhanden.</div>';
         }
+        html += '<div id="apCheatsheetHint" style="margin-top: 8px;"></div>';
         el.innerHTML = html;
-        // grosse Data-URI nicht ins Template einbetten, sondern per Property setzen
+        // grosse Data-URI nicht ins Template einbetten, sondern per Property setzen.
+        // Per onload kommen Abmessungen + Hinweise (nicht blockierend) dazu.
         const prev = document.getElementById("apCheatsheetPreview");
-        if (prev && bild) prev.src = bild;
+        if (prev && bild) {
+          prev.onload = adminCheatSheetPreviewLoaded;
+          prev.src = bild;
+          if (prev.complete && prev.naturalWidth) adminCheatSheetPreviewLoaded();
+        }
+      }
+
+      // Schwellen-basierte Hinweise (nur Hinweis, blockiert NICHTS).
+      function cheatSheetWarnungen(w, h, bytes) {
+        const warn = [];
+        if (w && h) {
+          if (w < 600 || h < 400) {
+            warn.push("Bild ist klein (" + w + "×" + h + " px) – im Dialog evtl. unscharf. Empfohlen mind. ~800×600 px.");
+          }
+          if (w > 5000 || h > 5000) {
+            warn.push("Bild ist sehr groß (" + w + "×" + h + " px) – mehr als für die Anzeige nötig.");
+          }
+        }
+        if (bytes && bytes > 2 * 1024 * 1024) {
+          warn.push(
+            "Dateigröße ~" +
+              (bytes / 1024 / 1024).toFixed(1) +
+              " MB – das vergrößert cheatsheet.js und verlangsamt das Laden (empfohlen < 1 MB).",
+          );
+        }
+        return warn;
+      }
+
+      // Liest Abmessungen aus dem Vorschau-Bild, zeigt Info + ggf. gelbe Hinweise.
+      function adminCheatSheetPreviewLoaded() {
+        const prev = document.getElementById("apCheatsheetPreview");
+        const hint = document.getElementById("apCheatsheetHint");
+        if (!prev || !hint) return;
+        const w = prev.naturalWidth;
+        const h = prev.naturalHeight;
+        const bytes = Math.round((adminState.cheatSheet || "").length * 0.75);
+        adminState.cheatSheetInfo = { w: w, h: h, bytes: bytes };
+        const mb = bytes / 1024 / 1024;
+        const groesse = mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
+        let html =
+          '<div style="font-size: 0.82em; color: var(--ap-muted, #6b7280);">Abmessungen: ' +
+          w +
+          "×" +
+          h +
+          " px · ~" +
+          groesse +
+          "</div>";
+        const warnungen = cheatSheetWarnungen(w, h, bytes);
+        if (warnungen.length) {
+          html +=
+            '<div style="margin-top: 6px; padding: 10px 12px; border-radius: 8px; background: #fff8e1; border: 1px solid #f0c000; color: #7a5c00; font-size: 0.86em;"><strong>⚠️ Hinweis</strong><ul style="margin: 4px 0 0; padding-left: 18px;">';
+          warnungen.forEach((m) => {
+            html += "<li>" + adminEsc(m) + "</li>";
+          });
+          html += '</ul><div style="margin-top: 4px;">Du kannst trotzdem speichern.</div></div>';
+        }
+        hint.innerHTML = html;
       }
 
       function adminCheatSheetUpload(input) {
@@ -14217,6 +14275,10 @@
         // --- Cheat-Sheet-Bild ---
         if (adminState.cheatSheetDirty) {
           gruppen.push({ titel: "🖼️ Cheat-Sheet", eintraege: ["Cheat-Sheet-Bild geändert"] });
+          const info = adminState.cheatSheetInfo;
+          if (info) {
+            cheatSheetWarnungen(info.w, info.h, info.bytes).forEach((m) => warnungen.push("Cheat-Sheet: " + m));
+          }
         }
 
         return { gruppen, warnungen };
