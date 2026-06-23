@@ -510,14 +510,24 @@ body.dark-mode .rufnummer-input {
 
 .solo-eg-offer-row {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
+  gap: 8px;
   padding: 8px 0;
   border-bottom: 1px solid rgba(128, 128, 128, 0.22);
   color: var(--text-color);
 }
 
+.solo-eg-offer-row::before {
+  content: "•";
+  color: var(--primary-color);
+  margin-right: 0;
+  font-weight: bold;
+  flex: 0 0 auto;
+}
+
 .solo-eg-offer-row span {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
