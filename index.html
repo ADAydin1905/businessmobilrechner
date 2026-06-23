@@ -685,8 +685,9 @@
       <div class="solo-eg-modal-body">
         <div class="solo-eg-list-head" aria-hidden="true">
           <span></span>
+          <span>Anzahl</span>
           <span>Gerätename</span>
-          <span>Nettopreis</span>
+          <span>Preis je netto</span>
           <span></span>
         </div>
 
@@ -2641,6 +2642,11 @@
         return isFinite(n) && n >= 0 ? n : 0;
       }
 
+      function parsePositiveIntInput(value, fallback = 1) {
+        const n = parseInt(String(value == null ? "" : value), 10);
+        return Number.isInteger(n) && n > 0 ? n : fallback;
+      }
+
       let kundendaten = { name: "", ansprechpartner: "", notizen: "", gueltigBis: "" };
 
       let soloEgGeraete = [];
@@ -2648,15 +2654,20 @@
       let tempSoloEgGeraete = [];
 
       function getValidSoloEgGeraete() {
-        return (soloEgGeraete || []).filter((geraet) => {
-          const name = String(geraet.name || "").trim();
-          const preis = parseEuroInput(geraet.preis);
-          return name || preis > 0;
-        });
+        return (soloEgGeraete || [])
+          .map((geraet) => ({
+            name: String(geraet.name || "").trim(),
+            preis: parseEuroInput(geraet.preis),
+            anzahl: parsePositiveIntInput(geraet.anzahl, 1),
+          }))
+          .filter((geraet) => geraet.name || geraet.preis > 0);
       }
 
       function getSoloEgGesamtsummeNetto(liste) {
-        return (liste || getValidSoloEgGeraete()).reduce((sum, geraet) => sum + parseEuroInput(geraet.preis), 0);
+        return (liste || getValidSoloEgGeraete()).reduce(
+          (sum, geraet) => sum + parseEuroInput(geraet.preis) * parsePositiveIntInput(geraet.anzahl, 1),
+          0,
+        );
       }
 
       function formatSoloEgPreis(preisNetto, istBrutto) {
@@ -2672,6 +2683,12 @@
       function soloEgLabel(geraet) {
         const name = String(geraet && geraet.name ? geraet.name : "").trim();
         return name || "Gerät ohne Vertrag";
+      }
+
+      function soloEgPositionLabel(geraet) {
+        const anzahl = parsePositiveIntInput(geraet && geraet.anzahl, 1);
+        const name = soloEgLabel(geraet);
+        return anzahl > 1 ? `${anzahl}x ${name}` : name;
       }
 
       function zuruecksetzen() {
@@ -2791,7 +2808,7 @@
           tempSoloEgGeraete = JSON.parse(JSON.stringify(soloEgGeraete || []));
 
           if (tempSoloEgGeraete.length === 0) {
-            tempSoloEgGeraete.push({ name: "", preis: 0 });
+            tempSoloEgGeraete.push({ name: "", preis: 0, anzahl: 1 });
           }
 
           loadSoloEgGeraete();
@@ -4899,12 +4916,17 @@
             row.setAttribute("data-idx", index);
             row.innerHTML =
               '<span class="solo-eg-drag" title="Gerät verschieben">⋮⋮</span>' +
+              '<input class="solo-eg-qty-input" type="number" min="1" step="1" value="' +
+              parsePositiveIntInput(geraet.anzahl, 1) +
+              '" oninput="updateSoloEgGeraet(' +
+              index +
+              ', \'anzahl\', this.value)" />' +
               '<input type="text" placeholder="Gerätename" value="' +
               escapeHtml(geraet.name || "") +
               '" oninput="updateSoloEgGeraet(' +
               index +
               ', \'name\', this.value)" />' +
-              '<div class="solo-eg-price-wrap"><input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
+              '<div class="solo-eg-price-wrap"><span class="solo-eg-price-prefix">je</span><input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
               escapeHtml(formatSoloEgInputPreis(geraet.preis)) +
               '" oninput="updateSoloEgGeraet(' +
               index +
@@ -4950,7 +4972,7 @@
       }
 
       function addSoloEgGeraet() {
-        tempSoloEgGeraete.push({ name: "", preis: 0 });
+        tempSoloEgGeraete.push({ name: "", preis: 0, anzahl: 1 });
         loadSoloEgGeraete();
         setTimeout(() => {
           const inputs = document.querySelectorAll("#soloEgList .solo-eg-item > input[type='text']");
@@ -4968,6 +4990,8 @@
         if (!tempSoloEgGeraete[index]) return;
         if (field === "preis") {
           tempSoloEgGeraete[index][field] = parseEuroInput(value);
+        } else if (field === "anzahl") {
+          tempSoloEgGeraete[index][field] = parsePositiveIntInput(value, 1);
         } else {
           tempSoloEgGeraete[index][field] = value;
         }
@@ -4985,6 +5009,7 @@
           .map((geraet) => ({
             name: String(geraet.name || "").trim(),
             preis: parseEuroInput(geraet.preis),
+            anzahl: parsePositiveIntInput(geraet.anzahl, 1),
           }))
           .filter((geraet) => geraet.name || geraet.preis > 0);
 
@@ -5001,8 +5026,8 @@
           .map(
             (geraet) =>
               '<div class="solo-eg-offer-row"><span>' +
-              escapeHtml(soloEgLabel(geraet)) +
-              "</span><strong>" +
+              escapeHtml(soloEgPositionLabel(geraet)) +
+              "</span><strong>je " +
               formatSoloEgPreis(geraet.preis, istBrutto) +
               "</strong></div>",
           )
@@ -5043,7 +5068,7 @@
 
         geraete.forEach((geraet) => {
           const li = document.createElement("li");
-          li.textContent = soloEgLabel(geraet) + ": " + formatSoloEgPreis(geraet.preis, istBrutto);
+          li.textContent = soloEgPositionLabel(geraet) + ": je " + formatSoloEgPreis(geraet.preis, istBrutto);
           ul.appendChild(li);
         });
 
@@ -7218,6 +7243,7 @@
               .map((geraet) => ({
                 name: String(geraet.name || "").trim(),
                 preis: parseEuroInput(geraet.preis),
+                anzahl: parsePositiveIntInput(geraet.anzahl, 1),
               }))
               .filter((geraet) => geraet.name || geraet.preis > 0);
           }
@@ -9814,7 +9840,7 @@
         if (soloEgTextGeraete.length > 0) {
           offerText += "Gerät(e) ohne Vertrag:\n";
           soloEgTextGeraete.forEach((geraet) => {
-            offerText += `  ${soloEgLabel(geraet)}: ${formatSoloEgPreis(geraet.preis, istBrutto)}${preisSuffix}\n`;
+            offerText += `  ${soloEgPositionLabel(geraet)}: je ${formatSoloEgPreis(geraet.preis, istBrutto)}${preisSuffix}\n`;
           });
           offerText += `  Gesamt Geräte ohne Vertrag: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
         }
@@ -10567,8 +10593,8 @@
 
               row.innerHTML =
                 "<span>" +
-                escapeHtml(soloEgLabel(geraet)) +
-                "</span><strong>" +
+                escapeHtml(soloEgPositionLabel(geraet)) +
+                "</span><strong>je " +
                 formatSoloEgPreis(geraet.preis, soloEgPdfIstBrutto) +
                 "</strong>";
 
@@ -10895,8 +10921,8 @@
 
               li.innerHTML =
                 `<span style="color: #e20074; margin-right: 8px; font-weight: bold;">•</span> ` +
-                escapeHtml(soloEgLabel(geraet)) +
-                ": " +
+                escapeHtml(soloEgPositionLabel(geraet)) +
+                ": je " +
                 formatSoloEgPreis(geraet.preis, istBrutto);
 
               soloEgSummaryUl.appendChild(li);
