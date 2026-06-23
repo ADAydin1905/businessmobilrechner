@@ -1678,11 +1678,14 @@ body.dark-mode .rabatt-btn:hover:not(.active) {
 
   padding: 10px;
 
-  border: 1px solid #eee;
+  /* Leicht dickerer Magenta-Rand, damit sich die "Alle ... setzen"-Kachel
+     dezent von den Karten-Konfigurationskacheln (1px) abhebt. */
+  border: 2px solid var(--primary-color);
 
   border-radius: var(--border-radius);
 
-  background-color: var(--background-color);
+  /* Weiß wie die Karten-Kacheln, theme-aware (kein Grau mehr; dark + light). */
+  background-color: var(--card-bg);
 
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
