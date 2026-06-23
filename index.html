@@ -369,7 +369,7 @@
 
             <li id="s_geraetekosten_zeile"><strong>Gerätekosten:</strong>&nbsp;<span id="s_geraete">-</span></li>
 
-            <li id="s_soloeg_zeile"><strong>Solo EG:</strong>&nbsp;<span id="s_soloeg">-</span></li>
+            <li id="s_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="s_soloeg">-</span></li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -405,7 +405,7 @@
 
             <li id="w_geraetekosten_zeile"><strong>Geräte:</strong>&nbsp;<span id="w_geraete">-</span></li>
 
-            <li id="w_soloeg_zeile"><strong>Solo EG:</strong>&nbsp;<span id="w_soloeg">-</span></li>
+            <li id="w_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="w_soloeg">-</span></li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -2666,7 +2666,7 @@
 
       function soloEgLabel(geraet) {
         const name = String(geraet && geraet.name ? geraet.name : "").trim();
-        return name || "Solo EG";
+        return name || "Gerät ohne Vertrag";
       }
 
       function zuruecksetzen() {
@@ -4973,9 +4973,9 @@
           .join("");
         const total = getSoloEgGesamtsummeNetto(geraete);
         return (
-          '<div class="tarif solo-eg-offer"><h3>Solo EG</h3><div class="solo-eg-offer-list">' +
+          '<div class="tarif solo-eg-offer"><h3>Gerät(e) ohne Vertrag</h3><div class="solo-eg-offer-list">' +
           rows +
-          '</div><div class="preisbox solo-eg-total">Gesamt Solo EG: ' +
+          '</div><div class="preisbox solo-eg-total">Gesamt Geräte ohne Vertrag: ' +
           formatSoloEgPreis(total, istBrutto) +
           " " +
           nettoOderBrutto +
@@ -4998,7 +4998,7 @@
         const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
         const title = document.createElement("h4");
         title.id = prefix + "_soloeg_h4";
-        title.textContent = "Solo EG:";
+        title.textContent = "Gerät(e) ohne Vertrag:";
         title.style.marginTop = "1rem";
 
         const ul = document.createElement("ul");
@@ -9479,7 +9479,7 @@
           (!window.calculatedTariffsForCopy || window.calculatedTariffsForCopy.length === 0) &&
           soloEgTextGeraete.length === 0
         ) {
-          return "Keine Tarife oder Solo-EG ausgewählt.";
+          return "Keine Tarife oder Geräte ohne Vertrag ausgewählt.";
         }
 
         const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
@@ -9776,11 +9776,11 @@
         });
 
         if (soloEgTextGeraete.length > 0) {
-          offerText += "Solo EG:\n";
+          offerText += "Gerät(e) ohne Vertrag:\n";
           soloEgTextGeraete.forEach((geraet) => {
             offerText += `  ${soloEgLabel(geraet)}: ${formatSoloEgPreis(geraet.preis, istBrutto)}${preisSuffix}\n`;
           });
-          offerText += `  Gesamt Solo EG: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
+          offerText += `  Gesamt Geräte ohne Vertrag: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
         }
 
         // 3. Summary
@@ -9878,7 +9878,7 @@
         const soloEgGesamtsummeText = getSoloEgGesamtsummeNetto(soloEgTextGeraete);
 
         if (soloEgGesamtsummeText > 0) {
-          offerText += `Solo EG: ${formatSoloEgPreis(soloEgGesamtsummeText, istBrutto)}${preisSuffix}\n`;
+          offerText += `Gerät(e) ohne Vertrag: ${formatSoloEgPreis(soloEgGesamtsummeText, istBrutto)}${preisSuffix}\n`;
         }
 
         const tarifUebersichtList = document.getElementById("s_tarifUebersicht");
@@ -10018,7 +10018,7 @@
 
           if ((window.calculatedTariffsForCopy || []).length === 0 && getValidSoloEgGeraete().length === 0) {
             öffneFehlerModal(
-              "<div>❌ Es muss mindestens ein Tarif oder Solo-EG ausgewählt sein, um eine PDF zu generieren.</div>",
+              "<div>❌ Es muss mindestens ein Tarif oder Gerät ohne Vertrag ausgewählt sein, um eine PDF zu generieren.</div>",
             );
 
             return;
@@ -10513,7 +10513,7 @@
               paddingBottom: "5px",
             });
 
-            soloEgTitle.textContent = "Solo EG";
+            soloEgTitle.textContent = "Gerät(e) ohne Vertrag";
 
             soloEgDiv.appendChild(soloEgTitle);
 
@@ -10553,7 +10553,7 @@
             });
 
             soloEgTotal.textContent =
-              "Gesamt Solo EG: " +
+              "Gesamt Geräte ohne Vertrag: " +
               formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgPdfGeraete), soloEgPdfIstBrutto) +
               " " +
               (soloEgPdfIstBrutto ? "Brutto" : "Netto");
@@ -10746,7 +10746,7 @@
           const soloEgGesamtsummePDF = getSoloEgGesamtsummeNetto();
 
           if (soloEgGesamtsummePDF > 0) {
-            summaryItems.push(`Solo EG: ${formatSoloEgPreis(soloEgGesamtsummePDF, istBrutto)} ${istBrutto ? "Brutto" : "Netto"}`);
+            summaryItems.push(`Gerät(e) ohne Vertrag: ${formatSoloEgPreis(soloEgGesamtsummePDF, istBrutto)} ${istBrutto ? "Brutto" : "Netto"}`);
           }
 
           summaryItems.forEach((text) => {
@@ -10838,7 +10838,7 @@
               fontSize: "1.1em",
             });
 
-            soloEgSummaryTitle.textContent = "Solo EG:";
+            soloEgSummaryTitle.textContent = "Gerät(e) ohne Vertrag:";
 
             summaryDiv.appendChild(soloEgSummaryTitle);
 
@@ -11378,7 +11378,7 @@
         checkZeroDeviceCosts(() => {
           if (!areOfferItemsSelected()) {
             öffneFehlerModal(
-              "<div>❌ Es muss mindestens ein Tarif oder Solo-EG ausgewählt sein, um das Angebot zu kopieren.</div>",
+              "<div>❌ Es muss mindestens ein Tarif oder Gerät ohne Vertrag ausgewählt sein, um das Angebot zu kopieren.</div>",
             );
 
             return;
