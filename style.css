@@ -2104,32 +2104,50 @@ select.mailstyle:focus {
   margin-top: 0.5rem;
 }
 .einmal-pill {
+  position: relative;
   display: flex;
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--primary-color);
+  background-color: var(--background-color);
+  border: 1px solid #ddd;
   border-radius: var(--border-radius);
-  overflow: hidden;
+  padding: 4px;
   margin-bottom: 6px;
+}
+body.dark-mode .einmal-pill {
+  background-color: #2b2b2b;
+  border-color: #555;
+}
+/* Bewegliche Fuellung wie beim Netto/Brutto-Schalter: gleitet mit Ueberschwingen ("Wackeln"). */
+.einmal-pill .einmal-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background-color: var(--primary-color);
+  border-radius: 8px;
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  z-index: 1;
 }
 .einmal-pill .einmal-opt {
   flex: 1 1 0;
   min-width: 0;
+  position: relative;
+  z-index: 2;
   background: none;
   border: none;
   padding: 5px 4px;
   font-size: 0.72rem;
   line-height: 1.15;
   cursor: pointer;
-  color: var(--primary-color);
+  color: var(--text-color);
   font-weight: 600;
   text-align: center;
-}
-.einmal-pill .einmal-opt + .einmal-opt {
-  border-left: 1px solid var(--primary-color);
+  border-radius: 8px;
+  transition: color 0.3s ease;
 }
 .einmal-pill .einmal-opt.active {
-  background: var(--primary-color);
   color: #fff;
 }
 .einmal-tw-input {

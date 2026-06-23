@@ -6848,6 +6848,7 @@
         return (
           `<div class="einmal-wrap" id="einmalRow_${cardId}" data-modus="${modus}">` +
           `<div class="einmal-pill">` +
+          `<span class="einmal-slider" style="transform: translateX(${istTW ? "100%" : "0%"});"></span>` +
           `<button type="button" class="einmal-opt${istTW ? "" : " active"}" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')">Bereitstellungspreis</button>` +
           `<button type="button" class="einmal-opt${istTW ? " active" : ""}" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')">Tarifwechselgebühr</button>` +
           `</div>` +
@@ -6877,6 +6878,8 @@
         if (row) {
           row.dataset.modus = einmalModi[cardId];
           row.querySelectorAll(".einmal-opt").forEach((b) => b.classList.toggle("active", b.dataset.modus === einmalModi[cardId]));
+          const slider = row.querySelector(".einmal-slider");
+          if (slider) slider.style.transform = istTW ? "translateX(100%)" : "translateX(0%)";
           const sel = document.getElementById(`bereitstellung_${cardId}`);
           const tw = document.getElementById(`tarifwechsel_${cardId}`);
           if (sel) sel.style.display = istTW ? "none" : "";
