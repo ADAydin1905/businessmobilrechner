@@ -502,6 +502,36 @@ body.dark-mode .rufnummer-input {
   margin-top: 15px;
 }
 
+.solo-eg-offer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.solo-eg-offer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.22);
+  color: var(--text-color);
+}
+
+.solo-eg-offer-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.solo-eg-offer-row strong {
+  flex: 0 0 auto;
+  text-align: right;
+  color: var(--text-color);
+}
+
+.solo-eg-total {
+  color: var(--primary-color);
+}
+
 .summary {
   border: 1px solid var(--primary-color);
 }
@@ -1012,6 +1042,133 @@ body.dark-mode .bestandstarif-item {
   background-color: #2a2a2a;
 
   border-color: #444;
+}
+
+#soloEgModal {
+  max-width: 760px;
+  width: 90%;
+}
+
+#soloEgList {
+  max-height: 360px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 5px;
+}
+
+.solo-eg-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto 40px;
+  gap: 10px;
+  align-items: center;
+  background-color: var(--light-background);
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.solo-eg-item input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.solo-eg-price-input {
+  text-align: right;
+}
+
+.solo-eg-item input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.12);
+}
+
+.solo-eg-currency {
+  color: var(--text-color);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.solo-eg-item .delete-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.solo-eg-item .delete-btn:hover {
+  background-color: #c82333;
+}
+
+.solo-eg-item .delete-btn::before {
+  content: "✕";
+  font-weight: bold;
+  font-size: 1.15rem;
+}
+
+.solo-eg-modal-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  background-color: var(--light-background);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.solo-eg-modal-total strong:last-child {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  text-align: right;
+}
+
+.solo-eg-empty {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  font-style: italic;
+}
+
+body.dark-mode .solo-eg-item {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+body.dark-mode .solo-eg-item input {
+  border-color: #555;
+}
+
+@media (max-width: 640px) {
+  .solo-eg-item {
+    grid-template-columns: 1fr;
+  }
+
+  .solo-eg-currency {
+    justify-self: end;
+  }
+
+  .solo-eg-item .delete-btn {
+    justify-self: end;
+  }
+
+  .solo-eg-offer-row {
+    align-items: flex-start;
+  }
 }
 
 .modal-container button.secondary:hover {

@@ -299,6 +299,8 @@
 
             <button onclick="openModal('bestandstarifeModal')">Bestandstarife</button>
 
+            <button onclick="openModal('soloEgModal')">Solo EG</button>
+
             <button onclick="generateStyledPDF()">PDF</button>
 
             <button id="kopierenBtn">Angebotstext</button>
@@ -366,6 +368,8 @@
             </li>
 
             <li id="s_geraetekosten_zeile"><strong>Gerätekosten:</strong>&nbsp;<span id="s_geraete">-</span></li>
+
+            <li id="s_soloeg_zeile"><strong>Solo EG:</strong>&nbsp;<span id="s_soloeg">-</span></li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -400,6 +404,8 @@
             </li>
 
             <li id="w_geraetekosten_zeile"><strong>Geräte:</strong>&nbsp;<span id="w_geraete">-</span></li>
+
+            <li id="w_soloeg_zeile"><strong>Solo EG:</strong>&nbsp;<span id="w_soloeg">-</span></li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -663,6 +669,41 @@
         <button class="primary" onclick="bestandstarifeSpeichern()">Speichern</button>
 
         <button class="secondary" onclick="closeModal('bestandstarifeModal')">Abbrechen</button>
+      </div>
+    </div>
+
+    <div id="soloEgModal" class="modal-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
+        <h3 style="margin: 0">Solo EG</h3>
+
+        <button
+          onclick="closeModal('soloEgModal')"
+          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
+          aria-label="Schließen"
+        >
+          ❌
+        </button>
+      </div>
+
+      <button
+        class="primary"
+        onclick="addSoloEgGeraet()"
+        style="width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 14px"
+      >
+        + Gerät hinzufügen
+      </button>
+
+      <div id="soloEgList"></div>
+
+      <div class="solo-eg-modal-total">
+        <strong>Gesamtsumme Solo EG:</strong>
+        <strong id="soloEgGesamtsumme">0,00 €</strong>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem">
+        <button class="primary" onclick="soloEgSpeichern()">Speichern</button>
+
+        <button class="secondary" onclick="closeModal('soloEgModal')">Abbrechen</button>
       </div>
     </div>
 
@@ -2586,7 +2627,47 @@
         return dateString;
       }
 
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function parseEuroInput(value) {
+        const n = parseFloat(String(value == null ? "" : value).replace(",", "."));
+        return isFinite(n) && n >= 0 ? n : 0;
+      }
+
       let kundendaten = { name: "", ansprechpartner: "", notizen: "", gueltigBis: "" };
+
+      let soloEgGeraete = [];
+
+      let tempSoloEgGeraete = [];
+
+      function getValidSoloEgGeraete() {
+        return (soloEgGeraete || []).filter((geraet) => {
+          const name = String(geraet.name || "").trim();
+          const preis = parseEuroInput(geraet.preis);
+          return name || preis > 0;
+        });
+      }
+
+      function getSoloEgGesamtsummeNetto(liste) {
+        return (liste || getValidSoloEgGeraete()).reduce((sum, geraet) => sum + parseEuroInput(geraet.preis), 0);
+      }
+
+      function formatSoloEgPreis(preisNetto, istBrutto) {
+        const mwst = 1.19;
+        return formatCurrencyNumber(parseEuroInput(preisNetto) * (istBrutto ? mwst : 1)) + " €";
+      }
+
+      function soloEgLabel(geraet) {
+        const name = String(geraet && geraet.name ? geraet.name : "").trim();
+        return name || "Solo EG";
+      }
 
       function zuruecksetzen() {
         localStorage.removeItem("kundendaten");
@@ -2699,6 +2780,16 @@
           tempBestandstarife = JSON.parse(JSON.stringify(bestandstarife));
 
           loadBestandstarife();
+        }
+
+        if (modalId === "soloEgModal") {
+          tempSoloEgGeraete = JSON.parse(JSON.stringify(soloEgGeraete || []));
+
+          if (tempSoloEgGeraete.length === 0) {
+            tempSoloEgGeraete.push({ name: "", preis: 0 });
+          }
+
+          loadSoloEgGeraete();
         }
 
         if (modalId === "fehlerModal") {
@@ -4785,6 +4876,145 @@
         closeModal("kundendatenModal");
       }
 
+      // Solo-EG Funktionen
+
+      function loadSoloEgGeraete() {
+        const list = document.getElementById("soloEgList");
+        if (!list) return;
+
+        list.innerHTML = "";
+
+        if (!tempSoloEgGeraete.length) {
+          list.innerHTML =
+            '<div class="solo-eg-empty">Noch keine Solo-EG hinzugefügt</div>';
+        } else {
+          tempSoloEgGeraete.forEach((geraet, index) => {
+            const row = document.createElement("div");
+            row.className = "solo-eg-item";
+            row.innerHTML =
+              '<input type="text" placeholder="Gerätename" value="' +
+              escapeHtml(geraet.name || "") +
+              '" onchange="updateSoloEgGeraet(' +
+              index +
+              ', \'name\', this.value)" />' +
+              '<input class="solo-eg-price-input" type="text" inputmode="decimal" placeholder="0,00" value="' +
+              escapeHtml(geraet.preis || "") +
+              '" oninput="updateSoloEgGeraet(' +
+              index +
+              ', \'preis\', this.value)" />' +
+              '<span class="solo-eg-currency">€ netto</span>' +
+              '<button class="delete-btn" onclick="deleteSoloEgGeraet(' +
+              index +
+              ')" title="Löschen"></button>';
+            list.appendChild(row);
+          });
+        }
+
+        updateTempSoloEgGesamtsumme();
+      }
+
+      function addSoloEgGeraet() {
+        tempSoloEgGeraete.push({ name: "", preis: 0 });
+        loadSoloEgGeraete();
+        setTimeout(() => {
+          const inputs = document.querySelectorAll("#soloEgList .solo-eg-item input[type='text']");
+          const last = inputs[inputs.length - 1];
+          if (last) last.focus();
+        }, 0);
+      }
+
+      function deleteSoloEgGeraet(index) {
+        tempSoloEgGeraete.splice(index, 1);
+        loadSoloEgGeraete();
+      }
+
+      function updateSoloEgGeraet(index, field, value) {
+        if (!tempSoloEgGeraete[index]) return;
+        if (field === "preis") {
+          tempSoloEgGeraete[index][field] = parseEuroInput(value);
+        } else {
+          tempSoloEgGeraete[index][field] = value;
+        }
+        updateTempSoloEgGesamtsumme();
+      }
+
+      function updateTempSoloEgGesamtsumme() {
+        const summe = getSoloEgGesamtsummeNetto(tempSoloEgGeraete);
+        const el = document.getElementById("soloEgGesamtsumme");
+        if (el) el.textContent = formatCurrencyNumber(summe) + " €";
+      }
+
+      function soloEgSpeichern() {
+        soloEgGeraete = (tempSoloEgGeraete || [])
+          .map((geraet) => ({
+            name: String(geraet.name || "").trim(),
+            preis: parseEuroInput(geraet.preis),
+          }))
+          .filter((geraet) => geraet.name || geraet.preis > 0);
+
+        berechneTarife();
+
+        closeModal("soloEgModal");
+      }
+
+      function buildSoloEgAngebotHtml(istBrutto) {
+        const geraete = getValidSoloEgGeraete();
+        if (!geraete.length) return "";
+        const nettoOderBrutto = istBrutto ? "Brutto" : "Netto";
+        const rows = geraete
+          .map(
+            (geraet) =>
+              '<div class="solo-eg-offer-row"><span>' +
+              escapeHtml(soloEgLabel(geraet)) +
+              "</span><strong>" +
+              formatSoloEgPreis(geraet.preis, istBrutto) +
+              "</strong></div>",
+          )
+          .join("");
+        const total = getSoloEgGesamtsummeNetto(geraete);
+        return (
+          '<div class="tarif solo-eg-offer"><h3>Solo EG</h3><div class="solo-eg-offer-list">' +
+          rows +
+          '</div><div class="preisbox solo-eg-total">Gesamt Solo EG: ' +
+          formatSoloEgPreis(total, istBrutto) +
+          " " +
+          nettoOderBrutto +
+          "</div></div>"
+        );
+      }
+
+      function removeSoloEgSummarySection(prefix) {
+        const oldTitle = document.getElementById(prefix + "_soloeg_h4");
+        const oldList = document.getElementById(prefix + "_soloeg_ul");
+        if (oldTitle) oldTitle.remove();
+        if (oldList) oldList.remove();
+      }
+
+      function renderSoloEgSummarySection(prefix, anchor) {
+        removeSoloEgSummarySection(prefix);
+        const geraete = getValidSoloEgGeraete();
+        if (!geraete.length || !anchor || !anchor.parentElement) return;
+
+        const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
+        const title = document.createElement("h4");
+        title.id = prefix + "_soloeg_h4";
+        title.textContent = "Solo EG:";
+        title.style.marginTop = "1rem";
+
+        const ul = document.createElement("ul");
+        ul.id = prefix + "_soloeg_ul";
+        ul.style.marginTop = "0.5rem";
+
+        geraete.forEach((geraet) => {
+          const li = document.createElement("li");
+          li.textContent = soloEgLabel(geraet) + ": " + formatSoloEgPreis(geraet.preis, istBrutto);
+          ul.appendChild(li);
+        });
+
+        anchor.parentElement.insertBefore(title, anchor.nextSibling);
+        anchor.parentElement.insertBefore(ul, title.nextSibling);
+      }
+
       // Bestandstarife Funktionen
 
       let bestandstarife = [];
@@ -6822,6 +7052,8 @@
           cards: [],
 
           zubuchoptionen: zubuchoptionen,
+
+          soloEgGeraete: soloEgGeraete,
         };
 
         const hauptkartenAnzahl = parseInt(state.hauptkarten, 10) || 0;
@@ -6943,6 +7175,15 @@
 
           if (decodedState.zubuchoptionen) {
             zubuchoptionen = decodedState.zubuchoptionen;
+          }
+
+          if (Array.isArray(decodedState.soloEgGeraete)) {
+            soloEgGeraete = decodedState.soloEgGeraete
+              .map((geraet) => ({
+                name: String(geraet.name || "").trim(),
+                preis: parseEuroInput(geraet.preis),
+              }))
+              .filter((geraet) => geraet.name || geraet.preis > 0);
           }
 
           // GrK-Modus + per-Karte-70%-Haken VOR dem Render wiederherstellen,
@@ -8750,6 +8991,8 @@
           output.innerHTML += cardHTML;
         });
 
+        output.innerHTML += buildSoloEgAngebotHtml(istBrutto);
+
         console.log("output.innerHTML.length nach dem Hinzufügen aller Karten:", output.innerHTML.length);
 
         console.log("Erste 200 Zeichen des output.innerHTML:", output.innerHTML.substring(0, 200));
@@ -8869,6 +9112,11 @@
 
           document.getElementById(`${prefix}_geraete`).textContent =
             `${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
+
+          const soloEgGesamtsummeNetto = getSoloEgGesamtsummeNetto();
+
+          document.getElementById(`${prefix}_soloeg`).textContent =
+            `${formatCurrencyNumber(soloEgGesamtsummeNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
 
           const tarifUebersicht = document.getElementById(`${prefix}_tarifUebersicht`);
 
@@ -9177,6 +9425,20 @@
           delete window.tempManuelleTarifeList;
         }
 
+        renderSoloEgSummarySection(
+          "s",
+          document.getElementById("s_bestandstarife_ul") || document.getElementById("s_tarifUebersicht"),
+        );
+
+        renderSoloEgSummarySection(
+          "w",
+          document.getElementById("w_bestandstarife_ul") ||
+            document.getElementById("w_freie_slots_container") ||
+            document.getElementById("w_tarifUebersicht"),
+        );
+
+        const soloEgGesamtsummeNetto = getSoloEgGesamtsummeNetto();
+
         document.getElementById("s_bereitstellung_zeile").style.display =
           gesamtBereitstellungspreisNetto > 0 ? "flex" : "none";
 
@@ -9188,6 +9450,10 @@
 
         document.getElementById("w_geraetekosten_zeile").style.display =
           gesamtGeraetepreisNetto > 0 || hatGeraeteOption ? "flex" : "none";
+
+        document.getElementById("s_soloeg_zeile").style.display = soloEgGesamtsummeNetto > 0 ? "flex" : "none";
+
+        document.getElementById("w_soloeg_zeile").style.display = soloEgGesamtsummeNetto > 0 ? "flex" : "none";
 
         // Setze die sortierte Liste für alle Ausgabe-Formate (PDF, Angebot-Kopieren)
 
@@ -9207,8 +9473,13 @@
       }
 
       function getFormattedOfferText() {
-        if (!window.calculatedTariffsForCopy || window.calculatedTariffsForCopy.length === 0) {
-          return "Keine Tarife ausgewählt.";
+        const soloEgTextGeraete = getValidSoloEgGeraete();
+
+        if (
+          (!window.calculatedTariffsForCopy || window.calculatedTariffsForCopy.length === 0) &&
+          soloEgTextGeraete.length === 0
+        ) {
+          return "Keine Tarife oder Solo-EG ausgewählt.";
         }
 
         const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
@@ -9221,7 +9492,7 @@
 
         const tariffGroupMap = new Map();
 
-        window.calculatedTariffsForCopy.forEach((item) => {
+        (window.calculatedTariffsForCopy || []).forEach((item) => {
           // WICHTIG: Bei Partner(daten)karten auch nach Zuweisung (HK vs HDK) gruppieren
 
           const zuweisungsTyp = item.hauptkartenId ? (item.hauptkartenId.startsWith("hk_") ? "HK" : "HDK") : "none";
@@ -9324,7 +9595,9 @@
           offerText += "\n";
         }
 
-        offerText += "Business Mobil Tarifdetails:\n\n";
+        if (groupedTariffs.length > 0) {
+          offerText += "Business Mobil Tarifdetails:\n\n";
+        }
 
         groupedTariffs.forEach((group) => {
           const displayedTarifName = getDisplayName(group.tarifName);
@@ -9502,6 +9775,14 @@
           offerText += "\n\n";
         });
 
+        if (soloEgTextGeraete.length > 0) {
+          offerText += "Solo EG:\n";
+          soloEgTextGeraete.forEach((geraet) => {
+            offerText += `  ${soloEgLabel(geraet)}: ${formatSoloEgPreis(geraet.preis, istBrutto)}${preisSuffix}\n`;
+          });
+          offerText += `  Gesamt Solo EG: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
+        }
+
         // 3. Summary
 
         let gesamtpreisNettoPeriode1 = 0,
@@ -9512,7 +9793,7 @@
           gesamtGeraetepreisNetto = 0,
           gesamtKarten = 0;
 
-        window.calculatedTariffsForCopy.forEach((cardResult) => {
+        (window.calculatedTariffsForCopy || []).forEach((cardResult) => {
           gesamtpreisNettoPeriode1 += cardResult.preisNettoPeriode1;
 
           gesamtpreisNettoPeriode2 += cardResult.preisNettoPeriode2;
@@ -9557,7 +9838,7 @@
 
         if (hatZeitlichenUnterschied) {
           const dauerMonate =
-            window.calculatedTariffsForCopy.find((c) => c && c.promotionsInfo)?.promotionsInfo.dauer || 6;
+            (window.calculatedTariffsForCopy || []).find((c) => c && c.promotionsInfo)?.promotionsInfo.dauer || 6;
 
           offerText += `Monatliche Gesamtkosten (1.-${dauerMonate}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
 
@@ -9592,6 +9873,12 @@
 
         if (gesamtGeraetepreisNetto > 0) {
           offerText += `Gerätekosten: ${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+        }
+
+        const soloEgGesamtsummeText = getSoloEgGesamtsummeNetto(soloEgTextGeraete);
+
+        if (soloEgGesamtsummeText > 0) {
+          offerText += `Solo EG: ${formatSoloEgPreis(soloEgGesamtsummeText, istBrutto)}${preisSuffix}\n`;
         }
 
         const tarifUebersichtList = document.getElementById("s_tarifUebersicht");
@@ -9729,8 +10016,10 @@
 
           doc.setTextColor("#333");
 
-          if (window.calculatedTariffsForCopy.length === 0) {
-            öffneFehlerModal("<div>❌ Es muss mindestens ein Tarif ausgewählt sein, um eine PDF zu generieren.</div>");
+          if ((window.calculatedTariffsForCopy || []).length === 0 && getValidSoloEgGeraete().length === 0) {
+            öffneFehlerModal(
+              "<div>❌ Es muss mindestens ein Tarif oder Solo-EG ausgewählt sein, um eine PDF zu generieren.</div>",
+            );
 
             return;
           }
@@ -9739,7 +10028,7 @@
 
           const tariffGroupMap = new Map();
 
-          window.calculatedTariffsForCopy.forEach((item) => {
+          (window.calculatedTariffsForCopy || []).forEach((item) => {
             // WICHTIG: Bei Partner(daten)karten auch nach Zuweisung (HK vs HDK) gruppieren
 
             const zuweisungsTyp = item.hauptkartenId ? (item.hauptkartenId.startsWith("hk_") ? "HK" : "HDK") : "none";
@@ -10192,6 +10481,110 @@
             }
           }
 
+          const soloEgPdfGeraete = getValidSoloEgGeraete();
+
+          if (soloEgPdfGeraete.length > 0) {
+            const soloEgPdfIstBrutto =
+              document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
+
+            const soloEgDiv = document.createElement("div");
+
+            Object.assign(soloEgDiv.style, {
+              backgroundColor: "white",
+              border: "2px solid #ddd",
+              borderRadius: "12px",
+              padding: "15px",
+              boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
+              fontFamily: "var(--font-family)",
+              color: "#333",
+              width: `${contentWidth}mm`,
+              boxSizing: "border-box",
+              position: "absolute",
+              left: "-9999px",
+            });
+
+            const soloEgTitle = document.createElement("h3");
+
+            Object.assign(soloEgTitle.style, {
+              color: "#e20074",
+              marginTop: "0",
+              marginBottom: "10px",
+              borderBottom: "2px solid #e20074",
+              paddingBottom: "5px",
+            });
+
+            soloEgTitle.textContent = "Solo EG";
+
+            soloEgDiv.appendChild(soloEgTitle);
+
+            soloEgPdfGeraete.forEach((geraet) => {
+              const row = document.createElement("div");
+
+              Object.assign(row.style, {
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "20px",
+                padding: "7px 0",
+                borderBottom: "1px solid #eee",
+                fontSize: "1em",
+              });
+
+              row.innerHTML =
+                "<span>" +
+                escapeHtml(soloEgLabel(geraet)) +
+                "</span><strong>" +
+                formatSoloEgPreis(geraet.preis, soloEgPdfIstBrutto) +
+                "</strong>";
+
+              soloEgDiv.appendChild(row);
+            });
+
+            const soloEgTotal = document.createElement("div");
+
+            Object.assign(soloEgTotal.style, {
+              backgroundColor: "white",
+              padding: "10px",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              textAlign: "right",
+              color: "#e20074",
+              fontSize: "1.1em",
+              marginTop: "15px",
+            });
+
+            soloEgTotal.textContent =
+              "Gesamt Solo EG: " +
+              formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgPdfGeraete), soloEgPdfIstBrutto) +
+              " " +
+              (soloEgPdfIstBrutto ? "Brutto" : "Netto");
+
+            soloEgDiv.appendChild(soloEgTotal);
+
+            document.body.appendChild(soloEgDiv);
+
+            try {
+              const soloEgCanvas = await html2canvas(soloEgDiv, { scale: 2, useCORS: true, scrollY: -window.scrollY });
+
+              const soloEgImgHeight = (soloEgCanvas.height * contentWidth) / soloEgCanvas.width;
+
+              soloEgDiv.remove();
+
+              if (currentY + soloEgImgHeight + elementSpacing > pageHeight - margin) {
+                doc.addPage();
+
+                currentY = margin;
+              }
+
+              doc.addImage(soloEgCanvas.toDataURL("image/jpeg"), "jpeg", margin, currentY, contentWidth, soloEgImgHeight);
+
+              currentY += soloEgImgHeight + elementSpacing;
+            } catch (error) {
+              console.error("Fehler beim Erfassen der Solo-EG-Kachel mit html2canvas:", error);
+
+              soloEgDiv.remove();
+            }
+          }
+
           const summaryDiv = document.createElement("div");
 
           Object.assign(summaryDiv.style, {
@@ -10241,7 +10634,7 @@
 
           let gesamtKarten = 0;
 
-          window.calculatedTariffsForCopy.forEach((cardResult) => {
+          (window.calculatedTariffsForCopy || []).forEach((cardResult) => {
             if (cardResult) {
               gesamtpreisNettoPeriode1 += cardResult.preisNettoPeriode1;
 
@@ -10295,7 +10688,7 @@
 
           if (hatZeitlichenUnterschied) {
             const dauerMonate =
-              window.calculatedTariffsForCopy.find((c) => c && c.promotionsInfo)?.promotionsInfo.dauer || 6;
+              (window.calculatedTariffsForCopy || []).find((c) => c && c.promotionsInfo)?.promotionsInfo.dauer || 6;
 
             summaryItems.push(
               `Monatliche Gesamtkosten (1.-${dauerMonate}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}`,
@@ -10348,6 +10741,12 @@
             summaryItems.push(
               `Gerätekosten: ${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}`,
             );
+          }
+
+          const soloEgGesamtsummePDF = getSoloEgGesamtsummeNetto();
+
+          if (soloEgGesamtsummePDF > 0) {
+            summaryItems.push(`Solo EG: ${formatSoloEgPreis(soloEgGesamtsummePDF, istBrutto)} ${istBrutto ? "Brutto" : "Netto"}`);
           }
 
           summaryItems.forEach((text) => {
@@ -10425,6 +10824,50 @@
           }
 
           summaryDiv.appendChild(tarifUebersichtUl);
+
+          const soloEgSummaryGeraete = getValidSoloEgGeraete();
+
+          if (soloEgSummaryGeraete.length > 0) {
+            const soloEgSummaryTitle = document.createElement("h4");
+
+            Object.assign(soloEgSummaryTitle.style, {
+              color: "#e20074",
+              marginTop: "15px",
+              marginBottom: "10px",
+              paddingBottom: "5px",
+              fontSize: "1.1em",
+            });
+
+            soloEgSummaryTitle.textContent = "Solo EG:";
+
+            summaryDiv.appendChild(soloEgSummaryTitle);
+
+            const soloEgSummaryUl = document.createElement("ul");
+
+            Object.assign(soloEgSummaryUl.style, { listStyleType: "none", padding: "0" });
+
+            soloEgSummaryGeraete.forEach((geraet) => {
+              const li = document.createElement("li");
+
+              Object.assign(li.style, {
+                fontSize: "1.1em",
+                marginBottom: "8px",
+                color: "#333",
+                display: "flex",
+                alignItems: "flex-start",
+              });
+
+              li.innerHTML =
+                `<span style="color: #e20074; margin-right: 8px; font-weight: bold;">•</span> ` +
+                escapeHtml(soloEgLabel(geraet)) +
+                ": " +
+                formatSoloEgPreis(geraet.preis, istBrutto);
+
+              soloEgSummaryUl.appendChild(li);
+            });
+
+            summaryDiv.appendChild(soloEgSummaryUl);
+          }
 
           // Add Bestandstarife section if any exist
 
@@ -10927,10 +11370,16 @@
         return false;
       }
 
+      function areOfferItemsSelected() {
+        return areTariffsSelected() || getValidSoloEgGeraete().length > 0;
+      }
+
       document.getElementById("kopierenBtn").addEventListener("click", () => {
         checkZeroDeviceCosts(() => {
-          if (!areTariffsSelected()) {
-            öffneFehlerModal("<div>❌ Es muss mindestens ein Tarif ausgewählt sein, um das Angebot zu kopieren.</div>");
+          if (!areOfferItemsSelected()) {
+            öffneFehlerModal(
+              "<div>❌ Es muss mindestens ein Tarif oder Solo-EG ausgewählt sein, um das Angebot zu kopieren.</div>",
+            );
 
             return;
           }
