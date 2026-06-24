@@ -382,11 +382,11 @@
             </li>
 
             <li id="s_geraetekosten_zeile" class="cost-overview-row cost-overview-detail">
-              <strong>Gerätekosten:</strong><span id="s_geraete">-</span>
+              <strong>Subventionierte Geräte:</strong><span id="s_geraete">-</span>
             </li>
 
             <li id="s_soloeg_zeile" class="cost-overview-row cost-overview-detail">
-              <strong>Gerät(e) ohne Vertrag:</strong><span id="s_soloeg">-</span>
+              <strong>Unsubventionierte Geräte:</strong><span id="s_soloeg">-</span>
             </li>
 
             <li id="s_einmalig_zeile" class="cost-overview-row cost-overview-total">
@@ -440,11 +440,11 @@
             </li>
 
             <li id="w_geraetekosten_zeile" class="cost-overview-row cost-overview-detail">
-              <strong>Gerätekosten:</strong><span id="w_geraete">-</span>
+              <strong>Subventionierte Geräte:</strong><span id="w_geraete">-</span>
             </li>
 
             <li id="w_soloeg_zeile" class="cost-overview-row cost-overview-detail">
-              <strong>Gerät(e) ohne Vertrag:</strong><span id="w_soloeg">-</span>
+              <strong>Unsubventionierte Geräte:</strong><span id="w_soloeg">-</span>
             </li>
 
             <li id="w_einmalig_zeile" class="cost-overview-row cost-overview-total">
@@ -5090,36 +5090,91 @@
         );
       }
 
-      function removeSoloEgSummarySection(prefix) {
-        const oldTitle = document.getElementById(prefix + "_soloeg_h4");
-        const oldList = document.getElementById(prefix + "_soloeg_ul");
-        if (oldTitle) oldTitle.remove();
-        if (oldList) oldList.remove();
-      }
+      function gruppiereGeraeteNachNameUndPreis(geraete) {
+        const gruppen = new Map();
 
-      function renderSoloEgSummarySection(prefix, anchor) {
-        removeSoloEgSummarySection(prefix);
-        const geraete = getValidSoloEgGeraete();
-        if (!geraete.length || !anchor || !anchor.parentElement) return;
+        (geraete || []).forEach((geraet) => {
+          const name = String(geraet && geraet.name ? geraet.name : "").trim();
+          const preis = parseEuroInput(geraet && geraet.preis);
+          const anzahl = parsePositiveIntInput(geraet && geraet.anzahl, 1);
+          if (!name) return;
 
-        const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
-        const title = document.createElement("h4");
-        title.id = prefix + "_soloeg_h4";
-        title.textContent = "Gerät(e) ohne Vertrag:";
-        title.style.marginTop = "1rem";
+          const preisInCent = Math.round(preis * 100);
+          const key = name.toLocaleLowerCase("de-DE") + "|" + preisInCent;
 
-        const ul = document.createElement("ul");
-        ul.id = prefix + "_soloeg_ul";
-        ul.style.marginTop = "0.5rem";
-
-        geraete.forEach((geraet) => {
-          const li = document.createElement("li");
-          li.textContent = soloEgPositionLabel(geraet) + ": " + formatSoloEgPositionsPreis(geraet, istBrutto);
-          ul.appendChild(li);
+          if (gruppen.has(key)) {
+            gruppen.get(key).anzahl += anzahl;
+          } else {
+            gruppen.set(key, { name, preis: preisInCent / 100, anzahl });
+          }
         });
 
-        anchor.parentElement.insertBefore(title, anchor.nextSibling);
-        anchor.parentElement.insertBefore(ul, title.nextSibling);
+        return Array.from(gruppen.values());
+      }
+
+      function getSubventionierteGeraete(tarife) {
+        return gruppiereGeraeteNachNameUndPreis(
+          (tarife || [])
+            .filter((tarif) => tarif && String(tarif.geraeteName || "").trim())
+            .map((tarif) => ({
+              name: tarif.geraeteName,
+              preis: tarif.geraetepreisNetto,
+              anzahl: 1,
+            })),
+        );
+      }
+
+      function removeGeraeteSummarySections(prefix) {
+        ["subventioniert", "unsubventioniert"].forEach((typ) => {
+          const oldTitle = document.getElementById(`${prefix}_${typ}_h4`);
+          const oldList = document.getElementById(`${prefix}_${typ}_ul`);
+          if (oldTitle) oldTitle.remove();
+          if (oldList) oldList.remove();
+        });
+      }
+
+      function renderGeraeteSummarySections(prefix, anchor, tarife) {
+        removeGeraeteSummarySections(prefix);
+        if (!anchor || !anchor.parentElement) return;
+
+        const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
+        const abschnitte = [
+          {
+            id: "subventioniert",
+            titel: "Subventionierte Geräte:",
+            geraete: getSubventionierteGeraete(tarife),
+          },
+          {
+            id: "unsubventioniert",
+            titel: "Unsubventionierte Geräte:",
+            geraete: gruppiereGeraeteNachNameUndPreis(getValidSoloEgGeraete()),
+          },
+        ];
+
+        let currentAnchor = anchor;
+
+        abschnitte.forEach((abschnitt) => {
+          if (!abschnitt.geraete.length) return;
+
+          const title = document.createElement("h4");
+          title.id = `${prefix}_${abschnitt.id}_h4`;
+          title.textContent = abschnitt.titel;
+          title.style.marginTop = "1rem";
+
+          const ul = document.createElement("ul");
+          ul.id = `${prefix}_${abschnitt.id}_ul`;
+          ul.style.marginTop = "0.5rem";
+
+          abschnitt.geraete.forEach((geraet) => {
+            const li = document.createElement("li");
+            li.textContent = soloEgPositionLabel(geraet) + ": " + formatSoloEgPositionsPreis(geraet, istBrutto);
+            ul.appendChild(li);
+          });
+
+          currentAnchor.parentElement.insertBefore(title, currentAnchor.nextSibling);
+          title.parentElement.insertBefore(ul, title.nextSibling);
+          currentAnchor = ul;
+        });
       }
 
       // Bestandstarife Funktionen
@@ -9342,6 +9397,11 @@
 
           tarifUebersicht.innerHTML = "";
 
+          const vorhandeneBestandsUeberschrift = document.getElementById(`${prefix}_bestandstarife_h4`);
+          const vorhandeneBestandsListe = document.getElementById(`${prefix}_bestandstarife_ul`);
+          if (vorhandeneBestandsUeberschrift) vorhandeneBestandsUeberschrift.remove();
+          if (vorhandeneBestandsListe) vorhandeneBestandsListe.remove();
+
           const tarifCounts = allSelectedTariffsForDisplay.reduce((acc, curr) => {
             acc[curr.tarifName] = (acc[curr.tarifName] || 0) + 1;
             return acc;
@@ -9466,7 +9526,7 @@
 
               bestandsH4.id = `${prefix}_bestandstarife_h4`;
 
-              bestandsH4.textContent = "Ihre unveränderten Alt-Tarife:";
+              bestandsH4.textContent = "Alttarife:";
 
               bestandsH4.style.marginTop = "1rem";
 
@@ -9590,7 +9650,7 @@
 
           bestandsH4.id = "w_bestandstarife_h4";
 
-          bestandsH4.textContent = "Ihre unveränderten Alt-Tarife:";
+          bestandsH4.textContent = "Alttarife:";
 
           bestandsH4.style.marginTop = "1rem";
 
@@ -9630,10 +9690,10 @@
             });
           }
 
-          // Füge Überschrift und Liste nach dem w_freie_slots_container hinzu
+          // Reihenfolge: Tarife, Alttarife, Geräte; Kontingente folgen danach.
 
           if (w_freie_slots_container) {
-            w_freie_slots_container.parentElement.insertBefore(bestandsH4, w_freie_slots_container.nextSibling);
+            w_freie_slots_container.parentElement.insertBefore(bestandsH4, w_freie_slots_container);
 
             w_freie_slots_container.parentElement.insertBefore(bestandsUl, bestandsH4.nextSibling);
           }
@@ -9645,16 +9705,17 @@
           delete window.tempManuelleTarifeList;
         }
 
-        renderSoloEgSummarySection(
+        renderGeraeteSummarySections(
           "s",
           document.getElementById("s_bestandstarife_ul") || document.getElementById("s_tarifUebersicht"),
+          allSelectedTariffsForDisplay,
         );
 
-        renderSoloEgSummarySection(
+        renderGeraeteSummarySections(
           "w",
           document.getElementById("w_bestandstarife_ul") ||
-            document.getElementById("w_freie_slots_container") ||
             document.getElementById("w_tarifUebersicht"),
+          allSelectedTariffsForDisplay,
         );
 
         const soloEgGesamtsummeNetto = getSoloEgGesamtsummeNetto();

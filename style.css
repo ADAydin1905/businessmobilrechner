@@ -645,13 +645,24 @@ body.dark-mode .rufnummer-input {
 }
 
 .cost-overview-contracts > span {
-  min-width: 28px;
-  padding: 1px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 9px;
   border-radius: 999px;
   background: var(--primary-color);
   color: #fff;
   font-weight: 700;
+  line-height: 1;
   text-align: center;
+}
+
+.summary .cost-overview li.cost-overview-contracts,
+#warenkorbBox .cost-overview li.cost-overview-contracts {
+  align-items: center;
 }
 
 .cost-overview-divider {
@@ -679,6 +690,10 @@ body.dark-mode .rufnummer-input {
 .cost-overview-primary > strong,
 .cost-overview-primary > span {
   font-weight: 700;
+}
+
+.cost-overview-primary > span {
+  color: var(--primary-color);
 }
 
 .cost-overview-secondary,
