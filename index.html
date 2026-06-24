@@ -9769,6 +9769,8 @@
 
       function getFormattedOfferText() {
         const soloEgTextGeraete = getValidSoloEgGeraete();
+        const gruppierteSoloEgTextGeraete = gruppiereGeraeteNachNameUndPreis(soloEgTextGeraete);
+        const subventionierteTextGeraete = getSubventionierteGeraete(window.calculatedTariffsForCopy || []);
 
         if (
           (!window.calculatedTariffsForCopy || window.calculatedTariffsForCopy.length === 0) &&
@@ -10070,9 +10072,9 @@
           offerText += "\n\n";
         });
 
-        if (soloEgTextGeraete.length > 0) {
-          offerText += "Gerät(e) ohne Vertrag:\n";
-          soloEgTextGeraete.forEach((geraet) => {
+        if (gruppierteSoloEgTextGeraete.length > 0) {
+          offerText += "Unsubventionierte Geräte:\n";
+          gruppierteSoloEgTextGeraete.forEach((geraet) => {
             offerText += `  ${soloEgPositionLabel(geraet)}: ${formatSoloEgPositionsPreis(geraet, istBrutto)}${preisSuffix}\n`;
           });
           offerText += `  Gesamtbetrag: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
@@ -10128,8 +10130,8 @@
         gesamtKarten += bestandstarifeAnzahlText;
 
         offerText += "Zusammenfassung des Angebots\n";
-
-        offerText += `Anzahl Verträge: ${gesamtKarten}\n`;
+        offerText += `Anzahl Verträge: ${gesamtKarten}\n\n`;
+        offerText += "Monatliche Kosten\n";
 
         const hatZeitlichenUnterschied = Math.abs(gesamtpreisNettoPeriode1 - gesamtpreisNettoPeriode2) > 0.001;
 
@@ -10137,49 +10139,62 @@
           const dauerMonate =
             (window.calculatedTariffsForCopy || []).find((c) => c && c.promotionsInfo)?.promotionsInfo.dauer || 6;
 
-          offerText += `Monatliche Gesamtkosten (1.-${dauerMonate}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+          offerText += `Gesamt (1.-${dauerMonate}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
 
-          offerText += `Monatliche Gesamtkosten (ab ${dauerMonate + 1}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode2 * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+          offerText += `Gesamt (ab ${dauerMonate + 1}. Monat): ${formatCurrencyNumber(gesamtpreisNettoPeriode2 * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
 
           // Anteil aus unveränderten Alt-Tarifen (immer nach allen Gesamtkosten-Zeilen, wenn vorhanden)
 
           if (bestandstarifeGesamtsummeText > 0) {
-            offerText += `    • Anteil davon aus Ihren unveränderten Alt-Tarifen: ${formatCurrencyNumber(bestandstarifeGesamtsummeText * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+            offerText += `  Anteil aus unveränderten Alt-Tarifen: ${formatCurrencyNumber(bestandstarifeGesamtsummeText * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
           }
 
           const durchschnitt24MonateNetto = gesamt24MonatsPreisNetto / 24;
 
           const durchschnitt24MonateAngezeigt = durchschnitt24MonateNetto * (istBrutto ? mwst : 1);
 
-          offerText += `Durchschnittlicher Preis pro Vertrag (24 Monate): ${gesamtKarten > 0 ? formatCurrencyNumber(durchschnitt24MonateAngezeigt / gesamtKarten) + preisSuffix : "0,00" + preisSuffix}\n`;
+          offerText += `Ø pro Vertrag (24 Monate): ${gesamtKarten > 0 ? formatCurrencyNumber(durchschnitt24MonateAngezeigt / gesamtKarten) + " €" + preisSuffix : "0,00 €" + preisSuffix}\n`;
         } else {
-          offerText += `Monatliche Gesamtkosten: ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+          offerText += `Gesamt pro Monat: ${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
 
           // Anteil aus unveränderten Alt-Tarifen (immer nach allen Gesamtkosten-Zeilen, wenn vorhanden)
 
           if (bestandstarifeGesamtsummeText > 0) {
-            offerText += `    • Anteil davon aus Ihren unveränderten Alt-Tarifen: ${formatCurrencyNumber(bestandstarifeGesamtsummeText * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+            offerText += `  Anteil aus unveränderten Alt-Tarifen: ${formatCurrencyNumber(bestandstarifeGesamtsummeText * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
           }
 
-          offerText += `Durchschnittlicher Preis pro Vertrag: ${gesamtKarten > 0 ? formatCurrencyNumber((gesamtpreisNettoPeriode1 / gesamtKarten) * (istBrutto ? mwst : 1)) + preisSuffix : "0,00" + preisSuffix}\n`;
-        }
-
-        if (gesamtBereitstellungspreisNetto > 0) {
-          offerText += `Bereitstellungspreise gesamt: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
-        }
-
-        if (gesamtTarifwechselNetto > 0) {
-          offerText += `Tarifwechselgebühren gesamt: ${formatCurrencyNumber(gesamtTarifwechselNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
-        }
-
-        if (gesamtGeraetepreisNetto > 0) {
-          offerText += `Gerätekosten: ${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))}${preisSuffix}\n`;
+          offerText += `Ø pro Vertrag: ${gesamtKarten > 0 ? formatCurrencyNumber((gesamtpreisNettoPeriode1 / gesamtKarten) * (istBrutto ? mwst : 1)) + " €" + preisSuffix : "0,00 €" + preisSuffix}\n`;
         }
 
         const soloEgGesamtsummeText = getSoloEgGesamtsummeNetto(soloEgTextGeraete);
+        const gesamtEinmaligText =
+          gesamtBereitstellungspreisNetto +
+          gesamtTarifwechselNetto +
+          gesamtGeraetepreisNetto +
+          soloEgGesamtsummeText;
+
+        if (gesamtEinmaligText > 0) {
+          offerText += "\nEinmalige Kosten\n";
+        }
+
+        if (gesamtBereitstellungspreisNetto > 0) {
+          offerText += `Bereitstellungspreise: ${formatCurrencyNumber(gesamtBereitstellungspreisNetto * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
+        }
+
+        if (gesamtTarifwechselNetto > 0) {
+          offerText += `Tarifwechselgebühren: ${formatCurrencyNumber(gesamtTarifwechselNetto * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
+        }
+
+        if (gesamtGeraetepreisNetto > 0) {
+          offerText += `Subventionierte Geräte: ${formatCurrencyNumber(gesamtGeraetepreisNetto * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
+        }
 
         if (soloEgGesamtsummeText > 0) {
-          offerText += `Gerät(e) ohne Vertrag: ${formatSoloEgPreis(soloEgGesamtsummeText, istBrutto)}${preisSuffix}\n`;
+          offerText += `Unsubventionierte Geräte: ${formatSoloEgPreis(soloEgGesamtsummeText, istBrutto)}${preisSuffix}\n`;
+        }
+
+        if (gesamtEinmaligText > 0) {
+          offerText += `Gesamt einmalig: ${formatCurrencyNumber(gesamtEinmaligText * (istBrutto ? mwst : 1))} €${preisSuffix}\n`;
         }
 
         const tarifUebersichtList = document.getElementById("s_tarifUebersicht");
@@ -10203,7 +10218,7 @@
           );
 
           if (validBestandstarife.length > 0) {
-            offerText += "\nIhre unveränderten Alt-Tarife:\n";
+            offerText += "\nAlttarife:\n";
 
             // Gruppiere ALT-Verträge und manuelle Verträge
 
@@ -10233,7 +10248,7 @@
             // Zeige gruppierte ALT-Verträge
 
             if (altVertraegeCount > 0) {
-              offerText += `- Unveränderte Bestandstarife (${altVertraegeCount}x): ${formatCurrencyNumber(altVertraegeGesamtpreis)}${preisSuffix}\n`;
+              offerText += `- Unveränderte Bestandstarife (${altVertraegeCount}x): ${formatCurrencyNumber(altVertraegeGesamtpreis)} €${preisSuffix}\n`;
             }
 
             // Zeige manuelle Bestandstarife einzeln
@@ -10241,11 +10256,25 @@
             manuelleTarife.forEach((tarif) => {
               const rufnummerText = tarif.rufnummer && tarif.rufnummer.trim() ? `${tarif.rufnummer} - ` : "";
 
-              const displayText = `${rufnummerText}${tarif.tarifname || "Unbenannt"}: ${formatCurrencyNumber(parseFloat(tarif.preis) || 0)}${preisSuffix}`;
+              const displayText = `${rufnummerText}${tarif.tarifname || "Unbenannt"}: ${formatCurrencyNumber(parseFloat(tarif.preis) || 0)} €${preisSuffix}`;
 
               offerText += `- ${displayText}\n`;
             });
           }
+        }
+
+        if (subventionierteTextGeraete.length > 0) {
+          offerText += "\nSubventionierte Geräte:\n";
+          subventionierteTextGeraete.forEach((geraet) => {
+            offerText += `- ${soloEgPositionLabel(geraet)}: ${formatSoloEgPositionsPreis(geraet, istBrutto)}${preisSuffix}\n`;
+          });
+        }
+
+        if (gruppierteSoloEgTextGeraete.length > 0) {
+          offerText += "\nUnsubventionierte Geräte:\n";
+          gruppierteSoloEgTextGeraete.forEach((geraet) => {
+            offerText += `- ${soloEgPositionLabel(geraet)}: ${formatSoloEgPositionsPreis(geraet, istBrutto)}${preisSuffix}\n`;
+          });
         }
 
         if (kundendaten.notizen) offerText += `\nNotiz:\n${kundendaten.notizen}\n`;
@@ -10783,8 +10812,9 @@
           }
 
           const soloEgPdfGeraete = getValidSoloEgGeraete();
+          const gruppierteSoloEgPdfGeraete = gruppiereGeraeteNachNameUndPreis(soloEgPdfGeraete);
 
-          if (soloEgPdfGeraete.length > 0) {
+          if (gruppierteSoloEgPdfGeraete.length > 0) {
             const soloEgPdfIstBrutto =
               document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
 
@@ -10814,11 +10844,11 @@
               paddingBottom: "5px",
             });
 
-            soloEgTitle.textContent = "Gerät(e) ohne Vertrag";
+            soloEgTitle.textContent = "Unsubventionierte Geräte";
 
             soloEgDiv.appendChild(soloEgTitle);
 
-            soloEgPdfGeraete.forEach((geraet) => {
+            gruppierteSoloEgPdfGeraete.forEach((geraet) => {
               const row = document.createElement("div");
 
               Object.assign(row.style, {
@@ -11278,6 +11308,22 @@
             });
 
             summaryDiv.appendChild(bestandstarifeUl);
+          }
+
+          // Die PDF-Zusammenfassung direkt aus der sichtbaren Zusammenfassung übernehmen.
+          // So bleiben Reihenfolge, Bezeichnungen und Geräte-Gruppierung dauerhaft identisch.
+          const sichtbareZusammenfassung = document.querySelector(".summary");
+
+          if (sichtbareZusammenfassung) {
+            summaryDiv.innerHTML = sichtbareZusammenfassung.innerHTML;
+            summaryDiv.className = "summary card pdf-summary";
+            summaryDiv.style.setProperty("--card-bg", "#fff");
+            summaryDiv.style.setProperty("--text-color", "#333");
+            summaryDiv.style.setProperty("--primary-color", "#e20074");
+
+            summaryDiv.querySelectorAll("[id]").forEach((element) => {
+              element.removeAttribute("id");
+            });
           }
 
           document.body.appendChild(summaryDiv);
