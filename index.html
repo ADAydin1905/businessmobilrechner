@@ -6849,8 +6849,8 @@
           `<div class="einmal-wrap" id="einmalRow_${cardId}" data-modus="${modus}">` +
           `<div class="einmal-pill">` +
           `<span class="einmal-slider" style="transform: translateX(${istTW ? "100%" : "0%"});"></span>` +
-          `<button type="button" class="einmal-opt${istTW ? "" : " active"}" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')">Bereitstellungspreis</button>` +
-          `<button type="button" class="einmal-opt${istTW ? " active" : ""}" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')">Tarifwechselgebühr</button>` +
+          `<button type="button" class="einmal-opt${istTW ? "" : " active"}" data-modus="bereitstellung" onclick="setEinmalModus('${cardId}','bereitstellung')"><span class="lbl-full">Bereitstellungspreis</span><span class="lbl-kurz">BP</span></button>` +
+          `<button type="button" class="einmal-opt${istTW ? " active" : ""}" data-modus="tarifwechsel" onclick="setEinmalModus('${cardId}','tarifwechsel')"><span class="lbl-full">Tarifwechselgebühr</span><span class="lbl-kurz">TW-Gebühr</span></button>` +
           `</div>` +
           `<select id="${bereitID}" onchange="berechneTarife()" style="display: ${istTW ? "none" : ""};">${buildBereitstellungOptionsHTML("Kein Bereitstellungspreis")}</select>` +
           `<input type="number" id="tarifwechsel_${cardId}" class="einmal-tw-input" placeholder="Tarifwechselgebühr (Netto)" min="0" step="0.01" value="${twWert}" oninput="setTarifwechselWert('${cardId}', this.value)" style="display: ${istTW ? "" : "none"};">` +

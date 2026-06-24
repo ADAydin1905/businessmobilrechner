@@ -2105,6 +2105,8 @@ select.mailstyle:focus {
 /* Pillen-Menue "Einmalige Preise" pro Karte: Bereitstellungspreis | Tarifwechselgebuehr */
 .einmal-wrap {
   margin-top: 0.5rem;
+  /* Query-Container: erlaubt, die Pillen-Labels an die tatsaechliche Breite anzupassen. */
+  container-type: inline-size;
 }
 .einmal-pill {
   position: relative;
@@ -2152,6 +2154,26 @@ body.dark-mode .einmal-pill {
 }
 .einmal-pill .einmal-opt.active {
   color: #fff;
+}
+/* Dynamische Beschriftung: Standard = Kurzform (passt immer). Erst ab genug
+   Pillen-Breite die ausgeschriebene Form. Container Queries; faellt eine alte
+   Engine darauf zurueck, bleibt die Kurzform (passt ebenfalls). */
+.einmal-pill .einmal-opt {
+  white-space: nowrap;
+}
+.einmal-pill .einmal-opt .lbl-full {
+  display: none;
+}
+.einmal-pill .einmal-opt .lbl-kurz {
+  display: inline;
+}
+@container (min-width: 280px) {
+  .einmal-pill .einmal-opt .lbl-full {
+    display: inline;
+  }
+  .einmal-pill .einmal-opt .lbl-kurz {
+    display: none;
+  }
 }
 .einmal-tw-input {
   display: block;
