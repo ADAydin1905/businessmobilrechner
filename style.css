@@ -602,6 +602,131 @@ body.dark-mode .rufnummer-input {
   font-size: 1.2em;
 }
 
+.cost-overview {
+  margin: 0 0 22px;
+}
+
+.summary .cost-overview li::before {
+  content: none;
+}
+
+.summary .cost-overview li,
+#warenkorbBox .cost-overview li {
+  margin: 0;
+}
+
+.cost-overview-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 6px 0;
+  color: var(--text-color);
+}
+
+.cost-overview-row > strong,
+.cost-overview-row > em {
+  min-width: 0;
+}
+
+.cost-overview-row > span:last-child {
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cost-overview-contracts {
+  align-items: center;
+  margin-bottom: 12px !important;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(226, 0, 116, 0.06);
+}
+
+.cost-overview-contracts > span {
+  min-width: 28px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cost-overview-divider {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px !important;
+  padding: 10px 0 4px;
+  border-top: 1px solid rgba(226, 0, 116, 0.24);
+}
+
+.cost-overview-divider span {
+  color: var(--primary-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.cost-overview-primary {
+  padding-top: 8px;
+}
+
+.cost-overview-primary > strong,
+.cost-overview-primary > span {
+  font-weight: 700;
+}
+
+.cost-overview-secondary,
+.cost-overview-detail,
+.cost-overview-note {
+  font-size: 0.92em !important;
+}
+
+.cost-overview-secondary > strong,
+.cost-overview-detail > strong {
+  font-weight: 600;
+}
+
+.cost-overview-secondary,
+.cost-overview-note {
+  color: #6b7280;
+}
+
+.cost-overview-note {
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+.cost-overview-note > em {
+  font-style: normal;
+}
+
+.cost-overview-total {
+  margin-top: 5px !important;
+  padding-top: 9px;
+  border-top: 1px solid rgba(226, 0, 116, 0.24);
+}
+
+.cost-overview-total > strong,
+.cost-overview-total > span {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+body.dark-mode .cost-overview-contracts {
+  background: rgba(226, 0, 116, 0.14);
+}
+
+body.dark-mode .cost-overview-secondary,
+body.dark-mode .cost-overview-note {
+  color: #b7bcc5;
+}
+
 .switch {
   position: relative;
 

@@ -356,27 +356,41 @@
         <div class="summary card">
           <h3>Zusammenfassung Ihres Angebots</h3>
 
-          <ul>
-            <li><strong>Anzahl Verträge:</strong>&nbsp;<span id="s_summeVertraege">–</span></li>
-
-            <li><strong>Monatliche Gesamtkosten:</strong>&nbsp;<span id="s_summePreis">–</span></li>
-
-            <li><strong>Durchschnittlicher Preis pro Vertrag:</strong>&nbsp;<span id="s_durchschnitt">–</span></li>
-
-            <li id="s_bereitstellung_zeile">
-              <strong>Bereitstellungspreise:</strong>&nbsp;<span id="s_bereitstellung">-</span>
+          <ul class="cost-overview">
+            <li class="cost-overview-row cost-overview-contracts">
+              <strong>Anzahl Verträge</strong><span id="s_summeVertraege">–</span>
             </li>
 
-            <li id="s_tarifwechsel_zeile">
-              <strong>Tarifwechselgebühren:</strong>&nbsp;<span id="s_tarifwechsel">-</span>
+            <li class="cost-overview-divider"><span>Monatliche Kosten</span></li>
+
+            <li class="cost-overview-row cost-overview-primary">
+              <strong>Gesamt pro Monat:</strong><span id="s_summePreis">–</span>
             </li>
 
-            <li id="s_geraetekosten_zeile"><strong>Gerätekosten:</strong>&nbsp;<span id="s_geraete">-</span></li>
+            <li class="cost-overview-row cost-overview-secondary">
+              <strong>Ø pro Vertrag:</strong><span id="s_durchschnitt">–</span>
+            </li>
 
-            <li id="s_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="s_soloeg">-</span></li>
+            <li id="s_einmalig_bereich" class="cost-overview-divider"><span>Einmalige Kosten</span></li>
 
-            <li id="s_einmalig_zeile" style="border-top: 1px solid var(--primary-color); margin-top: 6px; padding-top: 6px;">
-              <strong>Einmalige Gesamtkosten:</strong>&nbsp;<span id="s_einmalig">-</span>
+            <li id="s_bereitstellung_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Bereitstellungspreise:</strong><span id="s_bereitstellung">-</span>
+            </li>
+
+            <li id="s_tarifwechsel_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Tarifwechselgebühren:</strong><span id="s_tarifwechsel">-</span>
+            </li>
+
+            <li id="s_geraetekosten_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Gerätekosten:</strong><span id="s_geraete">-</span>
+            </li>
+
+            <li id="s_soloeg_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Gerät(e) ohne Vertrag:</strong><span id="s_soloeg">-</span>
+            </li>
+
+            <li id="s_einmalig_zeile" class="cost-overview-row cost-overview-total">
+              <strong>Gesamt einmalig:</strong><span id="s_einmalig">-</span>
             </li>
           </ul>
 
@@ -400,27 +414,41 @@
         </h3>
 
         <div class="scrollable-content">
-          <ul>
-            <li><strong>Verträge:</strong>&nbsp;<span id="w_summeVertraege">–</span></li>
-
-            <li><strong>Monatlich:</strong>&nbsp;<span id="w_summePreis">–</span></li>
-
-            <li><strong>Ø pro Vertrag:</strong>&nbsp;<span id="w_durchschnitt">–</span></li>
-
-            <li id="w_bereitstellung_zeile">
-              <strong>Bereitstellungspreise:</strong>&nbsp;<span id="w_bereitstellung">-</span>
+          <ul class="cost-overview">
+            <li class="cost-overview-row cost-overview-contracts">
+              <strong>Anzahl Verträge</strong><span id="w_summeVertraege">–</span>
             </li>
 
-            <li id="w_tarifwechsel_zeile">
-              <strong>Tarifwechselgebühren:</strong>&nbsp;<span id="w_tarifwechsel">-</span>
+            <li class="cost-overview-divider"><span>Monatliche Kosten</span></li>
+
+            <li class="cost-overview-row cost-overview-primary">
+              <strong>Gesamt pro Monat:</strong><span id="w_summePreis">–</span>
             </li>
 
-            <li id="w_geraetekosten_zeile"><strong>Geräte:</strong>&nbsp;<span id="w_geraete">-</span></li>
+            <li class="cost-overview-row cost-overview-secondary">
+              <strong>Ø pro Vertrag:</strong><span id="w_durchschnitt">–</span>
+            </li>
 
-            <li id="w_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="w_soloeg">-</span></li>
+            <li id="w_einmalig_bereich" class="cost-overview-divider"><span>Einmalige Kosten</span></li>
 
-            <li id="w_einmalig_zeile" style="border-top: 1px solid var(--primary-color); margin-top: 6px; padding-top: 6px;">
-              <strong>Einmalige Gesamtkosten:</strong>&nbsp;<span id="w_einmalig">-</span>
+            <li id="w_bereitstellung_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Bereitstellungspreise:</strong><span id="w_bereitstellung">-</span>
+            </li>
+
+            <li id="w_tarifwechsel_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Tarifwechselgebühren:</strong><span id="w_tarifwechsel">-</span>
+            </li>
+
+            <li id="w_geraetekosten_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Gerätekosten:</strong><span id="w_geraete">-</span>
+            </li>
+
+            <li id="w_soloeg_zeile" class="cost-overview-row cost-overview-detail">
+              <strong>Gerät(e) ohne Vertrag:</strong><span id="w_soloeg">-</span>
+            </li>
+
+            <li id="w_einmalig_zeile" class="cost-overview-row cost-overview-total">
+              <strong>Gesamt einmalig:</strong><span id="w_einmalig">-</span>
             </li>
           </ul>
 
@@ -9191,7 +9219,7 @@
           if (hatZeitlichenUnterschied) {
             const dauerMonate = allSelectedTariffsForDisplay.find((c) => c.promotionsInfo)?.promotionsInfo.dauer || 6;
 
-            summePreisLi.querySelector("strong").innerHTML = `Monatlich (1.-${dauerMonate}. Monat):`;
+            summePreisLi.querySelector("strong").innerHTML = `Gesamt (1.-${dauerMonate}. Monat):`;
 
             document.getElementById(`${prefix}_summePreis`).textContent =
               `${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}`;
@@ -9200,13 +9228,14 @@
               periode2SummeLi = document.createElement("li");
 
               periode2SummeLi.id = `${prefix}_summePreisPeriode2_li`;
+              periode2SummeLi.className = "cost-overview-row cost-overview-primary";
 
               summePreisLi.after(periode2SummeLi);
             }
 
             periode2SummeLi.style.display = "flex";
 
-            periode2SummeLi.innerHTML = `<strong>Monatlich (ab ${dauerMonate + 1}. Monat):</strong>&nbsp;<span id="${prefix}_summePreisPeriode2">${formatCurrencyNumber(gesamtpreisNettoPeriode2 * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
+            periode2SummeLi.innerHTML = `<strong>Gesamt (ab ${dauerMonate + 1}. Monat):</strong><span id="${prefix}_summePreisPeriode2">${formatCurrencyNumber(gesamtpreisNettoPeriode2 * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
 
             // Add single "Anteil davon..." line after the last period cost line
 
@@ -9217,13 +9246,14 @@
                 davonAltLi = document.createElement("li");
 
                 davonAltLi.id = `${prefix}_davonAlt_single_li`;
+                davonAltLi.className = "cost-overview-row cost-overview-note";
 
                 periode2SummeLi.after(davonAltLi);
               }
 
               davonAltLi.style.display = "flex";
 
-              davonAltLi.innerHTML = `<em>&nbsp;&nbsp;Anteil davon aus Ihren unveränderten Alt-Tarifen:</em>&nbsp;<span>${formatCurrencyNumber(bestandstarifeGesamtsumme * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
+              davonAltLi.innerHTML = `<em>Anteil aus unveränderten Alt-Tarifen:</em><span>${formatCurrencyNumber(bestandstarifeGesamtsumme * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
             }
 
             const durchschnitt24MonateNetto = gesamt24MonatsPreisNetto / 24;
@@ -9241,7 +9271,7 @@
               periode2DurchschnittLi.style.display = "none";
             }
           } else {
-            summePreisLi.querySelector("strong").innerHTML = prefix === "s" ? "Monatliche Gesamtkosten:" : "Monatlich:";
+            summePreisLi.querySelector("strong").innerHTML = "Gesamt pro Monat:";
 
             document.getElementById(`${prefix}_summePreis`).textContent =
               `${formatCurrencyNumber(gesamtpreisNettoPeriode1 * (istBrutto ? mwst : 1))}${preisSuffix}`;
@@ -9255,13 +9285,14 @@
                 davonAltLi = document.createElement("li");
 
                 davonAltLi.id = `${prefix}_davonAlt_single_li`;
+                davonAltLi.className = "cost-overview-row cost-overview-note";
 
                 summePreisLi.after(davonAltLi);
               }
 
               davonAltLi.style.display = "flex";
 
-              davonAltLi.innerHTML = `<em>&nbsp;&nbsp;Anteil davon aus Ihren unveränderten Alt-Tarifen:</em>&nbsp;<span>${formatCurrencyNumber(bestandstarifeGesamtsumme * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
+              davonAltLi.innerHTML = `<em>Anteil aus unveränderten Alt-Tarifen:</em><span>${formatCurrencyNumber(bestandstarifeGesamtsumme * (istBrutto ? mwst : 1))}${preisSuffix}</span>`;
             } else if (prefix === "s") {
               // Hide "Anteil davon..." line wenn keine Bestandstarife vorhanden
 
@@ -9270,8 +9301,7 @@
               if (davonAltSingleLi) davonAltSingleLi.style.display = "none";
             }
 
-            durchschnittLi.querySelector("strong").innerHTML =
-              prefix === "s" ? "Durchschnittlicher Preis pro Vertrag:" : "Ø pro Vertrag:";
+            durchschnittLi.querySelector("strong").innerHTML = "Ø pro Vertrag:";
 
             document.getElementById(`${prefix}_durchschnitt`).textContent =
               gesamtKarten > 0
@@ -9654,6 +9684,8 @@
         // Einmalige Gesamtkosten (Summe aller einmaligen Posten) ein-/ausblenden.
         const gesamtEinmaligNetto =
           gesamtBereitstellungspreisNetto + gesamtTarifwechselNetto + gesamtGeraetepreisNetto + soloEgGesamtsummeNetto;
+        document.getElementById("s_einmalig_bereich").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
+        document.getElementById("w_einmalig_bereich").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
         document.getElementById("s_einmalig_zeile").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
         document.getElementById("w_einmalig_zeile").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
 
