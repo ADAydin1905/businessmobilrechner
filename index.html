@@ -435,64 +435,61 @@
 
     <div id="modalOverlay" class="modal-overlay"></div>
 
-    <div id="kundendatenModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0">Kundendaten</h3>
+    <div id="kundendatenModal" class="modal-container app-modal">
+      <div class="app-modal-head">
+        <div>
+          <h3>Kundendaten</h3>
+          <p>Angaben für Angebotstext und PDF erfassen.</p>
+        </div>
 
-        <button
-          onclick="closeModal('kundendatenModal')"
-          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
-          aria-label="Schließen"
-        >
-          ❌
-        </button>
+        <button class="app-modal-close" onclick="closeModal('kundendatenModal')" aria-label="Schließen">×</button>
       </div>
 
-      <div class="input-group">
-        <label for="kundeName">Name des Kunden:</label>
+      <div class="app-modal-body">
+        <div class="input-group">
+          <label for="kundeName">Name des Kunden:</label>
 
-        <input type="text" id="kundeName" />
+          <input type="text" id="kundeName" />
+        </div>
+
+        <div class="input-group">
+          <label for="kundeAnsprechpartner">Ansprechpartner:</label>
+
+          <input type="text" id="kundeAnsprechpartner" />
+        </div>
+
+        <div class="input-group">
+          <label for="kundeNotizen">Notizen:</label>
+
+          <textarea id="kundeNotizen"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label for="angebotGueltigBis">Angebot gültig bis:</label>
+
+          <input type="date" id="angebotGueltigBis" />
+        </div>
       </div>
 
-      <div class="input-group">
-        <label for="kundeAnsprechpartner">Ansprechpartner:</label>
-
-        <input type="text" id="kundeAnsprechpartner" />
-      </div>
-
-      <div class="input-group">
-        <label for="kundeNotizen">Notizen:</label>
-
-        <textarea id="kundeNotizen"></textarea>
-      </div>
-
-      <div class="input-group">
-        <label for="angebotGueltigBis">Angebot gültig bis:</label>
-
-        <input type="date" id="angebotGueltigBis" />
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; margin-top: 1rem">
-        <button class="primary" onclick="kundendatenSpeichern()">Speichern</button>
-
+      <div class="app-modal-actions">
         <button class="secondary" onclick="closeModal('kundendatenModal')">Abbrechen</button>
+
+        <button class="primary" onclick="kundendatenSpeichern()">Speichern</button>
       </div>
     </div>
 
-    <div id="bestandstarifeModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0">Bestandstarife verwalten</h3>
+    <div id="bestandstarifeModal" class="modal-container app-modal">
+      <div class="app-modal-head">
+        <div>
+          <h3>Bestandstarife verwalten</h3>
+          <p>Unveränderte Verträge ergänzen und im Angebot berücksichtigen.</p>
+        </div>
 
-        <button
-          onclick="closeModal('bestandstarifeModal')"
-          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
-          aria-label="Schließen"
-        >
-          ❌
-        </button>
+        <button class="app-modal-close" onclick="closeModal('bestandstarifeModal')" aria-label="Schließen">×</button>
       </div>
 
-      <div style="margin-bottom: 1.5rem">
+      <div class="app-modal-body">
+        <div style="margin-bottom: 1.5rem">
         <div style="margin-bottom: 15px; padding: 10px; background-color: var(--light-background); border-radius: 4px">
           <div style="display: flex; align-items: center; gap: 15px">
             <label class="magenta-checkbox">
@@ -669,22 +666,23 @@
         </div>
       </div>
 
-      <div id="bestandstarifeList">
-        <!-- Dynamische Liste der Bestandstarife -->
-      </div>
+        <div id="bestandstarifeList">
+          <!-- Dynamische Liste der Bestandstarife -->
+        </div>
 
-      <div style="background-color: var(--light-background); padding: 15px; border-radius: 8px; margin-bottom: 1.5rem">
-        <div style="display: flex; justify-content: space-between; align-items: center">
-          <strong style="font-size: 1.1rem">Gesamtsumme Bestandstarife:</strong>
+        <div style="background-color: var(--light-background); padding: 15px; border-radius: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <strong style="font-size: 1.1rem">Gesamtsumme Bestandstarife:</strong>
 
-          <strong style="font-size: 1.2rem; color: var(--primary-color)" id="bestandstarifeGesamtsumme">0,00 €</strong>
+            <strong style="font-size: 1.2rem; color: var(--primary-color)" id="bestandstarifeGesamtsumme">0,00 €</strong>
+          </div>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 1rem">
-        <button class="primary" onclick="bestandstarifeSpeichern()">Speichern</button>
-
+      <div class="app-modal-actions">
         <button class="secondary" onclick="closeModal('bestandstarifeModal')">Abbrechen</button>
+
+        <button class="primary" onclick="bestandstarifeSpeichern()">Speichern</button>
       </div>
     </div>
 
@@ -724,40 +722,41 @@
       </div>
     </div>
 
-    <div id="fehlerModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0; color: var(--primary-color)">Hinweis</h3>
+    <div id="fehlerModal" class="modal-container app-modal">
+      <div class="app-modal-head">
+        <div>
+          <h3>Hinweis</h3>
+        </div>
 
-        <button onclick="closeModal('fehlerModal')" class="modal-close-btn" aria-label="Schließen">❌</button>
+        <button onclick="closeModal('fehlerModal')" class="app-modal-close" aria-label="Schließen">×</button>
       </div>
 
-      <div id="fehlerModalTabs" style="margin-bottom: 1rem"></div>
+      <div class="app-modal-body app-modal-body-compact">
+        <div id="fehlerModalTabs"></div>
 
-      <div id="fehlerModalText" style="padding-top: 1rem"></div>
+        <div id="fehlerModalText"></div>
+      </div>
 
-      <div id="fehlerModalButtons" style="display: flex; justify-content: flex-end; margin-top: 1.5rem"></div>
+      <div id="fehlerModalButtons" class="app-modal-actions"></div>
     </div>
 
-    <div id="infoModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0">
-          Info & Anleitung
-          <span
-            id="infoModalStand"
-            style="font-size: 0.6em; font-weight: normal; color: var(--ap-muted, #6b7280); margin-left: 8px; white-space: nowrap"
-          ></span>
-        </h3>
+    <div id="infoModal" class="modal-container app-modal">
+      <div class="app-modal-head">
+        <div>
+          <h3>
+            Info & Anleitung
+            <span
+              id="infoModalStand"
+              style="font-size: 0.6em; font-weight: normal; color: var(--ap-muted, #6b7280); margin-left: 8px; white-space: nowrap"
+            ></span>
+          </h3>
+          <p>Bedienung, Buchungsregeln und wichtige Hinweise zum Rechner.</p>
+        </div>
 
-        <button
-          onclick="closeModal('infoModal')"
-          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
-          aria-label="Schließen"
-        >
-          ❌
-        </button>
+        <button class="app-modal-close" onclick="closeModal('infoModal')" aria-label="Schließen">×</button>
       </div>
 
-      <div id="infoModalContent">
+      <div id="infoModalContent" class="app-modal-body">
         <h4>Überblick</h4>
 
         <p>
@@ -994,39 +993,36 @@
       </div>
     </div>
 
-    <div id="zubuchModal" class="modal-container" data-current-card-id="">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 id="zubuchModalTitle" style="margin: 0">Zubuchoptionen</h3>
+    <div id="zubuchModal" class="modal-container app-modal" data-current-card-id="">
+      <div class="app-modal-head">
+        <div>
+          <h3 id="zubuchModalTitle">Zubuchoptionen</h3>
+          <p>Optionen, Aktionen und Konfiguration für diese Karte bearbeiten.</p>
+        </div>
 
-        <button onclick="closeModal('zubuchModal')" class="modal-close-btn" aria-label="Schließen">❌</button>
+        <button onclick="closeModal('zubuchModal')" class="app-modal-close" aria-label="Schließen">×</button>
       </div>
 
-      <div id="zubuchModalContent"></div>
+      <div id="zubuchModalContent" class="app-modal-body"></div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem">
+      <div class="app-modal-actions">
         <button id="zubuchModalPrimaryBtn" class="primary" onclick="handleZubuchSpeichern()">Speichern</button>
       </div>
     </div>
 
-    <div id="cheatSheetModal" class="modal-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
-        <h3 style="margin: 0; color: var(--primary-color)">Cheat-Sheet</h3>
+    <div id="cheatSheetModal" class="modal-container app-modal">
+      <div class="app-modal-head">
+        <div>
+          <h3>Cheat-Sheet</h3>
+          <p>Tarif- und Optionsübersicht auf einen Blick.</p>
+        </div>
 
-        <button
-          id="closeCheatSheetModal"
-          style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary-color)"
-          aria-label="Schließen"
-        >
-          ❌
-        </button>
+        <button id="closeCheatSheetModal" class="app-modal-close" aria-label="Schließen">×</button>
       </div>
 
-      <img
-        id="cheatSheetImg"
-        src=""
-        alt="Cheat-Sheet"
-        style="max-width: 90%; height: auto"
-      />
+      <div class="app-modal-body cheat-sheet-modal-body">
+        <img id="cheatSheetImg" src="" alt="Cheat-Sheet" />
+      </div>
     </div>
 
     <script>
@@ -6229,6 +6225,8 @@
 
         // Reset buttons and add default OK button
 
+        document.querySelector("#fehlerModal .app-modal-head h3").textContent = isError ? "Fehler" : "Hinweis";
+
         fehlerModalButtons.innerHTML = `<button class="primary" onclick="closeModal('fehlerModal')">OK</button>`;
 
         document.body.classList.add("modal-open");
@@ -11429,11 +11427,11 @@
 
 
 
+            <button class="secondary" onclick="closeModal('fehlerModal')">Abbrechen</button>
+
+
+
             <button class="primary" id="confirmActionBtn">Fortfahren</button>
-
-
-
-            <button class="secondary" onclick="closeModal('fehlerModal')" style="margin-left: 10px;">Abbrechen</button>
 
 
 
@@ -11628,8 +11626,6 @@
       // Tab-Switching-Funktionen für Assignment Modal
 
       function switchAssignmentTab(tabName) {
-        // Alle Tab-Buttons zurücksetzen
-
         const tab1 = document.getElementById("assignmentTab1");
 
         const tab2 = document.getElementById("assignmentTab2");
@@ -11646,38 +11642,18 @@
           return;
         }
 
-        // Dark Mode Status prüfen
-
-        const isDarkMode = document.body.classList.contains("dark-mode");
-
-        const inactiveBackground = isDarkMode ? "#2b2b2b" : "#f0f0f0";
-
-        const inactiveTextColor = isDarkMode ? "#f0f0f0" : "var(--text-color)";
-
         if (tabName === "visual") {
-          // Visual Tab aktivieren
+          tab1.classList.add("active");
 
-          tab1.style.background = "var(--primary-color)";
-
-          tab1.style.color = "white";
-
-          tab2.style.background = inactiveBackground;
-
-          tab2.style.color = inactiveTextColor;
+          tab2.classList.remove("active");
 
           visual.style.display = "flex";
 
           info.style.display = "none";
         } else if (tabName === "info") {
-          // Info Tab aktivieren
+          tab1.classList.remove("active");
 
-          tab1.style.background = inactiveBackground;
-
-          tab1.style.color = inactiveTextColor;
-
-          tab2.style.background = "var(--primary-color)";
-
-          tab2.style.color = "white";
+          tab2.classList.add("active");
 
           visual.style.display = "none";
 
@@ -15458,93 +15434,28 @@
       }
     </script>
 
-    <div id="assignmentModal" class="modal-container" style="max-width: 100vw; width: 1480px; height: 92vh">
-      <div style="display: flex; flex-direction: column; height: 100%; max-height: 92vh">
-        <!-- Header mit Titel und Close Button -->
+    <div id="assignmentModal" class="modal-container app-modal assignment-modal">
+      <div class="assignment-modal-shell">
+        <div class="app-modal-head">
+          <div>
+            <h3>Partnerkarten-Verwaltung</h3>
+            <p>Zuweisungen bearbeiten oder kompakt kontrollieren.</p>
+          </div>
 
-        <div
-          style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid var(--primary-color);
-            flex-shrink: 0;
-            position: relative;
-          "
-        >
-          <h3 style="margin: 0; color: var(--primary-color); font-size: 1.4rem; text-align: center">
-            Partnerkarten Verwaltung
-          </h3>
-
-          <button
-            onclick="closeModal('assignmentModal')"
-            style="
-              background: none;
-              border: none;
-              font-size: 1.5rem;
-              cursor: pointer;
-              color: var(--text-color);
-              padding: 5px;
-              border-radius: 50%;
-              transition: background-color 0.2s;
-              position: absolute;
-              right: 10px;
-              top: 10px;
-            "
-            onmouseover="this.style.backgroundColor = 'var(--background-color)'"
-            onmouseout="this.style.backgroundColor = 'transparent'"
-            aria-label="Schließen"
-          >
-            ❌
-          </button>
+          <button class="app-modal-close" onclick="closeModal('assignmentModal')" aria-label="Schließen">×</button>
         </div>
 
-        <!-- Tab Navigation -->
-
-        <div style="display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; flex-shrink: 0">
-          <button
-            id="assignmentTab1"
-            onclick="switchAssignmentTab('visual')"
-            style="
-              padding: 12px 24px;
-              background: var(--primary-color);
-              color: white;
-              border: none;
-              border-radius: 8px 8px 0 0;
-              cursor: pointer;
-              font-size: 1rem;
-              font-family: var(--font-family);
-              margin-right: 4px;
-              transition: all 0.2s ease;
-            "
-          >
+        <div class="assignment-tabs">
+          <button id="assignmentTab1" class="assignment-tab active" onclick="switchAssignmentTab('visual')">
             Zuweisung ändern
           </button>
 
-          <button
-            id="assignmentTab2"
-            onclick="switchAssignmentTab('info')"
-            style="
-              padding: 12px 24px;
-              background: #f0f0f0;
-              color: var(--text-color);
-              border: none;
-              border-radius: 8px 8px 0 0;
-              cursor: pointer;
-              font-size: 1rem;
-              font-family: var(--font-family);
-              transition: all 0.2s ease;
-            "
-          >
+          <button id="assignmentTab2" class="assignment-tab" onclick="switchAssignmentTab('info')">
             Kompakte Zuweisungsinfo
           </button>
         </div>
 
-        <!-- Tab Content -->
-
-        <div style="flex-grow: 1; overflow: hidden">
+        <div class="assignment-modal-content">
           <!-- Visual Assignment Tab -->
 
           <div id="assignmentTabContent-visual" style="height: 100%; display: flex; flex-direction: column">
@@ -15613,67 +15524,13 @@
               <!-- Columns for main cards will be generated here -->
             </div>
 
-            <div
-              style="
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                margin-top: 20px;
-                margin-right: 15px;
-                margin-bottom: 15px;
-                padding-top: 15px;
-                border-top: 1px solid #ddd;
-                flex-shrink: 0;
-              "
-            >
-              <button
-                onclick="saveVisualAssignment()"
-                style="
-                  padding: 10px 20px;
-                  background-color: var(--primary-color);
-                  color: white;
-                  border: none;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-size: 1rem;
-                  font-family: var(--font-family);
-                  transition: all 0.2s ease;
-                "
-                onmouseover="
-                  this.style.backgroundColor = '#c00060';
-                  this.style.transform = 'translateY(-2px)';
-                "
-                onmouseout="
-                  this.style.backgroundColor = 'var(--primary-color)';
-                  this.style.transform = 'translateY(0)';
-                "
-              >
-                Zuweisung speichern
+            <div class="app-modal-actions assignment-modal-actions">
+              <button class="secondary" onclick="closeModal('assignmentModal')">
+                Abbrechen
               </button>
 
-              <button
-                onclick="closeModal('assignmentModal')"
-                style="
-                  padding: 10px 20px;
-                  background-color: var(--background-color);
-                  color: var(--text-color);
-                  border: 2px solid #ddd;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-size: 1rem;
-                  font-family: var(--font-family);
-                  transition: all 0.2s ease;
-                "
-                onmouseover="
-                  this.style.backgroundColor = '#f0f0f0';
-                  this.style.borderColor = 'var(--primary-color)';
-                "
-                onmouseout="
-                  this.style.backgroundColor = 'var(--background-color)';
-                  this.style.borderColor = '#ddd';
-                "
-              >
-                Abbrechen
+              <button class="primary" onclick="saveVisualAssignment()">
+                Zuweisung speichern
               </button>
             </div>
           </div>
@@ -15685,41 +15542,8 @@
               <!-- Assignment info content will be generated here -->
             </div>
 
-            <div
-              style="
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                margin-top: 20px;
-                margin-right: 15px;
-                margin-bottom: 15px;
-                padding-top: 15px;
-                border-top: 1px solid #ddd;
-                flex-shrink: 0;
-              "
-            >
-              <button
-                onclick="closeModal('assignmentModal')"
-                style="
-                  padding: 10px 20px;
-                  background-color: var(--background-color);
-                  color: var(--text-color);
-                  border: 2px solid #ddd;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-size: 1rem;
-                  font-family: var(--font-family);
-                  transition: all 0.2s ease;
-                "
-                onmouseover="
-                  this.style.backgroundColor = '#f0f0f0';
-                  this.style.borderColor = 'var(--primary-color)';
-                "
-                onmouseout="
-                  this.style.backgroundColor = 'var(--background-color)';
-                  this.style.borderColor = '#ddd';
-                "
-              >
+            <div class="app-modal-actions assignment-modal-actions">
+              <button class="secondary" onclick="closeModal('assignmentModal')">
                 Schließen
               </button>
             </div>

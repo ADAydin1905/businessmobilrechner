@@ -1608,6 +1608,294 @@ body.dark-mode .rabatt-btn:hover:not(.active) {
   color: white;
 }
 
+/* Einheitliches modernes Modal-Grundgeruest (angelehnt an Solo EG). */
+.app-modal {
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+}
+
+.app-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--ap-border, #e0e0e0);
+  flex: 0 0 auto;
+}
+
+.app-modal-head h3 {
+  margin: 0 !important;
+  color: var(--primary-color);
+  font-size: 1.35rem;
+  line-height: 1.3;
+}
+
+.app-modal-head p {
+  margin: 4px 0 0;
+  color: var(--ap-muted, #666);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.app-modal-close {
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--primary-color) !important;
+  font-size: 1.5rem !important;
+  line-height: 1 !important;
+  flex: 0 0 auto;
+}
+
+.app-modal-close:hover {
+  border-color: var(--ap-border, #e0e0e0) !important;
+  background: rgba(226, 0, 116, 0.06) !important;
+}
+
+.app-modal-body {
+  padding: 20px 28px 18px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.app-modal-body-compact {
+  padding-top: 16px;
+}
+
+.app-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px 22px;
+  border-top: 1px solid var(--ap-border, #e0e0e0);
+  background: var(--ap-soft, #f7f8fa);
+  flex: 0 0 auto;
+}
+
+body.dark-mode .app-modal-head,
+body.dark-mode .app-modal-actions {
+  border-color: #444;
+}
+
+body.dark-mode .app-modal-actions {
+  background: #26262b;
+}
+
+body.dark-mode .app-modal-head p {
+  color: #aaa;
+}
+
+#kundendatenModal {
+  max-height: 88vh;
+}
+
+#kundendatenModal .app-modal-body {
+  max-height: calc(88vh - 166px);
+}
+
+#kundendatenModal h3 {
+  margin: 0 !important;
+}
+
+#kundendatenModal button.secondary {
+  margin-left: 0;
+}
+
+#bestandstarifeModal {
+  max-height: 88vh;
+  overflow: hidden;
+}
+
+#bestandstarifeModal .app-modal-body {
+  max-height: calc(88vh - 166px);
+}
+
+#fehlerModal,
+#zubuchModal {
+  padding: 0;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+#fehlerModalText {
+  min-height: 0;
+  max-height: 52vh;
+  padding-top: 0;
+  overflow-y: auto;
+}
+
+#zubuchModalContent {
+  max-height: calc(90vh - 166px);
+  padding: 20px 28px 18px;
+}
+
+#fehlerModalTabs {
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0;
+  border-bottom: 2px solid var(--ap-border, #e2e8f0);
+}
+
+#fehlerModalTabs:empty {
+  display: none;
+}
+
+#fehlerModalTabs .tab-button {
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin: 0 0 -2px;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--ap-muted, #6b7280);
+  box-shadow: none;
+}
+
+#fehlerModalTabs .tab-button:hover:not(.active) {
+  background: transparent;
+  color: var(--primary-color);
+}
+
+#fehlerModalTabs .tab-button.active {
+  background: transparent;
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  box-shadow: none;
+}
+
+#fehlerModalButtons:empty {
+  display: none;
+}
+
+#infoModal {
+  max-height: 88vh;
+}
+
+#infoModalContent {
+  max-height: calc(88vh - 84px);
+  padding: 20px 28px 26px;
+}
+
+#cheatSheetModal {
+  max-width: min(92vw, 1100px);
+  max-height: 88vh;
+}
+
+.cheat-sheet-modal-body {
+  max-height: calc(88vh - 84px);
+  text-align: center;
+}
+
+.cheat-sheet-modal-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.assignment-modal {
+  width: min(96vw, 1480px);
+  height: 92vh;
+  max-width: 1480px;
+  max-height: 92vh;
+}
+
+.assignment-modal-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.assignment-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 28px 18px;
+  padding-top: 8px;
+  border-bottom: 2px solid var(--ap-border, #e2e8f0);
+  flex: 0 0 auto;
+}
+
+.assignment-tab {
+  appearance: none;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  border-radius: 0 !important;
+  margin: 0 0 -2px;
+  padding: 10px 16px !important;
+  background: transparent !important;
+  color: var(--ap-muted, #6b7280) !important;
+  font-family: var(--font-family);
+  font-size: 0.95rem !important;
+  font-weight: 600;
+}
+
+.assignment-tab:hover,
+.assignment-tab.active {
+  color: var(--primary-color) !important;
+}
+
+.assignment-tab.active {
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.assignment-modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#assignmentTabContent-visual,
+#assignmentTabContent-info {
+  min-height: 0;
+}
+
+#assignment-container {
+  min-height: 0 !important;
+  margin: 0 28px;
+  padding: 12px !important;
+}
+
+#assignment-info-content {
+  padding: 0 28px !important;
+}
+
+.assignment-modal-actions {
+  padding: 14px 28px 18px;
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .app-modal-head,
+  .app-modal-body,
+  .app-modal-actions {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .assignment-tabs {
+    margin-left: 18px;
+    margin-right: 18px;
+    overflow-x: auto;
+  }
+
+  #assignment-container {
+    margin-left: 18px;
+    margin-right: 18px;
+  }
+
+  #assignment-info-content {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+}
+
 @media print {
   body {
     background-color: white;
