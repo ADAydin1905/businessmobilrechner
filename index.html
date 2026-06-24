@@ -374,6 +374,10 @@
             <li id="s_geraetekosten_zeile"><strong>Gerätekosten:</strong>&nbsp;<span id="s_geraete">-</span></li>
 
             <li id="s_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="s_soloeg">-</span></li>
+
+            <li id="s_einmalig_zeile" style="border-top: 1px solid var(--primary-color); margin-top: 6px; padding-top: 6px;">
+              <strong>Einmalige Gesamtkosten:</strong>&nbsp;<span id="s_einmalig">-</span>
+            </li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -414,6 +418,10 @@
             <li id="w_geraetekosten_zeile"><strong>Geräte:</strong>&nbsp;<span id="w_geraete">-</span></li>
 
             <li id="w_soloeg_zeile"><strong>Gerät(e) ohne Vertrag:</strong>&nbsp;<span id="w_soloeg">-</span></li>
+
+            <li id="w_einmalig_zeile" style="border-top: 1px solid var(--primary-color); margin-top: 6px; padding-top: 6px;">
+              <strong>Einmalige Gesamtkosten:</strong>&nbsp;<span id="w_einmalig">-</span>
+            </li>
           </ul>
 
           <h4>Ausgewählte Tarife:</h4>
@@ -9285,6 +9293,17 @@
           document.getElementById(`${prefix}_soloeg`).textContent =
             `${formatCurrencyNumber(soloEgGesamtsummeNetto * (istBrutto ? mwst : 1))}${preisSuffix}`;
 
+          // Einmalige Gesamtkosten = Bereitstellungspreise + Tarifwechselgebuehren
+          // + Geraete (mit Vertrag) + Geraete ohne Vertrag (Solo EG).
+          document.getElementById(`${prefix}_einmalig`).textContent =
+            `${formatCurrencyNumber(
+              (gesamtBereitstellungspreisNetto +
+                gesamtTarifwechselNetto +
+                gesamtGeraetepreisNetto +
+                soloEgGesamtsummeNetto) *
+                (istBrutto ? mwst : 1),
+            )}${preisSuffix}`;
+
           const tarifUebersicht = document.getElementById(`${prefix}_tarifUebersicht`);
 
           tarifUebersicht.innerHTML = "";
@@ -9627,6 +9646,12 @@
         document.getElementById("s_soloeg_zeile").style.display = soloEgGesamtsummeNetto > 0 ? "flex" : "none";
 
         document.getElementById("w_soloeg_zeile").style.display = soloEgGesamtsummeNetto > 0 ? "flex" : "none";
+
+        // Einmalige Gesamtkosten (Summe aller einmaligen Posten) ein-/ausblenden.
+        const gesamtEinmaligNetto =
+          gesamtBereitstellungspreisNetto + gesamtTarifwechselNetto + gesamtGeraetepreisNetto + soloEgGesamtsummeNetto;
+        document.getElementById("s_einmalig_zeile").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
+        document.getElementById("w_einmalig_zeile").style.display = gesamtEinmaligNetto > 0 ? "flex" : "none";
 
         // Setze die sortierte Liste für alle Ausgabe-Formate (PDF, Angebot-Kopieren)
 
