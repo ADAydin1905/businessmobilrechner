@@ -2703,6 +2703,12 @@
         return anzahl > 1 ? `${anzahl}x ${name}` : name;
       }
 
+      function formatSoloEgPositionsPreis(geraet, istBrutto) {
+        const anzahl = parsePositiveIntInput(geraet && geraet.anzahl, 1);
+        const mengenHinweis = anzahl > 1 ? "je " : "";
+        return mengenHinweis + formatSoloEgPreis(geraet && geraet.preis, istBrutto);
+      }
+
       function zuruecksetzen() {
         localStorage.removeItem("kundendaten");
 
@@ -5039,8 +5045,8 @@
             (geraet) =>
               '<div class="solo-eg-offer-row"><span>' +
               escapeHtml(soloEgPositionLabel(geraet)) +
-              "</span><strong>je " +
-              formatSoloEgPreis(geraet.preis, istBrutto) +
+              "</span><strong>" +
+              formatSoloEgPositionsPreis(geraet, istBrutto) +
               "</strong></div>",
           )
           .join("");
@@ -5048,7 +5054,7 @@
         return (
           '<div class="tarif solo-eg-offer"><h3>Gerät(e) ohne Vertrag</h3><div class="solo-eg-offer-list">' +
           rows +
-          '</div><div class="preisbox solo-eg-total">Gesamt Geräte ohne Vertrag: ' +
+          '</div><div class="preisbox solo-eg-total">Gesamtbetrag: ' +
           formatSoloEgPreis(total, istBrutto) +
           " " +
           nettoOderBrutto +
@@ -5080,7 +5086,7 @@
 
         geraete.forEach((geraet) => {
           const li = document.createElement("li");
-          li.textContent = soloEgPositionLabel(geraet) + ": je " + formatSoloEgPreis(geraet.preis, istBrutto);
+          li.textContent = soloEgPositionLabel(geraet) + ": " + formatSoloEgPositionsPreis(geraet, istBrutto);
           ul.appendChild(li);
         });
 
@@ -9974,9 +9980,9 @@
         if (soloEgTextGeraete.length > 0) {
           offerText += "Gerät(e) ohne Vertrag:\n";
           soloEgTextGeraete.forEach((geraet) => {
-            offerText += `  ${soloEgPositionLabel(geraet)}: je ${formatSoloEgPreis(geraet.preis, istBrutto)}${preisSuffix}\n`;
+            offerText += `  ${soloEgPositionLabel(geraet)}: ${formatSoloEgPositionsPreis(geraet, istBrutto)}${preisSuffix}\n`;
           });
-          offerText += `  Gesamt Geräte ohne Vertrag: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
+          offerText += `  Gesamtbetrag: ${formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgTextGeraete), istBrutto)}${preisSuffix}\n\n`;
         }
 
         // 3. Summary
@@ -10734,8 +10740,8 @@
               row.innerHTML =
                 "<span>" +
                 escapeHtml(soloEgPositionLabel(geraet)) +
-                "</span><strong>je " +
-                formatSoloEgPreis(geraet.preis, soloEgPdfIstBrutto) +
+                "</span><strong>" +
+                formatSoloEgPositionsPreis(geraet, soloEgPdfIstBrutto) +
                 "</strong>";
 
               soloEgDiv.appendChild(row);
@@ -10755,7 +10761,7 @@
             });
 
             soloEgTotal.textContent =
-              "Gesamt Geräte ohne Vertrag: " +
+              "Gesamtbetrag: " +
               formatSoloEgPreis(getSoloEgGesamtsummeNetto(soloEgPdfGeraete), soloEgPdfIstBrutto) +
               " " +
               (soloEgPdfIstBrutto ? "Brutto" : "Netto");
@@ -11070,8 +11076,8 @@
               li.innerHTML =
                 `<span style="color: #e20074; margin-right: 8px; font-weight: bold;">•</span> ` +
                 escapeHtml(soloEgPositionLabel(geraet)) +
-                ": je " +
-                formatSoloEgPreis(geraet.preis, istBrutto);
+                ": " +
+                formatSoloEgPositionsPreis(geraet, istBrutto);
 
               soloEgSummaryUl.appendChild(li);
             });
