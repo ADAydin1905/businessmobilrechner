@@ -311,7 +311,7 @@ body.dark-mode .rufnummer-input {
 
   box-sizing: border-box;
 
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
 
   color: var(--text-color);
 
@@ -997,7 +997,7 @@ input:checked + .slider:before {
 
   box-sizing: border-box;
 
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
 
   color: var(--text-color);
 
@@ -1119,7 +1119,7 @@ input:checked + .slider:before {
 
   border-radius: 8px;
 
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
 
   color: var(--text-color);
 
@@ -2317,7 +2317,7 @@ select.mailstyle {
 
   border-radius: var(--border-radius);
 
-  background-color: white;
+  background-color: var(--card-bg);
 
   font-weight: bold;
 
