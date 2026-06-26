@@ -2521,7 +2521,7 @@ select.mailstyle:focus {
 
   display: flex;
 
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
 
   border-radius: var(--border-radius);
 
@@ -2541,7 +2541,7 @@ select.mailstyle:focus {
   display: flex;
   width: 100%;
   box-sizing: border-box;
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
   border: 1px solid #ddd;
   border-radius: var(--border-radius);
   padding: 4px;
