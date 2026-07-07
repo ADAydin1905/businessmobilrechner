@@ -19,7 +19,7 @@
 :root {
   --primary-color: #e20074;
   --controls-expanded-width: 330px;
-  --cart-expanded-width: 280px;
+  --cart-expanded-width: clamp(320px, 24vw, 380px);
   --panel-collapsed-width: 46px;
 
   --background-color: #f4f6f8;
@@ -2844,6 +2844,14 @@ body.dark-mode .price-toggle {
   padding-right: 10px;
 
   margin-right: -10px;
+
+  -ms-overflow-style: none;
+
+  scrollbar-width: none;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  display: none;
 }
 
 #infoModal {
