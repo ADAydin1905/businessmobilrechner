@@ -6,6 +6,7 @@
  */
 :root {
   --primary-color: #e20074;
+  --panel-collapsed-width: 46px;
 
   --background-color: #f4f6f8;
 
@@ -104,9 +105,103 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+/* Panel-Header: Icon + Toggle-Button */
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 30px;
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.panel-icon {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.panel-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.panel-toggle-btn:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.panel-arrow {
+  transition: transform 0.25s ease;
+}
+
+.controls.collapsed .panel-header-left,
+#warenkorbBox.collapsed .panel-header-left {
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Eingeklappt: Pfeil dreht sich */
+.controls.collapsed .panel-arrow {
+  transform: rotate(180deg);
+}
+
+#warenkorbBox.collapsed .panel-arrow {
+  transform: rotate(180deg);
+}
+
+/* Eingeklappt: Inhalt & Extras ausblenden */
+.controls.collapsed .scrollable-content {
+  display: none;
+}
+
+.controls.collapsed .dark-mode-toggle {
+  display: none;
+}
+
+#warenkorbBox.collapsed .scrollable-content {
+  display: none;
+}
+
+#warenkorbBox.collapsed .price-toggle {
+  display: none;
+}
+
+/* Eingeklappt: Header vertikal ausrichten */
+.controls.collapsed h3,
+#warenkorbBox.collapsed h3 {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+/* Eingeklappt: Padding reduzieren */
+.controls.collapsed,
+#warenkorbBox.collapsed {
+  padding: 12px 8px;
+  overflow: hidden;
+}
+
 @media (min-width: 768px) {
   .container {
-    grid-template-columns: 330px 2fr 0.9fr;
+    grid-template-columns: 330px minmax(0, 2fr) minmax(280px, 0.9fr);
+    transition: grid-template-columns 0.3s ease;
 
     grid-template-areas: "controls central-content-area warenkorb";
   }
@@ -175,6 +270,18 @@ h2 {
     display: flex;
 
     flex-direction: column;
+  }
+
+  .container.controls-collapsed {
+    grid-template-columns: var(--panel-collapsed-width) minmax(0, 2fr) minmax(280px, 0.9fr);
+  }
+
+  .container.warenkorb-collapsed {
+    grid-template-columns: 330px minmax(0, 1fr) var(--panel-collapsed-width);
+  }
+
+  .container.controls-collapsed.warenkorb-collapsed {
+    grid-template-columns: var(--panel-collapsed-width) minmax(0, 1fr) var(--panel-collapsed-width);
   }
 }
 
