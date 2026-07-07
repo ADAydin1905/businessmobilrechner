@@ -4,8 +4,22 @@
  * Eingebunden per <link rel="stylesheet" href="style.css">. Funktioniert
  * identisch per Doppelklick (file://) und beim Hosten (GitHub Pages).
  */
+@property --controls-col {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 330px;
+}
+
+@property --cart-col {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 280px;
+}
+
 :root {
   --primary-color: #e20074;
+  --controls-expanded-width: 330px;
+  --cart-expanded-width: 280px;
   --panel-collapsed-width: 46px;
 
   --background-color: #f4f6f8;
@@ -173,12 +187,39 @@ h2 {
   display: none;
 }
 
+#warenkorbBox .scrollable-content,
+#warenkorbBox .price-toggle {
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease;
+}
+
+#warenkorbBox .price-toggle {
+  max-width: 180px;
+  overflow: hidden;
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease,
+    max-width 0.22s ease,
+    padding 0.22s ease,
+    border-width 0.22s ease;
+}
+
 #warenkorbBox.collapsed .scrollable-content {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 #warenkorbBox.collapsed .price-toggle {
-  display: none;
+  border-width: 0;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 /* Eingeklappt: Header vertikal ausrichten */
@@ -200,8 +241,13 @@ h2 {
 
 @media (min-width: 768px) {
   .container {
-    grid-template-columns: 330px minmax(0, 2fr) minmax(280px, 0.9fr);
-    transition: grid-template-columns 0.3s ease;
+    --controls-col: var(--controls-expanded-width);
+    --cart-col: var(--cart-expanded-width);
+    grid-template-columns: var(--controls-col) minmax(0, 1fr) var(--cart-col);
+    transition:
+      --controls-col 0.3s ease,
+      --cart-col 0.3s ease,
+      grid-template-columns 0.3s ease;
 
     grid-template-areas: "controls central-content-area warenkorb";
   }
@@ -273,15 +319,16 @@ h2 {
   }
 
   .container.controls-collapsed {
-    grid-template-columns: var(--panel-collapsed-width) minmax(0, 2fr) minmax(280px, 0.9fr);
+    --controls-col: var(--panel-collapsed-width);
   }
 
   .container.warenkorb-collapsed {
-    grid-template-columns: 330px minmax(0, 1fr) var(--panel-collapsed-width);
+    --cart-col: var(--panel-collapsed-width);
   }
 
   .container.controls-collapsed.warenkorb-collapsed {
-    grid-template-columns: var(--panel-collapsed-width) minmax(0, 1fr) var(--panel-collapsed-width);
+    --controls-col: var(--panel-collapsed-width);
+    --cart-col: var(--panel-collapsed-width);
   }
 }
 
