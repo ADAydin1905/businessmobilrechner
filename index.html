@@ -15632,10 +15632,14 @@
           (container.classList.contains("controls-collapsed") ? 1 : 0) +
           (container.classList.contains("warenkorb-collapsed") ? 1 : 0);
         const targetColumns = collapsedPanels === 0 ? 3 : collapsedPanels === 1 ? 4 : 5;
-        const columns = fitColumns > 5 ? fitColumns : Math.min(fitColumns, targetColumns);
+        const maxColumns = fitColumns > 5 ? fitColumns : Math.min(fitColumns, targetColumns);
 
         TARIFF_GRID_CONTENT_IDS.forEach((id) => {
-          document.getElementById(id)?.style.setProperty("--tariff-grid-columns", String(columns));
+          const grid = document.getElementById(id);
+          if (!grid) return;
+          const renderedCards = grid.querySelectorAll(".tarifblock-wrapper").length;
+          const columns = Math.max(1, Math.min(maxColumns, renderedCards || 1));
+          grid.style.setProperty("--tariff-grid-columns", String(columns));
         });
       }
 
