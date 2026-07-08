@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=panel-collapse-v5" />
+    <link rel="stylesheet" href="style.css?v=adaptive-tariff-grid-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -8241,6 +8241,8 @@
           lastHauptTarife[`hk_${i}`] = document.getElementById(`hk_tarif_${i}`)?.value || "";
         for (let i = 1; i <= hauptdatenkarten; i++)
           lastHauptTarife[`hdk_${i}`] = document.getElementById(`hdk_tarif_${i}`)?.value || "";
+
+        requestTariffGridLayoutUpdate();
       }
 
       function handleInputChange(event) {
@@ -15600,6 +15602,62 @@
       }
 
       // --- Panel-Toggle (Einstellungen / Warenkorb) ---
+      const TARIFF_GRID_CONTENT_IDS = [
+        "hauptkartenTarifauswahlContent",
+        "partnerkartenTarifauswahlContent",
+        "hauptdatenkartenTarifauswahlContent",
+        "partnerdatenkartenTarifauswahlContent",
+      ];
+      const TARIFF_GRID_MIN_CARD_WIDTH = 230;
+      const TARIFF_GRID_GAP = 15;
+      let tariffGridResizeObserver = null;
+      let tariffGridUpdateTimer = null;
+
+      function updateTariffGridColumns() {
+        const centralArea = document.querySelector(".central-content-area");
+        const container = document.querySelector(".container");
+        if (!centralArea || !container) return;
+
+        const visibleTariffGrid = TARIFF_GRID_CONTENT_IDS.map((id) => document.getElementById(id)).find(
+          (grid) => grid && grid.getBoundingClientRect().width > 0,
+        );
+        const availableWidth = (visibleTariffGrid || centralArea).getBoundingClientRect().width;
+        if (!availableWidth) return;
+
+        const fitColumns = Math.max(
+          1,
+          Math.floor((availableWidth + TARIFF_GRID_GAP) / (TARIFF_GRID_MIN_CARD_WIDTH + TARIFF_GRID_GAP)),
+        );
+        const collapsedPanels =
+          (container.classList.contains("controls-collapsed") ? 1 : 0) +
+          (container.classList.contains("warenkorb-collapsed") ? 1 : 0);
+        const targetColumns = collapsedPanels === 0 ? 3 : collapsedPanels === 1 ? 4 : 5;
+        const columns = fitColumns > 5 ? fitColumns : Math.min(fitColumns, targetColumns);
+
+        TARIFF_GRID_CONTENT_IDS.forEach((id) => {
+          document.getElementById(id)?.style.setProperty("--tariff-grid-columns", String(columns));
+        });
+      }
+
+      function requestTariffGridLayoutUpdate() {
+        window.requestAnimationFrame(updateTariffGridColumns);
+        window.clearTimeout(tariffGridUpdateTimer);
+        tariffGridUpdateTimer = window.setTimeout(updateTariffGridColumns, 340);
+      }
+
+      function setupTariffGridLayout() {
+        requestTariffGridLayoutUpdate();
+
+        const centralArea = document.querySelector(".central-content-area");
+        if (centralArea && "ResizeObserver" in window) {
+          tariffGridResizeObserver?.disconnect();
+          tariffGridResizeObserver = new ResizeObserver(updateTariffGridColumns);
+          tariffGridResizeObserver.observe(centralArea);
+        }
+
+        window.addEventListener("resize", requestTariffGridLayoutUpdate);
+      }
+
       function toggleControlsPanel() {
         const controls = document.querySelector(".controls");
         const container = document.querySelector(".container");
@@ -15607,6 +15665,7 @@
         container.classList.toggle("controls-collapsed", isCollapsed);
         updatePanelToggleState("controlsToggleBtn", isCollapsed, "Einstellungen");
         localStorage.setItem("controlsCollapsed", isCollapsed ? "1" : "0");
+        requestTariffGridLayoutUpdate();
       }
 
       function toggleWarenkorbPanel() {
@@ -15616,6 +15675,7 @@
         container.classList.toggle("warenkorb-collapsed", isCollapsed);
         updatePanelToggleState("warenkorbToggleBtn", isCollapsed, "Warenkorb");
         localStorage.setItem("warenkorbCollapsed", isCollapsed ? "1" : "0");
+        requestTariffGridLayoutUpdate();
       }
 
       function updatePanelToggleState(buttonId, isCollapsed, label) {
@@ -15642,6 +15702,7 @@
         } else {
           updatePanelToggleState("warenkorbToggleBtn", false, "Warenkorb");
         }
+        setupTariffGridLayout();
       })();
     </script>
 

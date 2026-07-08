@@ -21,6 +21,7 @@
   --controls-expanded-width: 330px;
   --cart-expanded-width: clamp(320px, 24vw, 380px);
   --panel-collapsed-width: 46px;
+  --tariff-grid-columns: 1;
 
   --background-color: #f4f6f8;
 
@@ -106,7 +107,7 @@ h2 {
 
   gap: 20px;
 
-  max-width: 1600px;
+  max-width: 2200px;
 
   margin: 20px auto;
 
@@ -427,7 +428,11 @@ body.dark-mode .rufnummer-input {
 }
 
 .controls .panel-title {
-  justify-content: flex-end;
+  justify-content: space-between;
+}
+
+.controls .panel-header-left {
+  width: 100%;
 }
 
 .controls .dark-mode-toggle {
@@ -437,9 +442,13 @@ body.dark-mode .rufnummer-input {
 
   height: 26px;
 
-  margin-right: 0;
+  margin-right: auto;
 
   justify-self: unset;
+}
+
+.controls.collapsed .panel-header-left {
+  width: auto;
 }
 
 .input-group {
@@ -2505,13 +2514,13 @@ select.mailstyle:focus {
 
   padding: 1rem;
 
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 
   background-color: var(--card-bg);
 
-  min-width: 200px;
+  min-width: 0;
 
-  flex: 1 1 calc(33.33% - 15px);
+  width: 100%;
 
   box-sizing: border-box;
 }
@@ -2554,13 +2563,15 @@ select.mailstyle:focus {
 #partnerkartenTarifauswahlContent,
 #hauptdatenkartenTarifauswahlContent,
 #partnerdatenkartenTarifauswahlContent {
-  display: flex;
+  display: grid;
 
-  flex-wrap: wrap;
+  grid-template-columns: repeat(var(--tariff-grid-columns), minmax(0, 1fr));
 
   gap: 15px;
 
   margin-top: 15px;
+
+  align-items: start;
 }
 
 #mainCardTariffSelection,
