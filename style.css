@@ -426,6 +426,10 @@ body.dark-mode .rufnummer-input {
   margin-bottom: 20px;
 }
 
+.controls .panel-title {
+  justify-content: flex-end;
+}
+
 .controls .dark-mode-toggle {
   position: relative;
 
