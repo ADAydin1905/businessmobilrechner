@@ -233,10 +233,33 @@ h2 {
   font-weight: 800;
 }
 
-.collapsed-card-value {
+.collapsed-card-input {
   margin-top: 2px;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 800;
+  line-height: 1;
+  padding: 0;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.collapsed-card-input::-webkit-inner-spin-button,
+.collapsed-card-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.collapsed-card-input:focus {
+  outline: none;
+  background: rgba(226, 0, 116, 0.12);
+  border-radius: 4px;
 }
 
 .collapsed-bn-toggle {

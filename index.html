@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-settings-badges-v2" />
+    <link rel="stylesheet" href="style.css?v=collapsed-editable-badges-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -167,19 +167,19 @@
             <div class="collapsed-card-badges" aria-label="Kartenanzahlen">
               <span class="collapsed-card-badge" id="controlsCollapsedHkBadge" title="Hauptkarten: 0" aria-label="Hauptkarten: 0">
                 <span class="collapsed-card-label">HK</span>
-                <span class="collapsed-card-value" id="controlsCollapsedHkCount">0</span>
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedHkInput" min="0" value="0" inputmode="numeric" aria-label="Hauptkarten" oninput="syncCollapsedCardCount('hauptkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
               <span class="collapsed-card-badge" id="controlsCollapsedPkBadge" title="Partnerkarten: 0" aria-label="Partnerkarten: 0">
                 <span class="collapsed-card-label">PK</span>
-                <span class="collapsed-card-value" id="controlsCollapsedPkCount">0</span>
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedPkInput" min="0" value="0" inputmode="numeric" aria-label="Partnerkarten" oninput="syncCollapsedCardCount('partnerkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
               <span class="collapsed-card-badge" id="controlsCollapsedHdkBadge" title="Haupt-Datenkarten: 0" aria-label="Haupt-Datenkarten: 0">
                 <span class="collapsed-card-label">HDK</span>
-                <span class="collapsed-card-value" id="controlsCollapsedHdkCount">0</span>
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedHdkInput" min="0" value="0" inputmode="numeric" aria-label="Haupt-Datenkarten" oninput="syncCollapsedCardCount('hauptdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
               <span class="collapsed-card-badge" id="controlsCollapsedPdkBadge" title="Partner-Datenkarten: 0" aria-label="Partner-Datenkarten: 0">
                 <span class="collapsed-card-label">PDK</span>
-                <span class="collapsed-card-value" id="controlsCollapsedPdkCount">0</span>
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedPdkInput" min="0" value="0" inputmode="numeric" aria-label="Partner-Datenkarten" oninput="syncCollapsedCardCount('partnerdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
             </div>
           </div>
@@ -15643,6 +15643,37 @@
         return parseInt(document.getElementById(id)?.value, 10) || 0;
       }
 
+      function normalizePanelCountValue(value) {
+        const parsed = parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+      }
+
+      function syncCollapsedCardCount(targetInputId, sourceInput) {
+        const targetInput = document.getElementById(targetInputId);
+        if (!targetInput) return;
+        const normalizedValue = normalizePanelCountValue(sourceInput.value);
+        targetInput.value = normalizedValue;
+
+        const label = sourceInput.getAttribute("aria-label") || "Karten";
+        const badge = sourceInput.closest(".collapsed-card-badge");
+        if (badge) {
+          const badgeLabel = `${label}: ${normalizedValue}`;
+          badge.title = badgeLabel;
+          badge.setAttribute("aria-label", badgeLabel);
+        }
+      }
+
+      function commitCollapsedCardCount() {
+        renderTarifDropdowns();
+      }
+
+      function handleCollapsedCardCountKeydown(event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        }
+      }
+
       function compactCollapsedPrice(priceText) {
         const fallback = "0 €";
         const source = String(priceText || "").replace(/\s+/g, " ").trim();
@@ -15673,9 +15704,9 @@
           ["controlsCollapsedPdk", "Partner-Datenkarten", counts.partnerdatenkarten],
         ].forEach(([idPrefix, label, value]) => {
           const badge = document.getElementById(`${idPrefix}Badge`);
-          const count = document.getElementById(`${idPrefix}Count`);
+          const input = document.getElementById(`${idPrefix}Input`);
           const badgeLabel = `${label}: ${value}`;
-          if (count) count.textContent = String(value);
+          if (input && document.activeElement !== input) input.value = String(value);
           if (badge) {
             badge.title = badgeLabel;
             badge.setAttribute("aria-label", badgeLabel);
