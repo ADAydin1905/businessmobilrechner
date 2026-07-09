@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-settings-badges-v1" />
+    <link rel="stylesheet" href="style.css?v=collapsed-settings-badges-v2" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -181,10 +181,6 @@
                 <span class="collapsed-card-label">PDK</span>
                 <span class="collapsed-card-value" id="controlsCollapsedPdkCount">0</span>
               </span>
-            </div>
-            <div class="collapsed-bn-toggle" id="controlsCollapsedPriceToggle" role="group" aria-label="Netto/Brutto Anzeige">
-              <button type="button" class="collapsed-bn-option" data-price-type="brutto" onclick="setPriceTypeFromCollapsedToggle('brutto')" title="Brutto anzeigen">B</button>
-              <button type="button" class="collapsed-bn-option active" data-price-type="netto" onclick="setPriceTypeFromCollapsedToggle('netto')" title="Netto anzeigen">N</button>
             </div>
           </div>
         </h3>
@@ -447,6 +443,10 @@
             </svg>
             <span class="collapsed-panel-badge" id="warenkorbCollapsedContracts" title="Keine Verträge" aria-label="Keine Verträge">0</span>
             <span class="collapsed-panel-badge collapsed-price-badge" id="warenkorbCollapsedPrice" title="Gesamt pro Monat: 0,00 € Netto" aria-label="Gesamt pro Monat: 0,00 € Netto">0 €</span>
+            <div class="collapsed-bn-toggle" id="warenkorbCollapsedPriceToggle" role="group" aria-label="Netto/Brutto Anzeige">
+              <button type="button" class="collapsed-bn-option" data-price-type="brutto" onclick="setPriceTypeFromCollapsedToggle('brutto')" title="Brutto anzeigen">B</button>
+              <button type="button" class="collapsed-bn-option active" data-price-type="netto" onclick="setPriceTypeFromCollapsedToggle('netto')" title="Netto anzeigen">N</button>
+            </div>
           </div>
 
           <div class="price-toggle" id="priceToggle">
@@ -5781,7 +5781,7 @@
           slider.style.transform = normalizedPriceType === "brutto" ? "translateX(100%)" : "translateX(0%)";
         }
 
-        document.querySelectorAll("#controlsCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
+        document.querySelectorAll("#warenkorbCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
           button.classList.toggle("active", button.dataset.priceType === normalizedPriceType);
         });
 
@@ -15701,7 +15701,7 @@
         }
 
         const activePriceType = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType || "netto";
-        document.querySelectorAll("#controlsCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
+        document.querySelectorAll("#warenkorbCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
           button.classList.toggle("active", button.dataset.priceType === activePriceType);
         });
       }
