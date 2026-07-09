@@ -20,7 +20,7 @@
   --primary-color: #e20074;
   --controls-expanded-width: 330px;
   --cart-expanded-width: clamp(320px, 24vw, 380px);
-  --panel-collapsed-width: 46px;
+  --panel-collapsed-width: 64px;
   --tariff-grid-columns: 1;
 
   --background-color: #f4f6f8;
@@ -164,6 +164,49 @@ h2 {
   transition: transform 0.25s ease;
 }
 
+.collapsed-panel-badge,
+.collapsed-panel-dot {
+  display: none;
+}
+
+.collapsed-panel-badge {
+  align-items: center;
+  justify-content: center;
+  max-width: 54px;
+  min-width: 30px;
+  min-height: 22px;
+  padding: 2px 5px;
+  border: 1px solid rgba(226, 0, 116, 0.35);
+  border-radius: 999px;
+  background: rgba(226, 0, 116, 0.08);
+  color: var(--primary-color);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-price-badge {
+  font-size: 0.62rem;
+  max-width: 56px;
+}
+
+.collapsed-panel-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #b8b8b8;
+  opacity: 0.45;
+}
+
+.collapsed-panel-dot.active {
+  background: var(--primary-color);
+  opacity: 1;
+  box-shadow: 0 0 0 4px rgba(226, 0, 116, 0.12);
+}
+
 .controls.collapsed .panel-header-left,
 #warenkorbBox.collapsed .panel-header-left {
   flex-direction: column;
@@ -185,7 +228,20 @@ h2 {
 }
 
 .controls.collapsed .dark-mode-toggle {
-  display: none;
+  display: block;
+  margin: 0;
+  transform: scale(0.82);
+  transform-origin: center;
+}
+
+.controls.collapsed .collapsed-panel-badge,
+#warenkorbBox.collapsed .collapsed-panel-badge {
+  display: inline-flex;
+}
+
+.controls.collapsed .collapsed-panel-dot,
+#warenkorbBox.collapsed .collapsed-panel-dot {
+  display: block;
 }
 
 #warenkorbBox .scrollable-content,
@@ -236,7 +292,7 @@ h2 {
 /* Eingeklappt: Padding reduzieren */
 .controls.collapsed,
 #warenkorbBox.collapsed {
-  padding: 12px 8px;
+  padding: 12px 6px;
   overflow: hidden;
 }
 
