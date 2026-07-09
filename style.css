@@ -167,6 +167,7 @@ h2 {
 .collapsed-panel-badge,
 .collapsed-panel-dot,
 .collapsed-card-badges,
+.collapsed-rv-badge,
 .collapsed-bn-toggle {
   display: none;
 }
@@ -228,6 +229,22 @@ h2 {
   overflow: hidden;
 }
 
+.collapsed-rv-badge {
+  width: 54px;
+  min-height: 38px;
+  margin-top: 6px;
+  padding: 4px 3px;
+  border: 1px solid rgba(226, 0, 116, 0.32);
+  border-radius: 8px;
+  background: rgba(226, 0, 116, 0.07);
+  color: var(--primary-color);
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
 .collapsed-card-label {
   font-size: 0.54rem;
   font-weight: 800;
@@ -257,6 +274,30 @@ h2 {
 }
 
 .collapsed-card-input:focus {
+  outline: none;
+  background: rgba(226, 0, 116, 0.12);
+  border-radius: 4px;
+}
+
+.collapsed-rv-select {
+  width: 100%;
+  min-width: 0;
+  margin-top: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.56rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 2px;
+  text-align: center;
+  text-align-last: center;
+  appearance: none;
+}
+
+.collapsed-rv-select:focus {
   outline: none;
   background: rgba(226, 0, 116, 0.12);
   border-radius: 4px;
@@ -337,6 +378,10 @@ h2 {
 .controls.collapsed .collapsed-card-badges {
   display: flex;
   flex-direction: column;
+}
+
+.controls.collapsed .collapsed-rv-badge {
+  display: flex;
 }
 
 #warenkorbBox.collapsed .collapsed-bn-toggle {

@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-editable-badges-v1" />
+    <link rel="stylesheet" href="style.css?v=collapsed-rv-badge-v2" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -182,6 +182,10 @@
                 <input type="number" class="collapsed-card-input" id="controlsCollapsedPdkInput" min="0" value="0" inputmode="numeric" aria-label="Partner-Datenkarten" oninput="syncCollapsedCardCount('partnerdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
             </div>
+            <span class="collapsed-rv-badge" id="controlsCollapsedRvBadge" title="RV-Rabatt: 0%" aria-label="RV-Rabatt: 0%">
+              <span class="collapsed-card-label">RV</span>
+              <select id="controlsCollapsedRabatt" class="collapsed-rv-select" aria-label="RV-Rabatt" onchange="setRabattFromCollapsedSelect(this.value)"></select>
+            </span>
           </div>
         </h3>
 
@@ -241,7 +245,7 @@
           <div class="einstellungs-zeile">
             <label for="rabatt" class="einstellungs-label">RV-Rabatte</label>
 
-            <select id="rabatt" class="mailstyle" style="width: 110px;" onchange="berechneTarife()">
+            <select id="rabatt" class="mailstyle" style="width: 110px;" onchange="setRabattFromExpandedSelect(this.value)">
               <!-- Optionen werden dynamisch aus rabatte.js befuellt (siehe befuelleRabattDropdowns) -->
             </select>
           </div>
@@ -7041,14 +7045,25 @@
 
       // Helfer: erzeugt das <option>-HTML fuer einen Rabatt-Dropdown.
       // mitMitarbeiter=true haengt zusaetzlich den "Mitarbeiter/BGE"-Eintrag an.
-      function buildRabattOptionsHTML(mitMitarbeiter) {
+      function buildRabattOptionsHTML(mitMitarbeiter, kompakt) {
         // Liste sortieren, 0 garantiert enthalten
         const liste = Array.from(new Set(rahmenvertragsRabatte.concat([0]))).sort((a, b) => a - b);
         let html = liste.map((p) => `<option value="${p}">${p}%</option>`).join("");
         if (mitMitarbeiter) {
-          html += '<option value="mitarbeiter">Mitarbeiter/BGE (tarifspezifisch)</option>';
+          const mitarbeiterLabel = kompakt ? "MA/BGE" : "Mitarbeiter/BGE (tarifspezifisch)";
+          html += `<option value="mitarbeiter">${mitarbeiterLabel}</option>`;
         }
         return html;
+      }
+
+      function setSelectValueIfAvailable(select, value) {
+        if (!select) return "0";
+        if (Array.from(select.options).some((option) => option.value === value)) {
+          select.value = value;
+          return value;
+        }
+        select.value = "0";
+        return "0";
       }
 
       // Befuellt den globalen Rahmenvertrags-Rabatt-Dropdown (#rabatt). Wird
@@ -7056,15 +7071,35 @@
       // Behaelt den aktuellen Wert bei, falls er nach Update noch waehlbar ist.
       function befuelleRabattDropdown() {
         const sel = document.getElementById("rabatt");
-        if (!sel) return;
-        const aktuell = sel.value;
-        sel.innerHTML = buildRabattOptionsHTML(true);
-        // Wert wiederherstellen, falls noch vorhanden, sonst auf 0 zuruecksetzen
-        if (Array.from(sel.options).some((o) => o.value === aktuell)) {
-          sel.value = aktuell;
-        } else {
-          sel.value = "0";
-        }
+        const collapsedSel = document.getElementById("controlsCollapsedRabatt");
+        if (!sel && !collapsedSel) return;
+        const aktuell = sel?.value || collapsedSel?.value || "0";
+        const optionsHTML = buildRabattOptionsHTML(true);
+        const collapsedOptionsHTML = buildRabattOptionsHTML(true, true);
+        if (sel) sel.innerHTML = optionsHTML;
+        if (collapsedSel) collapsedSel.innerHTML = collapsedOptionsHTML;
+        const restoredValue = setSelectValueIfAvailable(sel, aktuell);
+        setSelectValueIfAvailable(collapsedSel, restoredValue);
+        updateCollapsedPanelBadges();
+      }
+
+      function syncRabattSelects(value) {
+        const normalizedValue = String(value || "0");
+        const expandedSelect = document.getElementById("rabatt");
+        const collapsedSelect = document.getElementById("controlsCollapsedRabatt");
+        const appliedValue = setSelectValueIfAvailable(expandedSelect, normalizedValue);
+        setSelectValueIfAvailable(collapsedSelect, appliedValue);
+        updateCollapsedPanelBadges();
+      }
+
+      function setRabattFromExpandedSelect(value) {
+        syncRabattSelects(value);
+        berechneTarife();
+      }
+
+      function setRabattFromCollapsedSelect(value) {
+        syncRabattSelects(value);
+        berechneTarife();
       }
 
       if (!getRabattDatenSync()) {
@@ -15712,6 +15747,19 @@
             badge.setAttribute("aria-label", badgeLabel);
           }
         });
+
+        const rabattSelect = document.getElementById("rabatt");
+        const collapsedRabattSelect = document.getElementById("controlsCollapsedRabatt");
+        const rvBadge = document.getElementById("controlsCollapsedRvBadge");
+        if (rabattSelect && collapsedRabattSelect) {
+          if (document.activeElement !== collapsedRabattSelect) collapsedRabattSelect.value = rabattSelect.value;
+          const selectedText = rabattSelect.options[rabattSelect.selectedIndex]?.text || `${rabattSelect.value}%`;
+          const rvLabel = `RV-Rabatt: ${selectedText}`;
+          if (rvBadge) {
+            rvBadge.title = rvLabel;
+            rvBadge.setAttribute("aria-label", rvLabel);
+          }
+        }
 
         const contractsBadge = document.getElementById("warenkorbCollapsedContracts");
         const contractText = document.getElementById("w_summeVertraege")?.textContent?.trim() || String(totalCards);
