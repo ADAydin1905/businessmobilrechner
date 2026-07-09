@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-panel-badges-v1" />
+    <link rel="stylesheet" href="style.css?v=collapsed-settings-badges-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -164,8 +164,28 @@
                 <polyline points="7,1 2,8 7,15"></polyline>
               </svg>
             </button>
-            <span class="collapsed-panel-badge" id="controlsCollapsedCardCount" title="Keine Karten ausgewählt" aria-label="Keine Karten ausgewählt">0</span>
-            <span class="collapsed-panel-dot" id="controlsCollapsedStatus" title="Keine Zusatz-Einstellungen aktiv" aria-label="Keine Zusatz-Einstellungen aktiv"></span>
+            <div class="collapsed-card-badges" aria-label="Kartenanzahlen">
+              <span class="collapsed-card-badge" id="controlsCollapsedHkBadge" title="Hauptkarten: 0" aria-label="Hauptkarten: 0">
+                <span class="collapsed-card-label">HK</span>
+                <span class="collapsed-card-value" id="controlsCollapsedHkCount">0</span>
+              </span>
+              <span class="collapsed-card-badge" id="controlsCollapsedPkBadge" title="Partnerkarten: 0" aria-label="Partnerkarten: 0">
+                <span class="collapsed-card-label">PK</span>
+                <span class="collapsed-card-value" id="controlsCollapsedPkCount">0</span>
+              </span>
+              <span class="collapsed-card-badge" id="controlsCollapsedHdkBadge" title="Haupt-Datenkarten: 0" aria-label="Haupt-Datenkarten: 0">
+                <span class="collapsed-card-label">HDK</span>
+                <span class="collapsed-card-value" id="controlsCollapsedHdkCount">0</span>
+              </span>
+              <span class="collapsed-card-badge" id="controlsCollapsedPdkBadge" title="Partner-Datenkarten: 0" aria-label="Partner-Datenkarten: 0">
+                <span class="collapsed-card-label">PDK</span>
+                <span class="collapsed-card-value" id="controlsCollapsedPdkCount">0</span>
+              </span>
+            </div>
+            <div class="collapsed-bn-toggle" id="controlsCollapsedPriceToggle" role="group" aria-label="Netto/Brutto Anzeige">
+              <button type="button" class="collapsed-bn-option" data-price-type="brutto" onclick="setPriceTypeFromCollapsedToggle('brutto')" title="Brutto anzeigen">B</button>
+              <button type="button" class="collapsed-bn-option active" data-price-type="netto" onclick="setPriceTypeFromCollapsedToggle('netto')" title="Netto anzeigen">N</button>
+            </div>
           </div>
         </h3>
 
@@ -5749,24 +5769,34 @@
         updateCollapsedPanelBadges();
       }
 
+      function setPriceType(priceType, shouldRecalculate = true) {
+        const normalizedPriceType = priceType === "brutto" ? "brutto" : "netto";
+
+        document.querySelectorAll("#priceToggle .toggle-option").forEach((button) => {
+          button.classList.toggle("active", button.dataset.priceType === normalizedPriceType);
+        });
+
+        const slider = document.querySelector("#priceToggle .toggle-slider");
+        if (slider) {
+          slider.style.transform = normalizedPriceType === "brutto" ? "translateX(100%)" : "translateX(0%)";
+        }
+
+        document.querySelectorAll("#controlsCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
+          button.classList.toggle("active", button.dataset.priceType === normalizedPriceType);
+        });
+
+        updateCollapsedPanelBadges();
+        if (shouldRecalculate && typeof berechneTarife === "function") berechneTarife();
+      }
+
+      function setPriceTypeFromCollapsedToggle(priceType) {
+        setPriceType(priceType, true);
+      }
+
       document.addEventListener("DOMContentLoaded", (event) => {
         document.getElementById("priceToggle").addEventListener("click", (e) => {
           if (e.target.matches(".toggle-option")) {
-            const priceType = e.target.dataset.priceType;
-
-            document.querySelector("#priceToggle .toggle-option.active").classList.remove("active");
-
-            e.target.classList.add("active");
-
-            const slider = document.querySelector("#priceToggle .toggle-slider");
-
-            if (priceType === "brutto") {
-              slider.style.transform = "translateX(100%)";
-            } else {
-              slider.style.transform = "translateX(0%)";
-            }
-
-            berechneTarife();
+            setPriceType(e.target.dataset.priceType, true);
           }
         });
 
@@ -7415,18 +7445,7 @@
           document.getElementById("manuelleZuweisung").checked = decodedState.manuelleZuweisung;
 
           const priceType = decodedState.priceType || "netto";
-
-          document.querySelector("#priceToggle .toggle-option.active").classList.remove("active");
-
-          const targetToggle = document.querySelector(`#priceToggle .toggle-option[data-price-type="${priceType}"]`);
-
-          if (targetToggle) targetToggle.classList.add("active");
-
-          const slider = document.querySelector("#priceToggle .toggle-slider");
-
-          if (slider) {
-            slider.style.transform = priceType === "brutto" ? "translateX(100%)" : "translateX(0%)";
-          }
+          setPriceType(priceType, false);
 
           if (decodedState.zubuchoptionen) {
             zubuchoptionen = decodedState.zubuchoptionen;
@@ -15647,32 +15666,21 @@
           partnerdatenkarten: getPanelCountValue("partnerdatenkarten"),
         };
         const totalCards = counts.hauptkarten + counts.partnerkarten + counts.hauptdatenkarten + counts.partnerdatenkarten;
-        const countBadge = document.getElementById("controlsCollapsedCardCount");
-        if (countBadge) {
-          const countLabel =
-            `${totalCards} Karten: ${counts.hauptkarten} HK, ${counts.partnerkarten} PK, ` +
-            `${counts.hauptdatenkarten} HDK, ${counts.partnerdatenkarten} PDK`;
-          countBadge.textContent = String(totalCards);
-          countBadge.title = countLabel;
-          countBadge.setAttribute("aria-label", countLabel);
-        }
-
-        const activeSettings = [];
-        if (document.getElementById("bestandsRufnummer")?.checked) activeSettings.push("Rufnummern");
-        if (document.getElementById("zeigeBereitstellung")?.checked) activeSettings.push("Einmalige Preise");
-        if (document.getElementById("rabattUebersteuern")?.checked) activeSettings.push("Individuelle RV-Rabatte");
-        if (document.getElementById("manuelleZuweisung")?.checked) activeSettings.push("Manuelle Zuweisung");
-        if (document.getElementById("grkModus")?.checked) activeSettings.push("GrK-Modus");
-
-        const statusDot = document.getElementById("controlsCollapsedStatus");
-        if (statusDot) {
-          const statusLabel = activeSettings.length
-            ? `${activeSettings.length} Zusatz-Einstellung(en) aktiv: ${activeSettings.join(", ")}`
-            : "Keine Zusatz-Einstellungen aktiv";
-          statusDot.classList.toggle("active", activeSettings.length > 0);
-          statusDot.title = statusLabel;
-          statusDot.setAttribute("aria-label", statusLabel);
-        }
+        [
+          ["controlsCollapsedHk", "Hauptkarten", counts.hauptkarten],
+          ["controlsCollapsedPk", "Partnerkarten", counts.partnerkarten],
+          ["controlsCollapsedHdk", "Haupt-Datenkarten", counts.hauptdatenkarten],
+          ["controlsCollapsedPdk", "Partner-Datenkarten", counts.partnerdatenkarten],
+        ].forEach(([idPrefix, label, value]) => {
+          const badge = document.getElementById(`${idPrefix}Badge`);
+          const count = document.getElementById(`${idPrefix}Count`);
+          const badgeLabel = `${label}: ${value}`;
+          if (count) count.textContent = String(value);
+          if (badge) {
+            badge.title = badgeLabel;
+            badge.setAttribute("aria-label", badgeLabel);
+          }
+        });
 
         const contractsBadge = document.getElementById("warenkorbCollapsedContracts");
         const contractText = document.getElementById("w_summeVertraege")?.textContent?.trim() || String(totalCards);
@@ -15691,6 +15699,11 @@
           priceBadge.title = priceLabel;
           priceBadge.setAttribute("aria-label", priceLabel);
         }
+
+        const activePriceType = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType || "netto";
+        document.querySelectorAll("#controlsCollapsedPriceToggle .collapsed-bn-option").forEach((button) => {
+          button.classList.toggle("active", button.dataset.priceType === activePriceType);
+        });
       }
 
       function updateTariffGridColumns() {
