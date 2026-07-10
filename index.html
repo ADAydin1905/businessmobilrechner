@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-tooltips-bn-order-v1" />
+    <link rel="stylesheet" href="style.css?v=start-surface-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -397,6 +397,39 @@
 
       <div class="central-content-area">
         <div class="tariff-selection-area">
+          <div id="tariffStartSurface" class="start-surface card" aria-label="Berechnung starten">
+            <div class="start-surface-copy">
+              <span class="start-surface-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+              </span>
+              <div>
+                <h3>Berechnung starten</h3>
+                <p>Noch keine Karten angelegt.</p>
+              </div>
+            </div>
+
+            <div class="start-surface-actions">
+              <button type="button" class="start-action" onclick="addCardFromStart('hauptkarten')" title="Hauptkarte hinzufügen" aria-label="Hauptkarte hinzufügen">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+                  <path d="M11 18h2"></path>
+                </svg>
+                <span>Hauptkarte hinzufügen</span>
+              </button>
+              <button type="button" class="start-action" onclick="addCardFromStart('hauptdatenkarten')" title="Haupt-Datenkarte hinzufügen" aria-label="Haupt-Datenkarte hinzufügen">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                  <path d="M8 9h8"></path>
+                  <path d="M8 13h5"></path>
+                </svg>
+                <span>Haupt-Datenkarte hinzufügen</span>
+              </button>
+            </div>
+          </div>
+
           <div id="mainCardTariffSelection" class="card">
             <h3>Tarifauswahl Hauptkarten</h3>
 
@@ -7657,6 +7690,22 @@
 
       // === URL State Management End ===
 
+      function addCardFromStart(targetInputId) {
+        const input = document.getElementById(targetInputId);
+        if (!input) return;
+
+        input.value = normalizePanelCountValue(input.value) + 1;
+        renderTarifDropdowns();
+
+        const firstSelectByInput = {
+          hauptkarten: "hk_tarif_1",
+          hauptdatenkarten: "hdk_tarif_1",
+        };
+        window.requestAnimationFrame(() => {
+          document.getElementById(firstSelectByInput[targetInputId])?.focus();
+        });
+      }
+
       function renderTarifDropdowns() {
         const zeigeBereitstellung = document.getElementById("zeigeBereitstellung")?.checked;
 
@@ -7814,6 +7863,11 @@
         partnerDataCardTariffSelectionDiv.style.display = partnerdatenkarten === 0 ? "none" : "block";
 
         const totalKarten = hauptkarten + partnerkarten + hauptdatenkarten + partnerdatenkarten;
+
+        const startSurface = document.getElementById("tariffStartSurface");
+        if (startSurface) {
+          startSurface.style.display = totalKarten === 0 ? "block" : "none";
+        }
 
         if (resultsDiv) {
           resultsDiv.style.display = totalKarten === 0 ? "none" : "block";
