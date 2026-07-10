@@ -404,6 +404,30 @@ h2 {
   gap: 8px;
 }
 
+.controls.collapsed .panel-toggle-btn {
+  order: 1;
+}
+
+.controls.collapsed .panel-icon {
+  order: 2;
+}
+
+.controls.collapsed .dark-mode-toggle {
+  order: 3;
+}
+
+.controls.collapsed .collapsed-card-badges {
+  order: 4;
+}
+
+.controls.collapsed .collapsed-rv-badge {
+  order: 5;
+}
+
+.controls.collapsed .collapsed-action-buttons {
+  order: 6;
+}
+
 /* Eingeklappt: Pfeil dreht sich */
 .controls.collapsed .panel-arrow {
   transform: rotate(180deg);
