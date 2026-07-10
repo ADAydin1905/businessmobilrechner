@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-rv-badge-v2" />
+    <link rel="stylesheet" href="style.css?v=collapsed-actions-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -186,6 +186,57 @@
               <span class="collapsed-card-label">RV</span>
               <select id="controlsCollapsedRabatt" class="collapsed-rv-select" aria-label="RV-Rabatt" onchange="setRabattFromCollapsedSelect(this.value)"></select>
             </span>
+            <div class="collapsed-action-buttons" aria-label="Schnellaktionen">
+              <button type="button" class="collapsed-action-btn" onclick="openModal('kundendatenModal')" title="Kundendaten" aria-label="Kundendaten">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="openModal('bestandstarifeModal')" title="Bestandstarife" aria-label="Bestandstarife">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+                  <path d="M3 8l2-5h14l2 5"></path>
+                  <path d="M10 12h4"></path>
+                  <path d="M8 16h8"></path>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="openModal('soloEgModal')" title="Solo EG" aria-label="Solo EG">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+                  <path d="M11 18h2"></path>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="generateStyledPDF()" title="PDF" aria-label="PDF exportieren">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <path d="M14 2v6h6"></path>
+                  <text x="6.5" y="17" textLength="11" lengthAdjust="spacingAndGlyphs">PDF</text>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="document.getElementById('kopierenBtn')?.click()" title="Angebotstext" aria-label="Angebotstext kopieren">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <path d="M14 2v6h6"></path>
+                  <path d="M8 13h8"></path>
+                  <path d="M8 17h6"></path>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="openAssignmentModal()" title="Zuweisung" aria-label="Zuweisung">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 7h13"></path>
+                  <path d="M18 4l3 3-3 3"></path>
+                  <path d="M16 17H3"></path>
+                  <path d="M6 14l-3 3 3 3"></path>
+                </svg>
+              </button>
+              <button type="button" class="collapsed-action-btn" onclick="zuruecksetzen()" title="Zurücksetzen" aria-label="Zurücksetzen">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                  <path d="M3 3v6h6"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </h3>
 

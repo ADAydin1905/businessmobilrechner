@@ -168,6 +168,7 @@ h2 {
 .collapsed-panel-dot,
 .collapsed-card-badges,
 .collapsed-rv-badge,
+.collapsed-action-buttons,
 .collapsed-bn-toggle {
   display: none;
 }
@@ -303,6 +304,65 @@ h2 {
   border-radius: 4px;
 }
 
+.collapsed-action-buttons {
+  width: 54px;
+  margin-top: 8px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.collapsed-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(226, 0, 116, 0.2);
+  transition:
+    background-color 0.2s ease,
+    transform 0.12s ease,
+    box-shadow 0.2s ease;
+}
+
+.collapsed-action-btn:hover {
+  background: #c00060;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(226, 0, 116, 0.28);
+}
+
+.collapsed-action-btn:active {
+  transform: translateY(0);
+}
+
+.collapsed-action-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.collapsed-action-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.collapsed-action-btn text {
+  fill: currentColor;
+  stroke: none;
+  font-size: 5px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 .collapsed-bn-toggle {
   width: 54px;
   padding: 3px;
@@ -384,6 +444,10 @@ h2 {
   display: flex;
 }
 
+.controls.collapsed .collapsed-action-buttons {
+  display: flex;
+}
+
 #warenkorbBox.collapsed .collapsed-bn-toggle {
   display: flex;
 }
@@ -438,6 +502,17 @@ h2 {
 #warenkorbBox.collapsed {
   padding: 12px 6px;
   overflow: hidden;
+}
+
+.controls.collapsed {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.controls.collapsed::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 768px) {
