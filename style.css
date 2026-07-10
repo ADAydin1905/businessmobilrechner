@@ -247,7 +247,7 @@ h2 {
 }
 
 .collapsed-card-label {
-  font-size: 0.54rem;
+  font-size: 0.6rem;
   font-weight: 800;
 }
 
@@ -289,7 +289,7 @@ h2 {
   color: var(--primary-color);
   cursor: pointer;
   font: inherit;
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 800;
   line-height: 1;
   padding: 0 2px;
