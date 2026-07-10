@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=collapsed-settings-order-v1" />
+    <link rel="stylesheet" href="style.css?v=collapsed-tooltips-bn-order-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -165,26 +165,26 @@
               </svg>
             </button>
             <div class="collapsed-card-badges" aria-label="Kartenanzahlen">
-              <span class="collapsed-card-badge" id="controlsCollapsedHkBadge" data-tooltip-label="HK" title="HK: 0" aria-label="HK: 0">
+              <span class="collapsed-card-badge" id="controlsCollapsedHkBadge" data-tooltip-title="Hauptkarten" title="Hauptkarten" aria-label="Hauptkarten: 0">
                 <span class="collapsed-card-label">HK</span>
-                <input type="number" class="collapsed-card-input" id="controlsCollapsedHkInput" min="0" value="0" inputmode="numeric" title="HK: 0" aria-label="Hauptkarten" oninput="syncCollapsedCardCount('hauptkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedHkInput" min="0" value="0" inputmode="numeric" title="Hauptkarten" aria-label="Hauptkarten" oninput="syncCollapsedCardCount('hauptkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
-              <span class="collapsed-card-badge" id="controlsCollapsedPkBadge" data-tooltip-label="PK" title="PK: 0" aria-label="PK: 0">
+              <span class="collapsed-card-badge" id="controlsCollapsedPkBadge" data-tooltip-title="Partnerkarten" title="Partnerkarten" aria-label="Partnerkarten: 0">
                 <span class="collapsed-card-label">PK</span>
-                <input type="number" class="collapsed-card-input" id="controlsCollapsedPkInput" min="0" value="0" inputmode="numeric" title="PK: 0" aria-label="Partnerkarten" oninput="syncCollapsedCardCount('partnerkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedPkInput" min="0" value="0" inputmode="numeric" title="Partnerkarten" aria-label="Partnerkarten" oninput="syncCollapsedCardCount('partnerkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
-              <span class="collapsed-card-badge" id="controlsCollapsedHdkBadge" data-tooltip-label="HDK" title="HDK: 0" aria-label="HDK: 0">
+              <span class="collapsed-card-badge" id="controlsCollapsedHdkBadge" data-tooltip-title="Haupt Datenkarte" title="Haupt Datenkarte" aria-label="Haupt Datenkarte: 0">
                 <span class="collapsed-card-label">HDK</span>
-                <input type="number" class="collapsed-card-input" id="controlsCollapsedHdkInput" min="0" value="0" inputmode="numeric" title="HDK: 0" aria-label="Haupt-Datenkarten" oninput="syncCollapsedCardCount('hauptdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedHdkInput" min="0" value="0" inputmode="numeric" title="Haupt Datenkarte" aria-label="Haupt Datenkarte" oninput="syncCollapsedCardCount('hauptdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
-              <span class="collapsed-card-badge" id="controlsCollapsedPdkBadge" data-tooltip-label="PDK" title="PDK: 0" aria-label="PDK: 0">
+              <span class="collapsed-card-badge" id="controlsCollapsedPdkBadge" data-tooltip-title="Partnerdatenkarte" title="Partnerdatenkarte" aria-label="Partnerdatenkarte: 0">
                 <span class="collapsed-card-label">PDK</span>
-                <input type="number" class="collapsed-card-input" id="controlsCollapsedPdkInput" min="0" value="0" inputmode="numeric" title="PDK: 0" aria-label="Partner-Datenkarten" oninput="syncCollapsedCardCount('partnerdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
+                <input type="number" class="collapsed-card-input" id="controlsCollapsedPdkInput" min="0" value="0" inputmode="numeric" title="Partnerdatenkarte" aria-label="Partnerdatenkarte" oninput="syncCollapsedCardCount('partnerdatenkarten', this)" onchange="commitCollapsedCardCount()" onkeydown="handleCollapsedCardCountKeydown(event)" />
               </span>
             </div>
-            <span class="collapsed-rv-badge" id="controlsCollapsedRvBadge" title="RV: 0%" aria-label="RV: 0%">
+            <span class="collapsed-rv-badge" id="controlsCollapsedRvBadge" title="Rahmenvertragsrabatt" aria-label="Rahmenvertragsrabatt: 0%">
               <span class="collapsed-card-label">RV</span>
-              <select id="controlsCollapsedRabatt" class="collapsed-rv-select" title="RV: 0%" aria-label="RV-Rabatt" onchange="setRabattFromCollapsedSelect(this.value)"></select>
+              <select id="controlsCollapsedRabatt" class="collapsed-rv-select" title="Rahmenvertragsrabatt" aria-label="Rahmenvertragsrabatt" onchange="setRabattFromCollapsedSelect(this.value)"></select>
             </span>
             <div class="collapsed-action-buttons" aria-label="Schnellaktionen">
               <button type="button" class="collapsed-action-btn" onclick="openModal('kundendatenModal')" title="Kundendaten" aria-label="Kundendaten">
@@ -499,8 +499,8 @@
             <span class="collapsed-panel-badge" id="warenkorbCollapsedContracts" title="Keine Verträge" aria-label="Keine Verträge">0</span>
             <span class="collapsed-panel-badge collapsed-price-badge" id="warenkorbCollapsedPrice" title="Gesamt pro Monat: 0,00 € Netto" aria-label="Gesamt pro Monat: 0,00 € Netto">0 €</span>
             <div class="collapsed-bn-toggle" id="warenkorbCollapsedPriceToggle" role="group" aria-label="Netto/Brutto Anzeige">
-              <button type="button" class="collapsed-bn-option" data-price-type="brutto" onclick="setPriceTypeFromCollapsedToggle('brutto')" title="Brutto anzeigen">B</button>
               <button type="button" class="collapsed-bn-option active" data-price-type="netto" onclick="setPriceTypeFromCollapsedToggle('netto')" title="Netto anzeigen">N</button>
+              <button type="button" class="collapsed-bn-option" data-price-type="brutto" onclick="setPriceTypeFromCollapsedToggle('brutto')" title="Brutto anzeigen">B</button>
             </div>
           </div>
 
@@ -15741,11 +15741,11 @@
         targetInput.value = normalizedValue;
 
         const badge = sourceInput.closest(".collapsed-card-badge");
-        const label = badge?.dataset.tooltipLabel || sourceInput.getAttribute("aria-label") || "Karten";
-        const badgeLabel = `${label}: ${normalizedValue}`;
-        sourceInput.title = badgeLabel;
+        const tooltipTitle = badge?.dataset.tooltipTitle || sourceInput.getAttribute("aria-label") || "Karten";
+        const badgeLabel = `${tooltipTitle}: ${normalizedValue}`;
+        sourceInput.title = tooltipTitle;
         if (badge) {
-          badge.title = badgeLabel;
+          badge.title = tooltipTitle;
           badge.setAttribute("aria-label", badgeLabel);
         }
       }
@@ -15785,20 +15785,20 @@
         };
         const totalCards = counts.hauptkarten + counts.partnerkarten + counts.hauptdatenkarten + counts.partnerdatenkarten;
         [
-          ["controlsCollapsedHk", "HK", counts.hauptkarten],
-          ["controlsCollapsedPk", "PK", counts.partnerkarten],
-          ["controlsCollapsedHdk", "HDK", counts.hauptdatenkarten],
-          ["controlsCollapsedPdk", "PDK", counts.partnerdatenkarten],
+          ["controlsCollapsedHk", "Hauptkarten", counts.hauptkarten],
+          ["controlsCollapsedPk", "Partnerkarten", counts.partnerkarten],
+          ["controlsCollapsedHdk", "Haupt Datenkarte", counts.hauptdatenkarten],
+          ["controlsCollapsedPdk", "Partnerdatenkarte", counts.partnerdatenkarten],
         ].forEach(([idPrefix, label, value]) => {
           const badge = document.getElementById(`${idPrefix}Badge`);
           const input = document.getElementById(`${idPrefix}Input`);
           const badgeLabel = `${label}: ${value}`;
           if (input) {
             if (document.activeElement !== input) input.value = String(value);
-            input.title = badgeLabel;
+            input.title = label;
           }
           if (badge) {
-            badge.title = badgeLabel;
+            badge.title = label;
             badge.setAttribute("aria-label", badgeLabel);
           }
         });
@@ -15809,10 +15809,11 @@
         if (rabattSelect && collapsedRabattSelect) {
           if (document.activeElement !== collapsedRabattSelect) collapsedRabattSelect.value = rabattSelect.value;
           const selectedText = rabattSelect.options[rabattSelect.selectedIndex]?.text || `${rabattSelect.value}%`;
-          const rvLabel = `RV: ${selectedText}`;
-          collapsedRabattSelect.title = rvLabel;
+          const rvTooltip = "Rahmenvertragsrabatt";
+          const rvLabel = `${rvTooltip}: ${selectedText}`;
+          collapsedRabattSelect.title = rvTooltip;
           if (rvBadge) {
-            rvBadge.title = rvLabel;
+            rvBadge.title = rvTooltip;
             rvBadge.setAttribute("aria-label", rvLabel);
           }
         }
