@@ -50,7 +50,7 @@
 
     <title>Business Mobil Rechner</title>
 
-    <link rel="stylesheet" href="style.css?v=guide-arrows-v1" />
+    <link rel="stylesheet" href="style.css?v=welcome-guide-v1" />
   </head>
 
   <body onload="applyAppEinstellungen(); applyCheatSheet(); applyInfoStand(); befuelleRabattDropdown(); renderTarifDropdowns()">
@@ -397,16 +397,15 @@
 
       <div class="central-content-area">
         <div class="tariff-selection-area">
-          <div id="tariffGuideSurface" class="guide-surface card" aria-label="Kurzer Guide">
-            <div class="guide-arrow guide-arrow-count" id="guideArrowCount" aria-hidden="true">
-              <span>Kartenanzahl</span>
-            </div>
-            <div class="guide-arrow guide-arrow-options" id="guideArrowOptions" aria-hidden="true">
-              <span>Bedingungen</span>
-            </div>
+          <div id="tariffGuideSurface" class="guide-surface card" aria-label="Willkommen">
             <div class="guide-surface-content">
-              <h3>Loslegen</h3>
-              <p>Stelle links zuerst Kartenanzahl und Bedingungen ein. Rechts läuft der Warenkorb live mit.</p>
+              <h2>Willkommen beim Business Mobil Rechner</h2>
+              <p>Wir wünschen dir viel Erfolg damit.</p>
+              <p>
+                Hast du Ideen oder ist dir ein Fehler aufgefallen?<br />
+                Sende uns dein Feedback an:
+                <a href="mailto:test-feedback@telekom.de">test-feedback@telekom.de</a>
+              </p>
             </div>
           </div>
 
@@ -7831,7 +7830,6 @@
         const guideSurface = document.getElementById("tariffGuideSurface");
         if (guideSurface) {
           guideSurface.style.display = totalKarten === 0 && !areOfferItemsSelected() ? "block" : "none";
-          requestGuideArrowLayoutUpdate();
         }
 
         if (resultsDiv) {
@@ -11899,7 +11897,6 @@
         const guideSurface = document.getElementById("tariffGuideSurface");
         if (guideSurface) {
           guideSurface.style.display = totalCards === 0 && !hasOfferItems ? "block" : "none";
-          requestGuideArrowLayoutUpdate();
         }
       }
 
@@ -15763,7 +15760,6 @@
       const TARIFF_GRID_GAP = 15;
       let tariffGridResizeObserver = null;
       let tariffGridUpdateTimer = null;
-      let guideArrowUpdateTimer = null;
 
       function getPanelCountValue(id) {
         return parseInt(document.getElementById(id)?.value, 10) || 0;
@@ -15918,74 +15914,17 @@
         tariffGridUpdateTimer = window.setTimeout(updateTariffGridColumns, 340);
       }
 
-      function positionGuideArrows() {
-        const guide = document.getElementById("tariffGuideSurface");
-        if (!guide) return;
-
-        const controls = document.querySelector(".controls");
-        const guideVisible = window.getComputedStyle(guide).display !== "none";
-        const shouldHideArrows = !guideVisible || window.innerWidth <= 900 || controls?.classList.contains("collapsed");
-        guide.classList.toggle("guide-arrows-hidden", shouldHideArrows);
-        if (shouldHideArrows) {
-          guide.style.removeProperty("--guide-min-height");
-          return;
-        }
-
-        const guideRect = guide.getBoundingClientRect();
-        const minTop = 24;
-        const countTarget = document.getElementById("hauptkarten")?.closest(".input-group") || document.getElementById("hauptkarten");
-        const optionsTarget = document.getElementById("rabatt")?.closest(".einstellungs-zeile") || document.getElementById("rabatt");
-
-        const relativeCenter = (targetElement) => {
-          if (!targetElement) return null;
-          const targetRect = targetElement.getBoundingClientRect();
-          if (!targetRect.width || !targetRect.height) return null;
-          return targetRect.top + targetRect.height / 2 - guideRect.top;
-        };
-
-        const countTop = relativeCenter(countTarget);
-        const optionsTop = relativeCenter(optionsTarget);
-        const visibleTops = [countTop, optionsTop].filter((top) => Number.isFinite(top));
-        if (visibleTops.length) {
-          const desiredMinHeight = Math.max(116, Math.min(360, Math.max(...visibleTops) + 30));
-          guide.style.setProperty("--guide-min-height", `${desiredMinHeight}px`);
-        }
-
-        const maxTop = Math.max(minTop, Math.max(guideRect.height, parseFloat(guide.style.getPropertyValue("--guide-min-height")) || 0) - 24);
-
-        const positionArrow = (arrowId, targetTop) => {
-          const arrow = document.getElementById(arrowId);
-          if (!arrow || !Number.isFinite(targetTop)) return;
-          const clampedTop = Math.min(maxTop, Math.max(minTop, targetTop));
-          arrow.style.top = `${clampedTop}px`;
-        };
-
-        positionArrow("guideArrowCount", countTop);
-        positionArrow("guideArrowOptions", optionsTop);
-      }
-
-      function requestGuideArrowLayoutUpdate() {
-        window.requestAnimationFrame(positionGuideArrows);
-        window.clearTimeout(guideArrowUpdateTimer);
-        guideArrowUpdateTimer = window.setTimeout(positionGuideArrows, 340);
-      }
-
       function setupTariffGridLayout() {
         requestTariffGridLayoutUpdate();
-        requestGuideArrowLayoutUpdate();
 
         const centralArea = document.querySelector(".central-content-area");
         if (centralArea && "ResizeObserver" in window) {
           tariffGridResizeObserver?.disconnect();
-          tariffGridResizeObserver = new ResizeObserver(() => {
-            updateTariffGridColumns();
-            positionGuideArrows();
-          });
+          tariffGridResizeObserver = new ResizeObserver(updateTariffGridColumns);
           tariffGridResizeObserver.observe(centralArea);
         }
 
         window.addEventListener("resize", requestTariffGridLayoutUpdate);
-        window.addEventListener("resize", requestGuideArrowLayoutUpdate);
       }
 
       function toggleControlsPanel() {
@@ -15996,7 +15935,6 @@
         updatePanelToggleState("controlsToggleBtn", isCollapsed, "Einstellungen");
         localStorage.setItem("controlsCollapsed", isCollapsed ? "1" : "0");
         requestTariffGridLayoutUpdate();
-        requestGuideArrowLayoutUpdate();
       }
 
       function toggleWarenkorbPanel() {

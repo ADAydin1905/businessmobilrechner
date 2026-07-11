@@ -848,106 +848,48 @@ body.dark-mode .rufnummer-input {
 
 .guide-surface {
   border: 1px solid rgba(226, 0, 116, 0.18);
-  min-height: var(--guide-min-height, 245px);
-  overflow: hidden;
-  padding-left: clamp(160px, 30%, 230px);
-  position: relative;
+  padding: 36px 24px;
+  text-align: center;
 }
 
 .guide-surface-content {
-  max-width: 560px;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
-.guide-surface h3 {
-  margin: 0 0 12px;
+.guide-surface h2 {
+  margin: 0 0 14px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
   color: var(--primary-color);
+  font-size: 1.55rem;
+  line-height: 1.25;
 }
 
 .guide-surface p {
   margin: 0;
   color: #6b7280;
-  font-size: 0.96rem;
+  font-size: 0.98rem;
   line-height: 1.45;
 }
 
-.guide-arrow {
-  --guide-arrow-width: clamp(96px, 24%, 170px);
-  position: absolute;
-  left: 16px;
-  top: 72px;
-  width: var(--guide-arrow-width);
-  height: 24px;
+.guide-surface p + p {
+  margin-top: 18px;
+}
+
+.guide-surface a {
   color: var(--primary-color);
-  transform: translateY(-50%);
-  transition: top 0.2s ease, opacity 0.2s ease;
-}
-
-.guide-arrow::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-right: 9px solid currentColor;
-  transform: translateY(-50%);
-}
-
-.guide-arrow::after {
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  background: currentColor;
-  opacity: 0.8;
-  transform: translateY(-50%);
-}
-
-.guide-arrow span {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  margin-left: 22px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--primary-color);
-  font-size: 0.72rem;
   font-weight: 800;
-  line-height: 1;
-}
-
-.guide-arrow-options {
-  top: 176px;
-}
-
-.guide-surface.guide-arrows-hidden {
-  min-height: 116px;
-  padding-left: 20px;
-}
-
-.guide-surface.guide-arrows-hidden .guide-arrow {
-  opacity: 0;
-  pointer-events: none;
+  text-decoration: none;
 }
 
 body.dark-mode .guide-surface p {
   color: #b7bcc5;
 }
 
-@media (max-width: 900px) {
-  .guide-surface {
-    min-height: auto;
-    padding-left: 20px;
-  }
-
-  .guide-arrow {
-    display: none;
-  }
+.guide-surface a:hover {
+  text-decoration: underline;
 }
 
 .tarifblock-wrapper {
