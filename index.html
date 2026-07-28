@@ -2677,6 +2677,11 @@
       //   nimmtPartner (bool) | partnerTypen (["partnerkarte","partnerdatenkarte"]) | maxPartner (Zahl)
       // Sind die Felder nicht gesetzt, gelten gruppen-abhaengige Defaults, die das
       // bisherige Verhalten exakt bewahren.
+      //
+      // RAHMENVERTRAGS-ABHAENGIGES KONTINGENT (BGE):
+      // Zusaetzlich gibt es pro Haupt-Tarif das optionale Feld maxPartnerBge. Ist der
+      // Rahmenvertrag "Mitarbeiter/BGE" gewaehlt, gilt dieser Wert STATT maxPartner.
+      // Nicht gepflegt (undefined) = kein Unterschied zum normalen Kontingent.
       // =====================================================================
       const PARTNER_DEFAULTS = {
         hauptkarte: { typen: ["partnerkarte", "partnerdatenkarte"], max: 10 },
@@ -2701,8 +2706,18 @@
         if (t && Array.isArray(t.partnerTypen)) return t.partnerTypen;
         return hauptPartnerDefaults(hauptTarif).typen;
       }
+      // Ist aktuell der Rahmenvertrag "Mitarbeiter/BGE" gewaehlt? (globaler Rabatt-Dropdown;
+      // der individuelle Rabatt pro Karte kennt kein BGE, siehe buildRabattOptionsHTML)
+      function istBgeRahmenvertrag() {
+        const sel = document.getElementById("rabatt");
+        return !!sel && sel.value === "mitarbeiter";
+      }
       function hauptMaxPartner(hauptTarif) {
         const t = tarifDetails[hauptTarif];
+        // Bei BGE gilt - falls gepflegt - das separate BGE-Kontingent des Tarifs.
+        if (t && istBgeRahmenvertrag() && typeof t.maxPartnerBge === "number" && t.maxPartnerBge >= 0) {
+          return t.maxPartnerBge;
+        }
         if (t && typeof t.maxPartner === "number" && t.maxPartner >= 0) return t.maxPartner;
         return hauptPartnerDefaults(hauptTarif).max;
       }
@@ -7143,6 +7158,7 @@
         if (collapsedSel) collapsedSel.innerHTML = collapsedOptionsHTML;
         const restoredValue = setSelectValueIfAvailable(sel, aktuell);
         setSelectValueIfAvailable(collapsedSel, restoredValue);
+        merkeRabattWert();
         updateCollapsedPanelBadges();
       }
 
@@ -7155,14 +7171,66 @@
         updateCollapsedPanelBadges();
       }
 
-      function setRabattFromExpandedSelect(value) {
+      // Zuletzt gueltiger Rahmenvertrags-Rabatt. Wird gebraucht, weil das BGE-Kontingent
+      // (maxPartnerBge) kleiner sein kann als das normale - dann bekommt der Nutzer die
+      // gleiche Zwei-Wege-Rueckfrage wie beim Haupttarif-Wechsel und kann zurueck.
+      let lastRabattWert = "0";
+      function merkeRabattWert() {
+        lastRabattWert = document.getElementById("rabatt")?.value || "0";
+      }
+      function rabattAnzeigeName(wert) {
+        return wert === "mitarbeiter" ? "Mitarbeiter/BGE" : String(wert || "0") + " %";
+      }
+      function rabattKapazitaetMeldung(neuerWert, kapazitaet, gewaehlt) {
+        const p = (n) => (n === 1 ? "" : "n");
+        return (
+          `Mit dem Rahmenvertrag <strong>${escapeHtml(rabattAnzeigeName(neuerWert))}</strong> gelten andere ` +
+          `Partnerkarten-Kontingente. Dadurch passen insgesamt nur noch <strong>${kapazitaet}</strong> ` +
+          `Partnerkarte${p(kapazitaet)}, aktuell sind <strong>${gewaehlt}</strong> ausgewählt.<br><br>` +
+          `Sollen die überzähligen Partnerkarten entfernt oder der Rahmenvertrag zurückgesetzt werden?`
+        );
+      }
+
+      // Gemeinsamer Wechsel-Handler beider Rabatt-Dropdowns (ausgeklappt + eingeklappt).
+      function handleRabattWechsel(value) {
+        const vorher = lastRabattWert;
         syncRabattSelects(value);
+        const neu = document.getElementById("rabatt")?.value || "0";
+
+        // Kontingent-Pruefung erst NACH dem Setzen: hauptPartnerSlots/hauptMaxPartner
+        // lesen den gewaehlten Rahmenvertrag live aus dem Dropdown.
+        const gewaehlt =
+          (parseInt(document.getElementById("partnerkarten").value) || 0) +
+          (parseInt(document.getElementById("partnerdatenkarten").value) || 0);
+        const kapazitaet = partnerSlotSummen().total;
+
+        if (neu !== vorher && gewaehlt > kapazitaet) {
+          syncRabattSelects(vorher); // erst sichtbar zurueck (konsistenter Zustand), dann fragen
+          zeigePartnerKapazitaetDialog(
+            rabattKapazitaetMeldung(neu, kapazitaet, gewaehlt),
+            function onEntfernen() {
+              syncRabattSelects(neu);
+              lastRabattWert = neu;
+              reducePartnerkartenAufKapazitaet();
+              renderTarifDropdowns(); // ruft berechneTarife()
+            },
+            null, // bereits sichtbar zurueckgesetzt
+            "Rahmenvertrag zurücksetzen",
+          );
+          berechneTarife();
+          return;
+        }
+
+        lastRabattWert = neu;
         berechneTarife();
       }
 
+      function setRabattFromExpandedSelect(value) {
+        handleRabattWechsel(value);
+      }
+
       function setRabattFromCollapsedSelect(value) {
-        syncRabattSelects(value);
-        berechneTarife();
+        handleRabattWechsel(value);
       }
 
       if (!getRabattDatenSync()) {
@@ -7315,7 +7383,7 @@
       }
 
       // Zwei-Wege-Rueckfrage (nutzt das fehlerModal wie showConfirmationModal).
-      function zeigePartnerKapazitaetDialog(meldung, onEntfernen, onZuruecksetzen) {
+      function zeigePartnerKapazitaetDialog(meldung, onEntfernen, onZuruecksetzen, zuruecksetzenLabel) {
         const modal = document.getElementById("fehlerModal");
         const modalText = document.getElementById("fehlerModalText");
         const modalButtons = document.getElementById("fehlerModalButtons");
@@ -7327,7 +7395,9 @@
         modalText.innerHTML = `<div>${meldung}</div>`;
         modalButtons.innerHTML =
           '<button class="primary" id="kapEntfernenBtn">Partnerkarten entfernen</button>' +
-          '<button class="secondary" id="kapZuruecksetzenBtn" style="margin-left:10px;">Tarif zurücksetzen</button>';
+          '<button class="secondary" id="kapZuruecksetzenBtn" style="margin-left:10px;">' +
+          escapeHtml(zuruecksetzenLabel || "Tarif zurücksetzen") +
+          "</button>";
         document.getElementById("kapEntfernenBtn").addEventListener(
           "click",
           function () {
@@ -7533,6 +7603,7 @@
             document.getElementById("partnerdatenkarten").value = decodedState.partnerdatenkarten;
 
           document.getElementById("rabatt").value = decodedState.rabatt;
+          merkeRabattWert();
 
           document.getElementById("bestandsRufnummer").checked = false; // Force disable for shared URLs
 
@@ -13244,6 +13315,8 @@
                 typeof v0.maxPartner === "number"
                   ? v0.maxPartner
                   : (PARTNER_DEFAULTS[g] || PARTNER_DEFAULTS.hauptkarte).max;
+              // Rahmenvertrags-abhaengiges Kontingent: leer = kein Unterschied zu "max."
+              const maxBge = typeof v0.maxPartnerBge === "number" ? v0.maxPartnerBge : "";
               html += '<div class="ap-stufen-partner">';
               html +=
                 '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" data-basis="' +
@@ -13270,11 +13343,19 @@
                   ' onchange="adminToggleFamiliePartnerTyp(this.dataset.basis, this.dataset.gruppe, this.dataset.typ, this.checked)"> Daten</label>' +
                   "</span>";
                 html +=
-                  '<label style="display:flex;align-items:center;gap:5px;">max. <input type="number" min="0" step="1" value="' +
+                  '<label style="display:flex;align-items:center;gap:5px;" title="Maximale Anzahl Partnerkarten je Hauptkarte dieser Familie (Standard-Rahmenvertrag)">max. <input type="number" min="0" step="1" value="' +
                   maxP +
                   '" data-basis="' +
                   adminEsc(basis) +
                   '" onchange="adminSetFamilieMaxPartner(this.dataset.basis, this.value)" class="ap-input" style="width:72px;"></label>';
+                html +=
+                  '<label style="display:flex;align-items:center;gap:5px;" title="Abweichendes Kontingent, wenn der Rahmenvertrag &quot;Mitarbeiter/BGE&quot; gewählt ist. Leer = wie max.">bei BGE max. <input type="number" min="0" step="1" value="' +
+                  maxBge +
+                  '" placeholder="' +
+                  maxP +
+                  '" data-basis="' +
+                  adminEsc(basis) +
+                  '" onchange="adminSetFamilieMaxPartnerBge(this.dataset.basis, this.value)" class="ap-input" style="width:72px;"></label>';
               }
               html += "</div>";
             }
@@ -13407,6 +13488,22 @@
         if (!isFinite(n) || n < 0) n = 0; // #7: keine negative Anzahl
         adminSetzeAufFamilie(basis, (t) => {
           t.maxPartner = n;
+        });
+      }
+      // Kontingent fuer den Rahmenvertrag "Mitarbeiter/BGE". Leeres Feld = Feld entfernen
+      // -> es gilt wieder das normale maxPartner.
+      function adminSetFamilieMaxPartnerBge(basis, val) {
+        const roh = String(val == null ? "" : val).trim();
+        if (roh === "") {
+          adminSetzeAufFamilie(basis, (t) => {
+            delete t.maxPartnerBge;
+          });
+          return;
+        }
+        let n = parseInt(roh, 10);
+        if (!isFinite(n) || n < 0) n = 0;
+        adminSetzeAufFamilie(basis, (t) => {
+          t.maxPartnerBge = n;
         });
       }
 
