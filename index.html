@@ -1693,7 +1693,7 @@
         if (!isInvalid) {
           const currentCardsInTarget = targetList.querySelectorAll(".assignment-tile");
 
-          const maxLimit = targetMainTarif ? hauptMaxPartner(targetMainTarif) : isTargetHDK ? 4 : 10;
+          const maxLimit = targetMainTarif ? hauptMaxPartner(targetMainTarif, targetGroupId) : isTargetHDK ? 4 : 10;
 
           if (currentCardsInTarget.length > maxLimit) {
             isInvalid = true;
@@ -2277,7 +2277,7 @@
           const isHDK = groupId.startsWith("hdk");
 
           const maxCardsMainTarif = document.getElementById(groupId.replace("_", "_tarif_"))?.value || "";
-          const maxCards = maxCardsMainTarif ? hauptMaxPartner(maxCardsMainTarif) : isHDK ? 4 : 10;
+          const maxCards = maxCardsMainTarif ? hauptMaxPartner(maxCardsMainTarif, groupId) : isHDK ? 4 : 10;
 
           const list = document.getElementById(`assign-list-${groupId}`);
 
@@ -2679,9 +2679,12 @@
       // bisherige Verhalten exakt bewahren.
       //
       // RAHMENVERTRAGS-ABHAENGIGES KONTINGENT (BGE):
-      // Zusaetzlich gibt es pro Haupt-Tarif das optionale Feld maxPartnerBge. Ist der
-      // Rahmenvertrag "Mitarbeiter/BGE" gewaehlt, gilt dieser Wert STATT maxPartner.
-      // Nicht gepflegt (undefined) = kein Unterschied zum normalen Kontingent.
+      // Zusaetzlich gibt es pro Haupt-Tarif das optionale Feld maxPartnerBge. Gilt fuer
+      // eine Karte der Rahmenvertrag "Mitarbeiter/BGE", zaehlt dieser Wert STATT
+      // maxPartner. Nicht gepflegt (undefined) = kein Unterschied zum normalen Kontingent.
+      // Der Rahmenvertrag wird PRO KARTE bestimmt (kartenRabattWert): bei aktiven
+      // "Individuellen RV-Rabatten" kann Hauptkarte 1 auf BGE und Hauptkarte 2 auf 10 %
+      // stehen - dann gelten in derselben Rechnung unterschiedliche Kontingente.
       // =====================================================================
       const PARTNER_DEFAULTS = {
         hauptkarte: { typen: ["partnerkarte", "partnerdatenkarte"], max: 10 },
@@ -2706,16 +2709,27 @@
         if (t && Array.isArray(t.partnerTypen)) return t.partnerTypen;
         return hauptPartnerDefaults(hauptTarif).typen;
       }
-      // Ist aktuell der Rahmenvertrag "Mitarbeiter/BGE" gewaehlt? (globaler Rabatt-Dropdown;
-      // der individuelle Rabatt pro Karte kennt kein BGE, siehe buildRabattOptionsHTML)
-      function istBgeRahmenvertrag() {
-        const sel = document.getElementById("rabatt");
-        return !!sel && sel.value === "mitarbeiter";
+      // Effektiver Rahmenvertrags-Rabatt EINER Haupt-/Haupt-Datenkarte.
+      // cardId: "hk_1" / "hdk_2" (wie die Gruppen-Keys). Ohne cardId oder ohne aktive
+      // "Individuelle RV-Rabatte" gilt der globale Rabatt; ein individueller Wert
+      // gewinnt, "" ist die Option "Globaler Rabatt".
+      // Rueckgabe: "mitarbeiter" oder ein Prozentwert als String.
+      function kartenRabattWert(cardId) {
+        const globalWert = document.getElementById("rabatt")?.value || "0";
+        if (!cardId) return globalWert;
+        if (!document.getElementById("rabattUebersteuern")?.checked) return globalWert;
+        const sel = document.getElementById(String(cardId).replace("_", "_rabatt_"));
+        const wert = sel ? sel.value : "";
+        return wert === "" ? globalWert : wert;
       }
-      function hauptMaxPartner(hauptTarif) {
+      // Gilt fuer diese Karte der Rahmenvertrag "Mitarbeiter/BGE"?
+      function istBgeRahmenvertrag(cardId) {
+        return kartenRabattWert(cardId) === "mitarbeiter";
+      }
+      function hauptMaxPartner(hauptTarif, cardId) {
         const t = tarifDetails[hauptTarif];
         // Bei BGE gilt - falls gepflegt - das separate BGE-Kontingent des Tarifs.
-        if (t && istBgeRahmenvertrag() && typeof t.maxPartnerBge === "number" && t.maxPartnerBge >= 0) {
+        if (t && istBgeRahmenvertrag(cardId) && typeof t.maxPartnerBge === "number" && t.maxPartnerBge >= 0) {
           return t.maxPartnerBge;
         }
         if (t && typeof t.maxPartner === "number" && t.maxPartner >= 0) return t.maxPartner;
@@ -2728,12 +2742,12 @@
       //   - kein Tarif gewaehlt          -> Gruppen-Default (nicht vorzeitig begrenzen)
       //   - Speedbox-Datenkarte          -> 0 (nimmt wie in der Zuweisung keine Partner auf)
       //   - Tarif "nimmt keine Partner"  -> 0
-      //   - sonst                        -> hauptMaxPartner(tarif)
-      function hauptPartnerSlots(hauptTarif, gruppe) {
+      //   - sonst                        -> hauptMaxPartner(tarif, cardId)
+      function hauptPartnerSlots(hauptTarif, gruppe, cardId) {
         if (!hauptTarif) return (PARTNER_DEFAULTS[gruppe] || PARTNER_DEFAULTS.hauptkarte).max;
         if (gruppe === "hauptdatenkarte" && hauptTarif.includes("Speedbox")) return 0;
         if (!hauptNimmtPartner(hauptTarif)) return 0;
-        return hauptMaxPartner(hauptTarif);
+        return hauptMaxPartner(hauptTarif, cardId);
       }
       // Gesamtpruefung (ohne Kapazitaet): nimmt Partner? + Typ erlaubt? + Groesse passt?
       // partnerGruppe: "partnerkarte" (Business Card) oder "partnerdatenkarte" (CombiCard).
@@ -5975,7 +5989,7 @@
           const limit =
             hauptkartenTarif && hauptkartenTarif !== "Kein Tarif"
               ? hauptNimmtPartner(hauptkartenTarif)
-                ? hauptMaxPartner(hauptkartenTarif)
+                ? hauptMaxPartner(hauptkartenTarif, hauptkartenId)
                 : 0
               : isHDK
                 ? 4
@@ -6192,9 +6206,9 @@
 
           const hauptkartenTarif = hauptkartenTarifSelect.value;
 
-          if (gruppen[targetHauptkarteId].length >= hauptMaxPartner(hauptkartenTarif)) {
+          if (gruppen[targetHauptkarteId].length >= hauptMaxPartner(hauptkartenTarif, targetHauptkarteId)) {
             fehlerListe.push(
-              `❌ Partnerkarte ${pk.id}: Manuelle Zuweisung zu Hauptkarte ${hauptkarteNummer} fehlgeschlagen. Gruppe ist bereits voll (max. ${hauptMaxPartner(hauptkartenTarif)}).`,
+              `❌ Partnerkarte ${pk.id}: Manuelle Zuweisung zu Hauptkarte ${hauptkarteNummer} fehlgeschlagen. Gruppe ist bereits voll (max. ${hauptMaxPartner(hauptkartenTarif, targetHauptkarteId)}).`,
             );
 
             pkTarifSelect.style.border = "2px solid red";
@@ -6228,7 +6242,7 @@
             if (partnerPasstZuHaupt("partnerkarte", pk.tarif, hauptkartenTarif)) {
               kompatibleHauptkarteGefunden = true;
 
-              if (gruppen[hauptkartenId].length < hauptMaxPartner(hauptkartenTarif)) {
+              if (gruppen[hauptkartenId].length < hauptMaxPartner(hauptkartenTarif, hauptkartenId)) {
                 gruppen[hauptkartenId].push(pk);
                 zugewiesen = true;
                 break;
@@ -6291,7 +6305,7 @@
 
           const mainTarif = mainTarifSelect ? mainTarifSelect.value : "";
 
-          const limit = mainTarif ? hauptMaxPartner(mainTarif) : targetId.startsWith("hdk") ? 4 : 10;
+          const limit = mainTarif ? hauptMaxPartner(mainTarif, targetId) : targetId.startsWith("hdk") ? 4 : 10;
 
           if (!gruppen[targetId]) {
             // Ziel nimmt keine Partnerkarten auf (z.B. Speedbox-Datenkarte) -> klare Meldung
@@ -6355,7 +6369,7 @@
             if (
               partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, hdkTarif) &&
               gruppen[hdkId] && // kein Group-Eintrag (z.B. Speedbox) -> überspringen statt crashen
-              gruppen[hdkId].length < hauptMaxPartner(hdkTarif)
+              gruppen[hdkId].length < hauptMaxPartner(hdkTarif, hdkId)
             ) {
               gruppen[hdkId].push(pdk);
 
@@ -6378,7 +6392,7 @@
 
               if (
                 partnerPasstZuHaupt("partnerdatenkarte", pdk.tarif, hkTarif) &&
-                gruppen[hkId].length < hauptMaxPartner(hkTarif)
+                gruppen[hkId].length < hauptMaxPartner(hkTarif, hkId)
               ) {
                 gruppen[hkId].push(pdk);
 
@@ -7178,13 +7192,18 @@
       function merkeRabattWert() {
         lastRabattWert = document.getElementById("rabatt")?.value || "0";
       }
+      // "" = Option "Globaler Rabatt" -> den global gewaehlten Wert benennen.
       function rabattAnzeigeName(wert) {
-        return wert === "mitarbeiter" ? "Mitarbeiter/BGE" : String(wert || "0") + " %";
+        const w =
+          wert === "" || wert == null ? document.getElementById("rabatt")?.value || "0" : String(wert);
+        return w === "mitarbeiter" ? "Mitarbeiter/BGE" : w + " %";
       }
-      function rabattKapazitaetMeldung(neuerWert, kapazitaet, gewaehlt) {
+      // kartenLabel gesetzt = individueller Rabatt einer einzelnen Karte.
+      function rabattKapazitaetMeldung(neuerWert, kapazitaet, gewaehlt, kartenLabel) {
         const p = (n) => (n === 1 ? "" : "n");
+        const wo = kartenLabel ? ` für ${escapeHtml(kartenLabel)}` : "";
         return (
-          `Mit dem Rahmenvertrag <strong>${escapeHtml(rabattAnzeigeName(neuerWert))}</strong> gelten andere ` +
+          `Mit dem Rahmenvertrag <strong>${escapeHtml(rabattAnzeigeName(neuerWert))}</strong>${wo} gelten andere ` +
           `Partnerkarten-Kontingente. Dadurch passen insgesamt nur noch <strong>${kapazitaet}</strong> ` +
           `Partnerkarte${p(kapazitaet)}, aktuell sind <strong>${gewaehlt}</strong> ausgewählt.<br><br>` +
           `Sollen die überzähligen Partnerkarten entfernt oder der Rahmenvertrag zurückgesetzt werden?`
@@ -7231,6 +7250,46 @@
 
       function setRabattFromCollapsedSelect(value) {
         handleRabattWechsel(value);
+      }
+
+      // Zuletzt gueltiger INDIVIDUELLER RV-Rabatt je Haupt-/Haupt-Datenkarte
+      // (Basis fuer die Kontingent-Rueckfrage, analog lastHauptTarife).
+      let lastKartenRabatte = {};
+
+      // onchange-Handler der individuellen RV-Dropdowns (#hk_rabatt_i / #hdk_rabatt_i).
+      // Wechselt eine einzelne Karte zwischen BGE und Prozent-Rahmenvertrag, aendert sich
+      // nur DEREN Kontingent - die Rueckfrage laeuft aber ueber den Gesamtpool.
+      function handleIndividuellenRabattWechsel(selectElement, kartenArt, index) {
+        const cardKey = `${kartenArt}_${index}`;
+        const neuerWert = selectElement.value;
+        const vorherigerWert = lastKartenRabatte[cardKey] || "";
+
+        const gewaehlt =
+          (parseInt(document.getElementById("partnerkarten").value) || 0) +
+          (parseInt(document.getElementById("partnerdatenkarten").value) || 0);
+        const kapazitaet = partnerSlotSummen().total; // selectElement traegt bereits den neuen Wert
+
+        if (neuerWert !== vorherigerWert && gewaehlt > kapazitaet) {
+          selectElement.value = vorherigerWert; // erst sichtbar zurueck, dann fragen
+          const kartenLabel =
+            (kartenArt === "hdk" ? "Haupt-Datenkarte " : "Hauptkarte ") + index;
+          zeigePartnerKapazitaetDialog(
+            rabattKapazitaetMeldung(neuerWert, kapazitaet, gewaehlt, kartenLabel),
+            function onEntfernen() {
+              selectElement.value = neuerWert;
+              lastKartenRabatte[cardKey] = neuerWert;
+              reducePartnerkartenAufKapazitaet();
+              renderTarifDropdowns(); // ruft berechneTarife()
+            },
+            null, // bereits sichtbar zurueckgesetzt
+            "Rabatt zurücksetzen",
+          );
+          berechneTarife();
+          return;
+        }
+
+        lastKartenRabatte[cardKey] = neuerWert;
+        berechneTarife();
       }
 
       if (!getRabattDatenSync()) {
@@ -7358,9 +7417,13 @@
         let totalHk = 0,
           totalHdk = 0;
         for (let i = 1; i <= hk; i++)
-          totalHk += hauptPartnerSlots(document.getElementById(`hk_tarif_${i}`)?.value || "", "hauptkarte");
+          totalHk += hauptPartnerSlots(document.getElementById(`hk_tarif_${i}`)?.value || "", "hauptkarte", `hk_${i}`);
         for (let i = 1; i <= hdk; i++)
-          totalHdk += hauptPartnerSlots(document.getElementById(`hdk_tarif_${i}`)?.value || "", "hauptdatenkarte");
+          totalHdk += hauptPartnerSlots(
+            document.getElementById(`hdk_tarif_${i}`)?.value || "",
+            "hauptdatenkarte",
+            `hdk_${i}`,
+          );
         return { totalHk, totalHdk, total: totalHk + totalHdk };
       }
 
@@ -7419,15 +7482,34 @@
 
       // Baut die Konflikt-Meldung. slots = Kapazitaet des neuen Tarifs (je Karte),
       // proLabel haengt z.B. " je Hauptkarte" an (Sammel-Aenderung mehrerer Karten).
+      // slots = null: die Kapazitaet je Karte ist nicht einheitlich (individuelle RV-Rabatte
+      // koennen pro Karte ein anderes BGE-Kontingent ergeben) -> keine einzelne Zahl nennen.
       function partnerKapazitaetMeldung(tarif, slots, kapazitaet, gewaehlt, proLabel) {
         const p = (n) => (n === 1 ? "" : "n");
+        const kopf =
+          slots == null
+            ? `Mit dem Tarif <strong>${getDisplayName(tarif)}</strong> passen insgesamt nur noch `
+            : `Der Tarif <strong>${getDisplayName(tarif)}</strong> nimmt nur <strong>${slots}</strong> Partnerkarte${p(slots)}` +
+              (proLabel || "") +
+              ` auf. Dadurch passen insgesamt nur noch `;
         return (
-          `Der Tarif <strong>${getDisplayName(tarif)}</strong> nimmt nur <strong>${slots}</strong> Partnerkarte${p(slots)}` +
-          (proLabel || "") +
-          ` auf. Dadurch passen insgesamt nur noch <strong>${kapazitaet}</strong> Partnerkarte${p(kapazitaet)}, ` +
+          kopf +
+          `<strong>${kapazitaet}</strong> Partnerkarte${p(kapazitaet)}, ` +
           `aktuell sind <strong>${gewaehlt}</strong> ausgewählt.<br><br>` +
           `Sollen die überzähligen Partnerkarten entfernt oder der Tarifwechsel zurückgenommen werden?`
         );
+      }
+
+      // Slot-Zahl fuer eine Sammel-Aenderung (alle Karten auf denselben Tarif): nur wenn
+      // sie fuer JEDE Karte gleich ist, sonst null (siehe partnerKapazitaetMeldung).
+      function einheitlicheSlots(tarif, gruppe, praefix, anzahl) {
+        let wert = null;
+        for (let i = 1; i <= anzahl; i++) {
+          const s = hauptPartnerSlots(tarif, gruppe, `${praefix}_${i}`);
+          if (i === 1) wert = s;
+          else if (wert !== s) return null;
+        }
+        return wert;
       }
 
       // onchange-Handler der Haupt-/Haupt-Datenkarten-Tarife (statt direkt toggleGeraeteFelder).
@@ -7447,7 +7529,11 @@
           if (vorherigerTarif) selectElement.value = vorherigerTarif;
           else selectElement.selectedIndex = 0;
 
-          const slots = hauptPartnerSlots(neuerTarif, kartenArt === "hdk" ? "hauptdatenkarte" : "hauptkarte");
+          const slots = hauptPartnerSlots(
+            neuerTarif,
+            kartenArt === "hdk" ? "hauptdatenkarte" : "hauptkarte",
+            cardKey,
+          );
           zeigePartnerKapazitaetDialog(
             partnerKapazitaetMeldung(neuerTarif, slots, kapazitaet, gewaehlt, ""),
             function onEntfernen() {
@@ -7809,13 +7895,13 @@
         let totalHdkSlots = 0;
 
         for (let i = 1; i <= hauptdatenkarten; i++) {
-          totalHdkSlots += hauptPartnerSlots(currentSelections[`hdk_tarif_${i}`], "hauptdatenkarte");
+          totalHdkSlots += hauptPartnerSlots(currentSelections[`hdk_tarif_${i}`], "hauptdatenkarte", `hdk_${i}`);
         }
 
         let totalHkSlots = 0;
 
         for (let i = 1; i <= hauptkarten; i++) {
-          totalHkSlots += hauptPartnerSlots(currentSelections[`hk_tarif_${i}`], "hauptkarte");
+          totalHkSlots += hauptPartnerSlots(currentSelections[`hk_tarif_${i}`], "hauptkarte", `hk_${i}`);
         }
 
         const totalSlots = totalHkSlots + totalHdkSlots;
@@ -7975,7 +8061,13 @@
               }
               gleichSelect.value = "";
               zeigePartnerKapazitaetDialog(
-                partnerKapazitaetMeldung(tarif, hauptPartnerSlots(tarif, "hauptkarte"), kapazitaet, gewaehlt, " je Hauptkarte"),
+                partnerKapazitaetMeldung(
+                  tarif,
+                  einheitlicheSlots(tarif, "hauptkarte", "hk", hauptkarten),
+                  kapazitaet,
+                  gewaehlt,
+                  " je Hauptkarte",
+                ),
                 function onEntfernen() {
                   setHk(tarif);
                   reducePartnerkartenAufKapazitaet();
@@ -8075,7 +8167,10 @@
           }
         }
 
-        const rabattOptionen = buildRabattOptionsHTML(false);
+        // Individuelle RV-Rabatte pro Haupt-/Haupt-Datenkarte: enthalten jetzt auch
+        // "Mitarbeiter/BGE", damit sich BGE und Prozent-Rahmenvertraege in einer Rechnung
+        // mischen lassen (inkl. der davon abhaengigen Partnerkarten-Kontingente).
+        const rabattOptionen = buildRabattOptionsHTML(true);
 
         const zeigeRabattUebersteuern = document.getElementById("rabattUebersteuern")?.checked;
 
@@ -8097,7 +8192,7 @@
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
-            ? `<label for="${rabattID}" style="margin-top:0.5rem;">Individueller Rabatt:</label><select id="${rabattID}" onchange="berechneTarife()"><option value="">Globaler Rabatt</option>${rabattOptionen}</select>`
+            ? `<label for="${rabattID}" style="margin-top:0.5rem;">Individueller Rabatt:</label><select id="${rabattID}" onchange="handleIndividuellenRabattWechsel(this, 'hk', ${i})"><option value="">Globaler Rabatt</option>${rabattOptionen}</select>`
             : "";
 
           const geraeteFelderHTML = `<div id="${geraeteFelderID}" class="geraete-felder"><div class="input-group"><label for="${geraeteNameID}">Gerät:</label><input type="text" id="${geraeteNameID}" value="Sonstiges Gerät" onchange="berechneTarife()"></div><div class="input-group"><label for="${geraetePreisID}">Gerätepreis (Netto):</label><input type="number" id="${geraetePreisID}" value="0" min="0" step="0.01" onchange="berechneTarife()"></div></div>`;
@@ -8255,7 +8350,13 @@
               }
               gleichSelect.value = "";
               zeigePartnerKapazitaetDialog(
-                partnerKapazitaetMeldung(tarif, hauptPartnerSlots(tarif, "hauptdatenkarte"), kapazitaet, gewaehlt, " je Haupt-Datenkarte"),
+                partnerKapazitaetMeldung(
+                  tarif,
+                  einheitlicheSlots(tarif, "hauptdatenkarte", "hdk", hauptdatenkarten),
+                  kapazitaet,
+                  gewaehlt,
+                  " je Haupt-Datenkarte",
+                ),
                 function onEntfernen() {
                   setHdk(tarif, true);
                   reducePartnerkartenAufKapazitaet();
@@ -8305,7 +8406,7 @@
             : "";
 
           const rabattUebersteuernFeld = zeigeRabattUebersteuern
-            ? `<label for="${rabattID}" style="margin-top:0.5rem;">Individueller Rabatt:</label><select id="${rabattID}" onchange="berechneTarife()"><option value="">Globaler Rabatt</option>${rabattOptionen}</select>`
+            ? `<label for="${rabattID}" style="margin-top:0.5rem;">Individueller Rabatt:</label><select id="${rabattID}" onchange="handleIndividuellenRabattWechsel(this, 'hdk', ${i})"><option value="">Globaler Rabatt</option>${rabattOptionen}</select>`
             : "";
 
           const geraeteFelderHTML = `<div id="${geraeteFelderID}" class="geraete-felder"><div class="input-group"><label for="${geraeteNameID}">Gerät:</label><input type="text" id="${geraeteNameID}" value="Sonstiges Gerät" onchange="berechneTarife()"></div><div class="input-group"><label for="${geraetePreisID}">Gerätepreis (Netto):</label><input type="number" id="${geraetePreisID}" value="0" min="0" step="0.01" onchange="berechneTarife()"></div></div>`;
@@ -8440,6 +8541,13 @@
         for (let i = 1; i <= hauptdatenkarten; i++)
           lastHauptTarife[`hdk_${i}`] = document.getElementById(`hdk_tarif_${i}`)?.value || "";
 
+        // Dasselbe fuer die individuellen RV-Rabatte (Basis der Kontingent-Rueckfrage).
+        lastKartenRabatte = {};
+        for (let i = 1; i <= hauptkarten; i++)
+          lastKartenRabatte[`hk_${i}`] = document.getElementById(`hk_rabatt_${i}`)?.value || "";
+        for (let i = 1; i <= hauptdatenkarten; i++)
+          lastKartenRabatte[`hdk_${i}`] = document.getElementById(`hdk_rabatt_${i}`)?.value || "";
+
         updateCollapsedPanelBadges();
         requestTariffGridLayoutUpdate();
       }
@@ -8471,15 +8579,14 @@
           id,
           tarif,
           rufnummer,
-          rabattFaktorGlobal,
-          rabattUebersteuern,
           istBrutto,
           mwst,
           zeigeBereitstellung,
           indexInGruppe,
           anzahlInGruppe,
-          isMitarbeiterRabatt,
         } = cardData;
+        // Hinweis: Der Rahmenvertrags-Rabatt kommt nicht mehr als Parameter herein, sondern
+        // wird pro Karte ueber kartenRabattWert(cardId) bestimmt (global vs. individuell).
 
         if (!tarif || tarif === "-- Keine Auswahl --") return null;
 
@@ -8544,29 +8651,29 @@
 
           const preisNachVvlPeriode2 = originalTarifPreis;
 
-          let aktuellerRabattFaktor = rabattFaktorGlobal;
+          // Rahmenvertrag dieser Karte (individueller Wert schlaegt den globalen).
+          const kartenRabatt = kartenRabattWert(`hk_${id}`);
 
-          // Prüfe auf Mitarbeiter/BGE-Rabatt
+          let aktuellerRabattFaktor = 1;
 
-          if (isMitarbeiterRabatt && mitarbeiterRabatte[tarif]) {
-            aktuellerRabattFaktor = 1 - mitarbeiterRabatte[tarif] / 100;
+          if (kartenRabatt === "mitarbeiter") {
+            // Mitarbeiter/BGE-Rabatt (tarifspezifisch); ohne hinterlegten Satz = 0 %
+            if (mitarbeiterRabatte[tarif]) {
+              aktuellerRabattFaktor = 1 - mitarbeiterRabatte[tarif] / 100;
 
-            tarifRabattProzent = mitarbeiterRabatte[tarif]; // Exakte BGE-Rabatte ohne Rundung
+              tarifRabattProzent = mitarbeiterRabatte[tarif]; // Exakte BGE-Rabatte ohne Rundung
 
-            isBGETarifRabatt = true;
-          } else if (rabattUebersteuern) {
-            const individuellerRabattDropdown = document.getElementById(`hk_rabatt_${id}`);
-
-            if (individuellerRabattDropdown && individuellerRabattDropdown.value) {
-              aktuellerRabattFaktor = 1 - parseFloat(individuellerRabattDropdown.value) / 100;
+              isBGETarifRabatt = true;
             }
+          } else {
+            aktuellerRabattFaktor = 1 - (parseFloat(kartenRabatt) || 0) / 100;
           }
 
           basisPreisNettoPeriode1 = truncateToTwoDecimals(preisNachVvlPeriode1 * aktuellerRabattFaktor);
 
           basisPreisNettoPeriode2 = truncateToTwoDecimals(preisNachVvlPeriode2 * aktuellerRabattFaktor);
 
-          if (!isMitarbeiterRabatt || !mitarbeiterRabatte[tarif]) {
+          if (!isBGETarifRabatt) {
             tarifRabattProzent = roundToTwoDecimals((1 - aktuellerRabattFaktor) * 100);
           }
 
@@ -8621,29 +8728,28 @@
         } else if (type === "Datenkarte") {
           const originalTarifPreis = details.preis;
 
-          let aktuellerRabattFaktor = rabattFaktorGlobal;
+          // Rahmenvertrag dieser Karte (individueller Wert schlaegt den globalen).
+          const kartenRabatt = kartenRabattWert(`hdk_${id}`);
 
-          // Prüfe auf Mitarbeiter/BGE-Rabatt
+          let aktuellerRabattFaktor = 1;
 
-          if (isMitarbeiterRabatt && mitarbeiterRabatte[tarif]) {
-            aktuellerRabattFaktor = 1 - mitarbeiterRabatte[tarif] / 100;
+          if (kartenRabatt === "mitarbeiter") {
+            if (mitarbeiterRabatte[tarif]) {
+              aktuellerRabattFaktor = 1 - mitarbeiterRabatte[tarif] / 100;
 
-            tarifRabattProzent = mitarbeiterRabatte[tarif]; // Exakte BGE-Rabatte ohne Rundung
+              tarifRabattProzent = mitarbeiterRabatte[tarif]; // Exakte BGE-Rabatte ohne Rundung
 
-            isBGETarifRabatt = true;
-          } else if (rabattUebersteuern) {
-            const individuellerRabattDropdown = document.getElementById(`hdk_rabatt_${id}`);
-
-            if (individuellerRabattDropdown && individuellerRabattDropdown.value) {
-              aktuellerRabattFaktor = 1 - parseFloat(individuellerRabattDropdown.value) / 100;
+              isBGETarifRabatt = true;
             }
+          } else {
+            aktuellerRabattFaktor = 1 - (parseFloat(kartenRabatt) || 0) / 100;
           }
 
           basisPreisNettoPeriode1 = truncateToTwoDecimals(originalTarifPreis * aktuellerRabattFaktor);
 
           basisPreisNettoPeriode2 = truncateToTwoDecimals(originalTarifPreis * aktuellerRabattFaktor);
 
-          if (!isMitarbeiterRabatt || !mitarbeiterRabatte[tarif]) {
+          if (!isBGETarifRabatt) {
             tarifRabattProzent = roundToTwoDecimals((1 - aktuellerRabattFaktor) * 100);
           }
 
@@ -8880,17 +8986,10 @@
       function berechneTarife() {
         const hauptkarten = parseInt(document.getElementById("hauptkarten").value) || 0;
 
-        const rabatt = document.getElementById("rabatt").value;
-
-        const rabattUebersteuern = document.getElementById("rabattUebersteuern")?.checked;
-
         const grkModusAktiv = document.getElementById("grkModus")?.checked;
 
-        // Bestimme ob Mitarbeiter/BGE-Rabatt aktiv ist
-
-        const isMitarbeiterRabatt = rabatt === "mitarbeiter";
-
-        const rabattFaktorGlobal = isMitarbeiterRabatt ? 1 : 1 - parseFloat(rabatt) / 100;
+        // Der Rahmenvertrag wird pro Karte in calculateCardPrice ueber kartenRabattWert()
+        // ermittelt (global oder individuell) - hier ist kein globaler Faktor mehr noetig.
 
         const istBrutto = document.querySelector("#priceToggle .toggle-option.active")?.dataset.priceType === "brutto";
 
@@ -8943,14 +9042,9 @@
 
             rufnummer: document.getElementById(`hk_rufnummer_${i}`)?.value || "",
 
-            rabattFaktorGlobal: rabattFaktorGlobal,
-            rabattUebersteuern: rabattUebersteuern,
-
             istBrutto: istBrutto,
             mwst: mwst,
             zeigeBereitstellung: zeigeBereitstellung,
-
-            isMitarbeiterRabatt: isMitarbeiterRabatt,
           });
 
           if (cardResult) {
@@ -8974,13 +9068,9 @@
               id: i,
               tarif: tarif,
 
-              rabattFaktorGlobal: rabattFaktorGlobal,
-
               istBrutto: istBrutto,
               mwst: mwst,
               zeigeBereitstellung: zeigeBereitstellung,
-
-              isMitarbeiterRabatt: isMitarbeiterRabatt,
             });
 
             if (cardResult) {
@@ -9033,8 +9123,6 @@
               zeigeBereitstellung: zeigeBereitstellung,
               indexInGruppe: actualPosition,
               anzahlInGruppe: gruppen[hauptkartenId].length,
-
-              isMitarbeiterRabatt: isMitarbeiterRabatt,
 
               grkModus: grkModusAktiv,
               grk70Karte: grk70[cardId] === true,
@@ -9835,7 +9923,7 @@
               const slotMainTarif = slotMainSel ? slotMainSel.value : "";
               const limit = slotMainTarif
                 ? hauptNimmtPartner(slotMainTarif)
-                  ? hauptMaxPartner(slotMainTarif)
+                  ? hauptMaxPartner(slotMainTarif, hauptkartenId)
                   : 0
                 : isHDK
                   ? 4
