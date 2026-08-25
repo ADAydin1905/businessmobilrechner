@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 31.7.2026, 14:05:14
+ * Automatisch erzeugt vom Admin-Panel am 25.8.2026, 15:30:54
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -8,7 +8,7 @@ window.TARIFE_DATA = {
     "schemaVersion": "1.0",
     "appVersion": "2.0",
     "beschreibung": "Tarifdaten fuer Business Mobil Rechner. Bearbeitbar ueber das Admin-Panel.",
-    "stand": "2026-07-31",
+    "stand": "2026-08-25",
     "felderProTarif": {
       "preis": "Monatlicher Nettopreis in Euro (Zahl)",
       "geraeteAufpreis": "Optionaler monatlicher Netto-Aufpreis fuer Endgeraete-Substufen. Bei Partnerkarten NICHT rabattierbar (kommt nach dem Partnerkarten-Rabatt dazu); bei Hauptkarten Teil des Endpreises und wird mit dem Rahmenvertrags-/BGE-Rabatt mitrabattiert",
@@ -47,7 +47,8 @@ window.TARIFE_DATA = {
         "Welcome Pass 1GB für 48 Stunden, 1x im Monat für die Ländergruppe 2 und 3 nutzbar",
         "Security OnNet Basic"
       ],
-      "gruppe": "hauptkarte"
+      "gruppe": "hauptkarte",
+      "geraeteAufpreis": 8.16
     },
     "Business Mobil XS mit Top Handy": {
       "preis": 46.18,
@@ -1045,6 +1046,48 @@ window.TARIFE_DATA = {
         "EU Roaming inkl. Großbritannien und Schweiz 91GB"
       ],
       "gruppe": "partnerdatenkarte"
+    },
+    "Business Mobil Start": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "aktiv": false
+    },
+    "Business Mobil Start eco": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Mobil Start mit Handy": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Mobil Start mit Top Handy": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Mobil Start mit Premium-Handy": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Mobil Start Premium": {
+      "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
     }
   }
 };
