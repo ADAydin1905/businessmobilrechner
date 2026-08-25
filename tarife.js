@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 25.8.2026, 15:43:41
+ * Automatisch erzeugt vom Admin-Panel am 25.8.2026, 15:46:34
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -1100,7 +1100,7 @@ window.TARIFE_DATA = {
       "preis": 6.99,
       "inclusiveMultiSim": 0,
       "leistungen": [],
-      "gruppe": "hauptkarte",
+      "gruppe": "partnerkarte",
       "entwurf": true
     },
     "Business Card Basic mit Handy": {
