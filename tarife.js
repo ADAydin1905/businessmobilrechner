@@ -1,6 +1,6 @@
 /*
  * tarife.js  -  Tarifdaten fuer den Business Mobil Rechner (v2.0)
- * Automatisch erzeugt vom Admin-Panel am 25.8.2026, 15:30:54
+ * Automatisch erzeugt vom Admin-Panel am 25.8.2026, 15:43:41
  * Einzige Tarifdaten-Quelle (per <script> geladen). Vom Admin-Panel erzeugt.
  */
 window.TARIFE_DATA = {
@@ -1084,6 +1084,48 @@ window.TARIFE_DATA = {
     },
     "Business Mobil Start Premium": {
       "preis": 37.77,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Card Basic": {
+      "preis": 6.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "aktiv": false
+    },
+    "Business Card Basic eco": {
+      "preis": 6.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Card Basic mit Handy": {
+      "preis": 6.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Card Basic mit Top Handy": {
+      "preis": 6.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Card Basic mit Premium-Handy": {
+      "preis": 6.99,
+      "inclusiveMultiSim": 0,
+      "leistungen": [],
+      "gruppe": "hauptkarte",
+      "entwurf": true
+    },
+    "Business Card Basic Premium": {
+      "preis": 6.99,
       "inclusiveMultiSim": 0,
       "leistungen": [],
       "gruppe": "hauptkarte",
